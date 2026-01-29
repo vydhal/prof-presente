@@ -89,7 +89,7 @@ const EventDetails = () => {
       day: "2-digit",
       month: "long",
       year: "numeric",
-      timeZone: "UTC",
+      timeZone: "America/Sao_Paulo",
     });
   };
 
@@ -97,7 +97,7 @@ const EventDetails = () => {
     return new Date(dateString).toLocaleTimeString("pt-BR", {
       hour: "2-digit",
       minute: "2-digit",
-      timeZone: "UTC",
+      timeZone: "America/Sao_Paulo",
     });
   };
 

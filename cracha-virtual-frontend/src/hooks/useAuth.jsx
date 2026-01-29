@@ -57,8 +57,19 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
-      const response = await api.post("/auth/register", userData); // Assumindo que a rota é /auth/register
-      return { success: true, user: response.data.user };
+      const response = await api.post("/auth/register", userData);
+      
+      // Auto-login logic
+      const { user: registeredUser, token } = response.data;
+      
+      if (token) {
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(registeredUser));
+        setUser(registeredUser);
+        api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      }
+      
+      return { success: true, user: registeredUser };
     } catch (error) {
       console.error("Erro no registro:", error.response?.data);
       return {

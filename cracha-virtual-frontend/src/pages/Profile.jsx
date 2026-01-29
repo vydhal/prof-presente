@@ -428,9 +428,15 @@ const Profile = () => {
                     <Input
                       id="phone"
                       value={formData.phone}
-                      onChange={(e) =>
-                        setFormData({ ...formData, phone: e.target.value })
-                      }
+                      onChange={(e) => {
+                        let value = e.target.value;
+                        value = value
+                          .replace(/\D/g, "")
+                          .replace(/(\d{2})(\d)/, "($1) $2")
+                          .replace(/(\d{5})(\d)/, "$1-$2");
+                        setFormData({ ...formData, phone: value });
+                      }}
+                      maxLength={15}
                       disabled={!isEditing}
                     />
                   </div>

@@ -3,6 +3,8 @@ const { body, validationResult } = require("express-validator");
 const { prisma } = require("../config/database");
 const { generateToken } = require("../utils/jwt");
 const { generateQRCode } = require("../utils/qrcode");
+const { sendEmail } = require("../utils/email"); // Import sendEmail
+const jwt = require("jsonwebtoken"); // Import jsonwebtoken for reset token
 
 // --- NOVO: Copie esta função para cá ou importe-a de um arquivo de utils ---
 const generateBadgeCode = (userName) => {
@@ -30,24 +32,20 @@ const registerValidation = [
     .withMessage("Senha deve ter pelo menos 6 caracteres"),
   body("birthDate").isISO8601().withMessage("Data de nascimento inválida"),
   body("cpf")
-    .optional()
     .matches(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/)
     .withMessage("CPF deve estar no formato XXX.XXX.XXX-XX"),
   body("contractType")
-    .optional()
     .isIn(["EFETIVO", "PRESTADOR", "ESTUDANTE"])
     .withMessage("Tipo de vínculo inválido"),
   body("workShifts")
-    .optional()
-    .isArray()
-    .withMessage("Turnos devem ser um array."),
+    .isArray({ min: 1 })
+    .withMessage("Selecione pelo menos um turno."),
   body("workShifts.*")
     .isIn(["MANHA", "TARDE", "NOITE", "INTEGRAL"])
     .withMessage("Turno inválido."),
   body("teachingSegments")
-    .optional()
-    .isArray()
-    .withMessage("Segmentos de ensino devem ser um array."),
+    .isArray({ min: 1 })
+    .withMessage("Selecione pelo menos um segmento de ensino."),
   body("teachingSegments.*")
     .isIn(["INFANTIL", "FUNDAMENTAL1", "FUNDAMENTAL2", "EJA", "ADMINISTRATIVO", "SUPERIOR"])
     .withMessage("Segmento de ensino inválido."),
@@ -203,9 +201,17 @@ const register = async (req, res) => {
       return newUser; // Retorna o usuário criado para a resposta final
     });
 
+    // --- NOVO: Gerar token para Auto-Login ---
+    const token = generateToken({ userId: result.id });
+
+    // Retornar dados do usuário (sem senha)
+    // O prisma select já filtrou a senha, mas garantindo:
+    const { password: _, ...userResponse } = result;
+
     res.status(201).json({
       message: "Usuário registrado com sucesso",
-      user: result, // 'result' agora é o objeto 'user' retornado pela transação
+      user: userResponse,
+      token, // <-- Retorna o token
     });
   } catch (error) {
     // 7. Seu tratamento de erro original (mantido)
@@ -310,10 +316,99 @@ const getProfile = async (req, res) => {
   }
 };
 
+// Solicitar redefinição de senha
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: "Email é obrigatório" });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      // Por segurança, não informamos que o usuário não existe, apenas retornamos sucesso
+      return res.json({ message: "Se este email estiver cadastrado, você receberá um link de redefinição." });
+    }
+
+    // Gerar token de redefinição (válido por 1 hora)
+    const token = jwt.sign(
+      { userId: user.id, purpose: "reset_password" },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    const resetLink = `${process.env.FRONTEND_URL || "http://localhost:5173"}/reset-password?token=${token}`;
+
+    const subject = "Redefinição de Senha - Prof Presente";
+    const html = `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+        <h2>Olá, ${user.name}!</h2>
+        <p>Recebemos uma solicitação para redefinir sua senha.</p>
+        <p>Clique no botão abaixo para criar uma nova senha:</p>
+        <div style="text-align: center; margin: 20px 0;">
+             <a href="${resetLink}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Redefinir Senha</a>
+        </div>
+        <p>Se nada acontecer ao clicar no botão, copie e cole o link no seu navegador:</p>
+        <p>${resetLink}</p>
+        <p>Este link é válido por 1 hora.</p>
+        <p>Se você não solicitou isso, pode ignorar este email.</p>
+        <p>Atenciosamente,<br>Equipe Prof Presente</p>
+      </div>
+    `;
+
+    await sendEmail({ to: user.email, subject, html });
+
+    res.json({ message: "Se este email estiver cadastrado, você receberá um link de redefinição." });
+  } catch (error) {
+    console.error("Erro no forgotPassword:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+};
+
+// Redefinir senha
+const resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({ error: "Token e nova senha são obrigatórios" });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+      if (decoded.purpose !== "reset_password") {
+        return res.status(403).json({ error: "Token inválido para redefinição de senha" });
+      }
+    } catch (err) {
+      return res.status(403).json({ error: "Token inválido ou expirado" });
+    }
+
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+    await prisma.user.update({
+      where: { id: decoded.userId },
+      data: { password: hashedPassword },
+    });
+
+    res.json({ message: "Senha redefinida com sucesso. Você já pode fazer login." });
+
+  } catch (error) {
+    console.error("Erro no resetPassword:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+};
+
+
 module.exports = {
   register,
   login,
   getProfile,
+  forgotPassword,
+  resetPassword,
   registerValidation,
   loginValidation,
 };

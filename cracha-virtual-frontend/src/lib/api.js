@@ -34,7 +34,8 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response?.status === 401) {
+    // Verifica se o erro é 401 ou 403
+    if (error.response?.status === 401 || error.response?.status === 403) {
       // Pega a URL da requisição original que falhou
       // (Ex: "/auth/login" ou "/events")
       const originalRequestUrl = error.config.url;
@@ -42,12 +43,14 @@ api.interceptors.response.use(
       // Define as rotas que NÃO devem acionar um logout global
       const isAuthRoute =
         originalRequestUrl.includes("/auth/login") ||
-        originalRequestUrl.includes("/auth/register");
+        originalRequestUrl.includes("/auth/register") ||
+        originalRequestUrl.includes("/auth/forgot-password") ||
+        originalRequestUrl.includes("/auth/reset-password");
 
-      // SE o erro 401 NÃO VEIO de uma rota de autenticação:
-      // Isso significa que é um token expirado em uma página protegida.
+      // SE o erro 401/403 NÃO VEIO de uma rota de autenticação:
+      // Isso significa que é um token expirado ou sem permissão em uma página protegida.
       if (!isAuthRoute) {
-        // Este é o "logout" global para tokens expirados
+        // Este é o "logout" global para tokens expirados/inválidos
         console.log(
           "Interceptor: Token expirado ou inválido em rota protegida. Deslogando."
         );
@@ -67,6 +70,8 @@ export const authAPI = {
   login: (credentials) => api.post("/auth/login", credentials),
   register: (userData) => api.post("/auth/register", userData),
   getProfile: () => api.get("/auth/profile"),
+  forgotPassword: (email) => api.post("/auth/forgot-password", { email }),
+  resetPassword: (data) => api.post("/auth/reset-password", data),
 };
 
 // Funções de usuários

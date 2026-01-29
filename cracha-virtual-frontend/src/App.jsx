@@ -25,6 +25,8 @@ const Evaluations = lazy(() => import("./pages/Evaluations"));
 const EvaluateEnrollment = lazy(() => import("./pages/EvaluateEnrollment"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Rankings = lazy(() => import("./pages/Rankings"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 import "./App.css";
 
@@ -61,6 +63,22 @@ function App() {
                 element={
                   <LazyWrapper>
                     <Register />
+                  </LazyWrapper>
+                }
+              />
+              <Route
+                path="/forgot-password"
+                element={
+                  <LazyWrapper>
+                    <ForgotPassword />
+                  </LazyWrapper>
+                }
+              />
+              <Route
+                path="/reset-password"
+                element={
+                  <LazyWrapper>
+                    <ResetPassword />
                   </LazyWrapper>
                 }
               />

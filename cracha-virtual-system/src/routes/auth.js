@@ -15,6 +15,8 @@ const { uploadProfilePhoto } = require("../middleware/upload");
 // Rotas públicas
 router.post("/register", uploadProfilePhoto, registerValidation, register);
 router.post("/login", loginValidation, login);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
 
 // Rotas protegidas
 router.get("/profile", authenticateToken, getProfile);

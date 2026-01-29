@@ -26,7 +26,7 @@ const EventCard = ({ event }) => {
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-      timeZone: "UTC",
+      timeZone: "America/Sao_Paulo",
     });
   };
 
