@@ -6,8 +6,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 enum UserRole {
@@ -61,9 +61,11 @@ model User {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   neighborhood    String?         // Bairro
-  workShifts      WorkShift[]     // <-- ADICIONE ESTA (NO PLURAL)
+  // workShifts      WorkShift[]     // <-- ADICIONE ESTA (NO PLURAL) - SQLite não suporta array
+  workShifts      String?         // Adaptado para SQLite
   contractType    ContractType?   // Tipo de vínculo
-  teachingSegments TeachingSegment[] // <-- ADICIONE ESTA (NO PLURAL)
+  // teachingSegments TeachingSegment[] // <-- ADICIONE ESTA (NO PLURAL) - SQLite não suporta array
+  teachingSegments String?        // Adaptado para SQLite
   professionId    String?         @map("profession_id")
   certificateLogs CertificateLog[]
   hasCompletedOnboarding  Boolean   @default(false) @map("has_completed_onboarding")
@@ -110,6 +112,13 @@ model Event {
   imageUrl     String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+
+  // NOVOS CAMPOS: Detalhes do evento
+  schedule        String?   // Descrição da programação (texto livre ou JSON string)
+  speakerName     String?   @map("speaker_name")
+  speakerRole     String?   @map("speaker_role")
+  speakerPhotoUrl String?   @map("speaker_photo_url")
+  mapLink         String?   @map("map_link")
 
    // NOVOS CAMPOS: Para o crachá impresso personalizado
   badgeTemplateUrl    String?   @map("badge_template_url")

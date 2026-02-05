@@ -14,18 +14,20 @@ const {
   sendEventCertificates,
   getCertificateLogsForEvent,
   uploadEventThumbnailController,
+  uploadSpeakerPhotoController,
 } = require("../controllers/eventController");
 
-const { authenticateToken, requireAdmin } = require("../middleware/auth");
+const { authenticateToken, authenticateOptional, requireAdmin } = require("../middleware/auth"); // <-- Update import
 
 const {
   uploadBadgeTemplate,
   uploadCertificate,
   uploadEventThumbnail,
+  uploadSpeakerPhoto,
 } = require("../middleware/upload");
 
-// Listar todos os eventos (público)
-router.get("/", authenticateToken, getAllEvents);
+// Listar todos os eventos (público - authentication optional)
+router.get("/", authenticateOptional, getAllEvents);
 
 // Obter evento por ID (público)
 router.get("/:id", getEventById);
@@ -68,6 +70,14 @@ router.post(
   requireAdmin,
   uploadEventThumbnail, // Middleware de upload
   uploadEventThumbnailController // Controller
+);
+
+router.post(
+  "/:id/speaker-photo",
+  authenticateToken,
+  requireAdmin,
+  uploadSpeakerPhoto,
+  uploadSpeakerPhotoController
 );
 
 //Criar certificados para o evento

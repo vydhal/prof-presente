@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html class="light" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Eventos SEDUC - Campina Grande</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Public Sans', sans-serif; }
+        .material-symbols-outlined { font-size: 20px; }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-[#0d141b] dark:text-slate-100 transition-colors duration-300">
+<header class="sticky top-0 z-50 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-[#e7edf3] dark:border-slate-800">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex items-center justify-between h-16 gap-8">
+<div class="flex items-center gap-3 shrink-0">
+<div class="bg-primary text-white p-1.5 rounded-lg">
+<svg class="w-6 h-6" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M47.2426 24L24 47.2426L0.757355 24L24 0.757355L47.2426 24ZM12.2426 21H35.7574L24 9.24264L12.2426 21Z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+<span class="text-xl font-bold tracking-tight text-primary">SEDUC Eventos</span>
+</div>
+<div class="flex-1 max-w-2xl hidden md:block">
+<div class="relative group">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-primary transition-colors">
+<span class="material-symbols-outlined">search</span>
+</div>
+<input class="block w-full pl-10 pr-3 py-2 border-none bg-slate-100 dark:bg-slate-800 rounded-xl focus:ring-2 focus:ring-primary/20 focus:bg-white dark:focus:bg-slate-700 transition-all placeholder:text-slate-500 text-sm" placeholder="Buscar eventos..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<nav class="hidden lg:flex items-center gap-6 mr-4">
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Início</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Eventos</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Sobre</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Ajuda</a>
+</nav>
+<button class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors group relative" onclick="document.documentElement.classList.toggle('dark')">
+<span class="material-symbols-outlined block dark:hidden">dark_mode</span>
+<span class="material-symbols-outlined hidden dark:block">light_mode</span>
+<span class="sr-only">Modo Escuro / Modo Claro</span>
+</button>
+<button class="bg-primary text-white px-5 py-2 rounded-lg text-sm font-bold hover:bg-primary/90 transition-all shadow-sm">
+                    Entrar / Cadastrar-se
+                </button>
+</div>
+</div>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<section class="relative mb-12 rounded-2xl overflow-hidden group">
+<div class="relative h-[480px] w-full">
+<div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent z-10"></div>
+<img alt="Banner de Evento em Destaque" class="absolute inset-0 w-full h-full object-cover object-center" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyPK_FB5NdpNcBoCR6WkppawjVmBLXluAPFub195yjYcC23pRDIAvEDTSDHuSxn2mIIPBpeXVYB4N8E8RJHrf_9hnDcbV8LbWm0j71OWC_Y5Vzy3ida1q0oyGwnURsZaiVn7yiBHi7fORipqXkqr4CkH1_-pvReINu-ffZRIzKPPLRwOj1t1N65aklUdqZaQfUZ6b2-cyKa_eH3qe8Ze7EqR-806W8Svn924OaGNiewNi7hG8PEE51Ms_X2vWfi_X8fzVeG4VdHdlC"/>
+<div class="relative z-20 h-full flex flex-col justify-center px-12 max-w-2xl text-white">
+<span class="bg-primary/90 text-white text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full w-fit mb-6">Eventos em Destaque</span>
+<h1 class="text-5xl font-black leading-tight mb-4">Fórum Municipal de Educação 2024</h1>
+<p class="text-lg text-slate-200 mb-8 font-light">Conectando educadores, inovadores e líderes para moldar o futuro da aprendizagem em Campina Grande. Junte-se a mais de 500 profissionais.</p>
+<div class="flex gap-4">
+<button class="bg-primary text-white px-8 py-3 rounded-lg font-bold hover:bg-white hover:text-primary transition-all text-base">
+                        Inscreva-se Agora
+                    </button>
+<button class="bg-white/10 backdrop-blur-md border border-white/20 text-white px-8 py-3 rounded-lg font-bold hover:bg-white/20 transition-all text-base">
+                        Saiba Mais
+                    </button>
+</div>
+</div>
+</div>
+<div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+<div class="w-8 h-1.5 rounded-full bg-primary"></div>
+<div class="w-2 h-1.5 rounded-full bg-white/50"></div>
+<div class="w-2 h-1.5 rounded-full bg-white/50"></div>
+</div>
+</section>
+<div class="flex items-center gap-3 overflow-x-auto pb-6 scrollbar-hide no-scrollbar">
+<button class="bg-primary text-white px-5 py-2 rounded-xl text-sm font-semibold whitespace-nowrap">Todos os Eventos</button>
+<button class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-5 py-2 rounded-xl text-sm font-medium hover:border-primary transition-colors whitespace-nowrap">Pedagogia</button>
+<button class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-5 py-2 rounded-xl text-sm font-medium hover:border-primary transition-colors whitespace-nowrap">Tecnologia</button>
+<button class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-5 py-2 rounded-xl text-sm font-medium hover:border-primary transition-colors whitespace-nowrap">Educação Inclusiva</button>
+<button class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-5 py-2 rounded-xl text-sm font-medium hover:border-primary transition-colors whitespace-nowrap">Arte &amp; Cultura</button>
+<button class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-5 py-2 rounded-xl text-sm font-medium hover:border-primary transition-colors whitespace-nowrap">Gestão</button>
+</div>
+<div class="flex flex-col lg:flex-row gap-8">
+<div class="lg:w-3/4">
+<div class="flex items-center justify-between mb-8">
+<h2 class="text-2xl font-bold text-slate-800 dark:text-white">Próximos Eventos</h2>
+<div class="flex items-center gap-2 text-primary font-semibold text-sm cursor-pointer hover:underline">
+<span>Ordenar por: Recentes</span>
+<span class="material-symbols-outlined">expand_more</span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+<div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden hover:shadow-xl hover:shadow-primary/5 transition-all group cursor-pointer">
+<div class="relative h-44 overflow-hidden">
+<img alt="Capa do Evento" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA6ZEsJLzDntM3i6CmZPrvW_T4XmgslOn3VEDp091Mf32CQiIu8xSMS-iY7JpV6L2d1YQfw9YgqfxS5Uj_RUZOs4N8APFIk6folgiQBkL-04lvILF7AOdVyNzZa0WGbbnEoFvGLJXXyV1fKbN5QxOPioV6_yiWS2-7sdUChJs5Olr84THTtiTe4m8r9MDrVVTqZacOsx4XAeXEIo4EAjmUiiY3nDamFV79QxmSHcwfPL6YgxY9qIMN6bQw3j39pDNnNVY0UdndfNDaU"/>
+<div class="absolute top-3 right-3 bg-white/95 backdrop-blur-sm rounded-lg p-1.5 flex flex-col items-center min-w-[50px] shadow-sm">
+<span class="text-xs font-bold text-primary uppercase">Out</span>
+<span class="text-lg font-black text-slate-800 leading-none">15</span>
+</div>
+</div>
+<div class="p-5">
+<span class="text-xs font-bold text-primary uppercase mb-2 block">Tecnologia</span>
+<h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-tight">EduTech Summit 2024</h3>
+<div class="flex flex-col gap-2 text-slate-500 dark:text-slate-400 text-sm mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">calendar_month</span>
+<span>Data: 15 de Outubro</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">location_on</span>
+<span>Local: Auditório Principal, CG</span>
+</div>
+</div>
+<button class="w-full py-2.5 rounded-lg border-2 border-primary/10 text-primary font-bold hover:bg-primary hover:text-white transition-all text-sm">
+                            Ver Detalhes
+                        </button>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden hover:shadow-xl hover:shadow-primary/5 transition-all group cursor-pointer">
+<div class="relative h-44 overflow-hidden">
+<img alt="Capa do Evento" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuADTtgpgQLwg6VYIzXwddCP40fDBnxheScf3BqBsdLDXRX2ePZa_4oH9b8bUXnyUxQJkv7yK6kAGkzEIjAsjXORsZlFD3bN-l5ksaLc6BULE20lc-YRfOy1zSpPfijUjV0_-8KmL3Xrlibxb-VFiFn0afZtZ63rQ8auEH1uGsO0v0TnRwgPhDrRTs6Ye5cDL7bEE9zeUInZ6rVysUVWf9w4QcheNb-a9le60jlH7Wj-GzM6tHI8NpzXW7xvhEQYl1kPvRdmwpnomzWT"/>
+<div class="absolute top-3 right-3 bg-white/95 backdrop-blur-sm rounded-lg p-1.5 flex flex-col items-center min-w-[50px] shadow-sm">
+<span class="text-xs font-bold text-primary uppercase">Out</span>
+<span class="text-lg font-black text-slate-800 leading-none">18</span>
+</div>
+</div>
+<div class="p-5">
+<span class="text-xs font-bold text-primary uppercase mb-2 block">Pedagogia</span>
+<h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-tight">Workshop de Pedagogia Inclusiva</h3>
+<div class="flex flex-col gap-2 text-slate-500 dark:text-slate-400 text-sm mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">calendar_month</span>
+<span>Data: 18 de Outubro</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">videocam</span>
+<span>Local: Sala Virtual A</span>
+</div>
+</div>
+<button class="w-full py-2.5 rounded-lg border-2 border-primary/10 text-primary font-bold hover:bg-primary hover:text-white transition-all text-sm">
+                            Ver Detalhes
+                        </button>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden hover:shadow-xl hover:shadow-primary/5 transition-all group cursor-pointer">
+<div class="relative h-44 overflow-hidden">
+<img alt="Capa do Evento" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAG3oZszvIQhCv7MTxgOMrRhuVM9j2ziPWO5MOzy3oAfzuppZvZzwAWHF-jkkKyb0t2vHGdCpABj-gnGbRJbZFaTcZpAcYyNw2bTVapqrBofjjjRjERFHUYDHN17QqvO9rGWUQJ-P4vIJBo2nI2eVesG21Vvm3jJE0GeTrRRhla6KvZ30aqiGpUU11ClR78l0zzNnDZRDiTnE053uCb_NnfhIleUbxzJMwmcgKNBKEkz2FKyMvDoP-ErYsfKCuqnwHVcJI8gQJtuPD8"/>
+<div class="absolute top-3 right-3 bg-white/95 backdrop-blur-sm rounded-lg p-1.5 flex flex-col items-center min-w-[50px] shadow-sm">
+<span class="text-xs font-bold text-primary uppercase">Out</span>
+<span class="text-lg font-black text-slate-800 leading-none">20</span>
+</div>
+</div>
+<div class="p-5">
+<span class="text-xs font-bold text-primary uppercase mb-2 block">Gestão</span>
+<h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-tight">Seminário de Letramento Digital</h3>
+<div class="flex flex-col gap-2 text-slate-500 dark:text-slate-400 text-sm mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">calendar_month</span>
+<span>Data: 20 de Outubro</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">location_on</span>
+<span>Local: Polo de Educação</span>
+</div>
+</div>
+<button class="w-full py-2.5 rounded-lg border-2 border-primary/10 text-primary font-bold hover:bg-primary hover:text-white transition-all text-sm">
+                            Ver Detalhes
+                        </button>
+</div>
+</div>
+</div>
+<div class="mt-12 flex justify-center">
+<button class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-8 py-3 rounded-xl font-bold hover:border-primary transition-all shadow-sm flex items-center gap-2">
+                    Carregar Mais Eventos
+                    <span class="material-symbols-outlined">expand_more</span>
+</button>
+</div>
+</div>
+<div class="lg:w-1/4 space-y-8">
+<div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+<div class="flex items-center justify-between mb-6">
+<h4 class="font-bold text-slate-800 dark:text-white">Calendário de Eventos</h4>
+<div class="flex gap-1">
+<button class="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"><span class="material-symbols-outlined">chevron_left</span></button>
+<button class="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"><span class="material-symbols-outlined">chevron_right</span></button>
+</div>
+</div>
+<div class="text-center mb-4 text-sm font-semibold">Outubro 2024</div>
+<div class="grid grid-cols-7 gap-1 text-center mb-2">
+<div class="text-[10px] font-bold text-slate-400 uppercase">Dom</div>
+<div class="text-[10px] font-bold text-slate-400 uppercase">Seg</div>
+<div class="text-[10px] font-bold text-slate-400 uppercase">Ter</div>
+<div class="text-[10px] font-bold text-slate-400 uppercase">Qua</div>
+<div class="text-[10px] font-bold text-slate-400 uppercase">Qui</div>
+<div class="text-[10px] font-bold text-slate-400 uppercase">Sex</div>
+<div class="text-[10px] font-bold text-slate-400 uppercase">Sáb</div>
+</div>
+<div class="grid grid-cols-7 gap-1 text-center">
+<div class="py-2 text-xs text-slate-300">29</div>
+<div class="py-2 text-xs text-slate-300">30</div>
+<div class="py-2 text-xs">1</div>
+<div class="py-2 text-xs">2</div>
+<div class="py-2 text-xs">3</div>
+<div class="py-2 text-xs">4</div>
+<div class="py-2 text-xs">5</div>
+<div class="py-2 text-xs">6</div>
+<div class="py-2 text-xs">7</div>
+<div class="py-2 text-xs">8</div>
+<div class="py-2 text-xs">9</div>
+<div class="py-2 text-xs">10</div>
+<div class="py-2 text-xs">11</div>
+<div class="py-2 text-xs">12</div>
+<div class="py-2 text-xs">13</div>
+<div class="py-2 text-xs">14</div>
+<div class="py-2 text-xs bg-primary text-white font-bold rounded-lg cursor-pointer shadow-md shadow-primary/20">15</div>
+<div class="py-2 text-xs">16</div>
+<div class="py-2 text-xs">17</div>
+<div class="py-2 text-xs bg-primary/10 text-primary font-bold rounded-lg cursor-pointer">18</div>
+<div class="py-2 text-xs">19</div>
+<div class="py-2 text-xs bg-primary/10 text-primary font-bold rounded-lg cursor-pointer">20</div>
+<div class="py-2 text-xs">21</div>
+<div class="py-2 text-xs">22</div>
+<div class="py-2 text-xs">23</div>
+<div class="py-2 text-xs">24</div>
+<div class="py-2 text-xs">25</div>
+<div class="py-2 text-xs">26</div>
+<div class="py-2 text-xs">27</div>
+<div class="py-2 text-xs">28</div>
+<div class="py-2 text-xs">29</div>
+<div class="py-2 text-xs">30</div>
+<div class="py-2 text-xs">31</div>
+<div class="py-2 text-xs text-slate-300">1</div>
+<div class="py-2 text-xs text-slate-300">2</div>
+</div>
+</div>
+<div class="bg-slate-100 dark:bg-slate-800/50 rounded-2xl p-6">
+<h4 class="font-bold text-slate-800 dark:text-white mb-4">Links Rápidos</h4>
+<ul class="space-y-4">
+<li>
+<a class="flex items-center gap-3 group" href="#">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">history</span>
+<span class="text-sm font-medium group-hover:text-primary transition-colors">Eventos Passados</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 group" href="#">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">workspace_premium</span>
+<span class="text-sm font-medium group-hover:text-primary transition-colors">Meus Certificados</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 group" href="#">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">help</span>
+<span class="text-sm font-medium group-hover:text-primary transition-colors">Central de Ajuda</span>
+</a>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</main>
+<footer class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-12 mt-12">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-12">
+<div class="col-span-1 md:col-span-1">
+<div class="flex items-center gap-3 mb-6">
+<div class="bg-primary text-white p-1 rounded-lg">
+<svg class="w-5 h-5" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M47.2426 24L24 47.2426L0.757355 24L24 0.757355L47.2426 24ZM12.2426 21H35.7574L24 9.24264L12.2426 21Z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+<span class="text-lg font-bold text-primary">SEDUC CG</span>
+</div>
+<p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                    Secretaria de Educação de Campina Grande. Oferecendo ferramentas modernas para a comunidade educacional desde 2021.
+                </p>
+</div>
+<div>
+<h5 class="font-bold mb-6 text-sm uppercase tracking-wider text-slate-900 dark:text-white">Portal</h5>
+<ul class="space-y-4 text-sm text-slate-500 dark:text-slate-400">
+<li><a class="hover:text-primary transition-colors" href="#">Sobre o Portal</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Política de Privacidade</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Termos de Uso</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Contate-nos</a></li>
+</ul>
+</div>
+<div>
+<h5 class="font-bold mb-6 text-sm uppercase tracking-wider text-slate-900 dark:text-white">Eventos</h5>
+<ul class="space-y-4 text-sm text-slate-500 dark:text-slate-400">
+<li><a class="hover:text-primary transition-colors" href="#">Todos os Workshops</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Criar Evento</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Locais</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Guia do Palestrante</a></li>
+</ul>
+</div>
+<div>
+<h5 class="font-bold mb-6 text-sm uppercase tracking-wider text-slate-900 dark:text-white">Informativo</h5>
+<p class="text-sm text-slate-500 dark:text-slate-400 mb-4">Fique por dentro dos últimos eventos educacionais.</p>
+<div class="flex gap-2">
+<input class="flex-1 text-sm bg-slate-100 dark:bg-slate-800 border-none rounded-lg focus:ring-1 focus:ring-primary" placeholder="Endereço de e-mail" type="email"/>
+<button class="bg-primary text-white px-4 py-2 rounded-lg"><span class="material-symbols-outlined">send</span></button>
+</div>
+</div>
+</div>
+<div class="border-t border-slate-100 dark:border-slate-800 mt-12 pt-8 text-center text-xs text-slate-400">
+            © 2024 SEDUC Campina Grande. Todos os direitos reservados. Desenvolvido para a educação pública.
+        </div>
+</div>
+</footer>
+
+</body></html>

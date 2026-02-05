@@ -103,6 +103,10 @@ const Admin = () => {
     endDate: "",
     maxAttendees: "",
     parentId: "",
+    mapLink: "",
+    schedule: "",
+    speakerName: "",
+    speakerRole: "",
   });
 
   const [badgeTemplateFile, setBadgeTemplateFile] = useState(null);
@@ -121,6 +125,9 @@ const Admin = () => {
   const [eventThumbnailFile, setEventThumbnailFile] = useState(null);
   const [eventThumbnailPreviewUrl, setEventThumbnailPreviewUrl] =
     useState(null);
+
+  const [speakerPhotoFile, setSpeakerPhotoFile] = useState(null);
+  const [speakerPhotoPreviewUrl, setSpeakerPhotoPreviewUrl] = useState(null);
 
   const { data: events, isLoading: eventsLoading } = useQuery({
     queryKey: ["admin-events"],
@@ -320,6 +327,28 @@ const Admin = () => {
     },
   });
 
+  const uploadSpeakerPhotoMutation = useMutation({
+    mutationFn: async ({ id, formData }) => {
+      const response = await api.post(`/events/${id}/speaker-photo`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(["admin-events"]);
+      // Atualiza o estado local para refletir a nova URL
+      setEditingEvent((prev) => ({ ...prev, speakerPhotoUrl: data.event.speakerPhotoUrl }));
+      toast.success("Foto do palestrante salva com sucesso!");
+      setSpeakerPhotoFile(null);
+      setSpeakerPhotoPreviewUrl(null);
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.error || "Erro ao salvar foto do palestrante."
+      );
+    },
+  });
+
   const resetForm = () => {
     setEventForm({
       title: "",
@@ -329,6 +358,10 @@ const Admin = () => {
       endDate: "",
       maxAttendees: "",
       parentId: "",
+      mapLink: "",
+      schedule: "",
+      speakerName: "",
+      speakerRole: "",
     });
 
     setBadgeTemplateFile(null);
@@ -358,6 +391,8 @@ const Admin = () => {
     });
     setEventThumbnailFile(null);
     setEventThumbnailPreviewUrl(null);
+    setSpeakerPhotoFile(null);
+    setSpeakerPhotoPreviewUrl(null);
   };
 
   const handleSubmit = (e) => {
@@ -388,6 +423,10 @@ const Admin = () => {
       endDate: event.endDate.slice(0, 16),
       maxAttendees: event.maxAttendees || "",
       parentId: event.parentId || "",
+      mapLink: event.mapLink || "",
+      schedule: event.schedule || "",
+      speakerName: event.speakerName || "",
+      speakerRole: event.speakerRole || "",
     });
 
     setBadgeTemplatePreviewUrl(null);
@@ -439,6 +478,8 @@ const Admin = () => {
 
     setEventThumbnailFile(null);
     setEventThumbnailPreviewUrl(null);
+    setSpeakerPhotoFile(null);
+    setSpeakerPhotoPreviewUrl(null);
   };
 
   const handleFileChange = (e) => {
@@ -599,6 +640,28 @@ const Admin = () => {
     uploadThumbnailMutation.mutate({ id: editingEvent.id, formData });
   };
 
+  const handleSpeakerPhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSpeakerPhotoFile(file);
+      if (speakerPhotoPreviewUrl) {
+        URL.revokeObjectURL(speakerPhotoPreviewUrl);
+      }
+      setSpeakerPhotoPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
+  const handleSpeakerPhotoSubmit = (e) => {
+    e.preventDefault();
+    if (!editingEvent || !speakerPhotoFile) {
+      toast.info("Selecione uma foto para o palestrante primeiro.");
+      return;
+    }
+    const formData = new FormData();
+    formData.append("speakerPhoto", speakerPhotoFile);
+    uploadSpeakerPhotoMutation.mutate({ id: editingEvent.id, formData });
+  };
+
   // Efeito para limpar as URLs de preview ao desmontar o componente ou ao mudar a URL
   useEffect(() => {
     return () => {
@@ -625,8 +688,8 @@ const Admin = () => {
         </p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="w-full overflow-x-auto pb-2">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6 lg:mb-0">
+        <div className="w-full overflow-x-auto pb-2 block">
           <TabsList className="inline-flex w-auto space-x-2 lg:grid lg:w-full lg:grid-cols-7">
             <TabsTrigger value="dashboard">
               <BarChart className="h-4 w-4 mr-2" />
@@ -662,6 +725,8 @@ const Admin = () => {
             </TabsTrigger>
           </TabsList>
         </div>
+
+        {/* BOTTOM NAVIGATION REMOVED - NOW USING GLOBAL BOTTOM NAV */}
 
         <TabsContent value="dashboard" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -817,6 +882,93 @@ const Admin = () => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
+                      <Label htmlFor="mapLink">Link do Mapa (URL)</Label>
+                      <Input
+                        id="mapLink"
+                        value={eventForm.mapLink}
+                        onChange={(e) =>
+                          setEventForm({ ...eventForm, mapLink: e.target.value })
+                        }
+                        placeholder="https://maps.google.com/..."
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="schedule">Programação (Resumo)</Label>
+                      <Textarea
+                        id="schedule"
+                        value={eventForm.schedule}
+                        onChange={(e) =>
+                          setEventForm({ ...eventForm, schedule: e.target.value })
+                        }
+                        placeholder="Descreva a programação..."
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="speakerName">Nome do Palestrante</Label>
+                      <Input
+                        id="speakerName"
+                        value={eventForm.speakerName}
+                        onChange={(e) =>
+                          setEventForm({ ...eventForm, speakerName: e.target.value })
+                        }
+                        placeholder="Ex: Dr. Fulano"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="speakerRole">Cargo do Palestrante</Label>
+                      <Input
+                        id="speakerRole"
+                        value={eventForm.speakerRole}
+                        onChange={(e) =>
+                          setEventForm({ ...eventForm, speakerRole: e.target.value })
+                        }
+                        placeholder="Ex: Secretário de Educação"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Upload Foto Palestrante */}
+                  <div className="p-4 border rounded-lg space-y-4 bg-slate-50 dark:bg-slate-900/50">
+                    <h3 className="font-semibold text-sm">Foto do Palestrante</h3>
+
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden shrink-0 border border-slate-300 dark:border-slate-700">
+                        {speakerPhotoPreviewUrl ? (
+                          <img src={speakerPhotoPreviewUrl} alt="Preview" className="w-full h-full object-cover" />
+                        ) : editingEvent?.speakerPhotoUrl ? (
+                          <img src={getAssetUrl(editingEvent.speakerPhotoUrl)} alt="Atual" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-slate-400">
+                            <Users className="w-8 h-8" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <Input
+                          type="file"
+                          onChange={handleSpeakerPhotoChange}
+                          accept="image/*"
+                          className="text-xs"
+                        />
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={handleSpeakerPhotoSubmit}
+                          disabled={uploadSpeakerPhotoMutation.isPending || !speakerPhotoFile}
+                        >
+                          {uploadSpeakerPhotoMutation.isPending ? "Enviando..." : "Salvar Foto"}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
                       <Label htmlFor="startDate">Data de Início</Label>
                       <Input
                         id="startDate"
@@ -887,11 +1039,11 @@ const Admin = () => {
                       }
                     >
                       {createEventMutation.isPending ||
-                      updateEventMutation.isPending
+                        updateEventMutation.isPending
                         ? "Salvando..."
                         : editingEvent
-                        ? "Atualizar"
-                        : "Criar"}
+                          ? "Atualizar"
+                          : "Criar"}
                     </Button>
                   </div>
                 </form>
@@ -933,17 +1085,17 @@ const Admin = () => {
                               className="w-full h-full object-cover"
                             />
                           ) : // Se não houver, mostra a imagem atual salva no evento
-                          editingEvent.imageUrl ? (
-                            <img
-                              src={getAssetUrl(editingEvent.imageUrl)} // <-- USE A FUNÇÃO AQUI                              alt="Imagem Atual"
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            // Placeholder
-                            <span className="text-sm text-gray-500">
-                              Sem imagem de capa
-                            </span>
-                          )}
+                            editingEvent.imageUrl ? (
+                              <img
+                                src={getAssetUrl(editingEvent.imageUrl)} // <-- USE A FUNÇÃO AQUI                              alt="Imagem Atual"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              // Placeholder
+                              <span className="text-sm text-gray-500">
+                                Sem imagem de capa
+                              </span>
+                            )}
                         </div>
                       </div>
 
@@ -1327,8 +1479,8 @@ const Admin = () => {
                                     {/* Exibe a data apenas se houver uma */}
                                     {report.sentAt
                                       ? new Date(
-                                          report.CreatedAt
-                                        ).toLocaleString("pt-BR")
+                                        report.CreatedAt
+                                      ).toLocaleString("pt-BR")
                                       : "—"}
                                   </TableCell>
                                 </TableRow>
@@ -1353,121 +1505,198 @@ const Admin = () => {
             </Dialog>
           </div>
 
-          <Card>
+          <Card className="border-none shadow-none md:border md:shadow-sm">
             <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Título</TableHead>
-                    <TableHead>Local</TableHead>
-                    <TableHead>Visibilidade</TableHead>
-                    <TableHead>Início</TableHead>
-                    <TableHead>Término</TableHead>
-                    <TableHead>Capacidade</TableHead>
-                    <TableHead className="text-center">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {eventsLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center">
-                        Carregando...
-                      </TableCell>
-                    </TableRow>
-                  ) : events?.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center">
-                        Nenhum evento cadastrado
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    events?.map((event) => (
-                      <TableRow key={event.id}>
-                        <TableCell className="font-medium">
-                          {event.title}
-                        </TableCell>
-                        <TableCell>{event.location}</TableCell>
-                        <TableCell>
-                          {event.isPrivate ? (
-                            <Badge variant="secondary">Privado</Badge>
-                          ) : (
-                            <Badge variant="outline">Público</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>{formatDate(event.startDate)}</TableCell>
-                        <TableCell>{formatDate(event.endDate)}</TableCell>
-                        <TableCell>
-                          {event.maxAttendees || "Ilimitado"}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex justify-between items-center gap-1">
-                            {/* BOTÃO DE EDITAR (sem alteração de lógica) */}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEdit(event)}
-                              title="Editar Evento"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-
-                            {/* BOTÃO DE IMPRIMIR CRACHÁS */}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                handlePrintBadges(event.id, event.title)
-                              }
-                              // AQUI A MUDANÇA: O botão é desabilitado se a URL do template não existir.
-                              disabled={!event.badgeTemplateUrl}
-                              // A dica também se torna dinâmica.
-                              title={
-                                event.badgeTemplateUrl
-                                  ? "Imprimir Crachás em Lote"
-                                  : "Configure o modelo de crachá para habilitar a impressão"
-                              }
-                            >
-                              <Printer className="h-4 w-4" />
-                            </Button>
-
-                            {/* BOTÃO DE ENVIAR CERTIFICADOS */}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                handleSendCertificates(event.id, event.title)
-                              }
-                              // AQUI A MUDANÇA: O botão é desabilitado se a URL do template não existir.
-                              disabled={
-                                !event.certificateTemplateUrl ||
-                                sendCertificatesMutation.isPending
-                              }
-                              // A dica agora é dinâmica para informar o usuário.
-                              title={
-                                event.certificateTemplateUrl
-                                  ? "Enviar Certificados por E-mail"
-                                  : "Configure o modelo de certificado para habilitar o envio"
-                              }
-                            >
-                              <Send className="h-4 w-4" />
-                            </Button>
-
-                            {/* BOTÃO DE EXCLUIR */}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(event.id)}
-                              title="Excluir Evento"
-                            >
-                              <Trash2 className="h-4 w-4 text-red-600" />
-                            </Button>
+              {/* MOBILE VIEW: Cards */}
+              <div className="md:hidden space-y-4">
+                {eventsLoading ? (
+                  <div className="text-center p-4">Carregando...</div>
+                ) : events?.length === 0 ? (
+                  <div className="text-center p-4">Nenhum evento cadastrado</div>
+                ) : (
+                  events?.map((event) => (
+                    <Card key={event.id} className="overflow-hidden">
+                      <div className="bg-gray-50 px-4 py-2 border-b flex justify-between items-center">
+                        <span className="font-semibold truncate max-w-[200px]">{event.title}</span>
+                        {event.isPrivate ? (
+                          <Badge variant="secondary" className="text-[10px]">Privado</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-[10px]">Público</Badge>
+                        )}
+                      </div>
+                      <CardContent className="p-4 space-y-2">
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <p className="text-muted-foreground text-xs">Início</p>
+                            <p>{formatDate(event.startDate)}</p>
                           </div>
+                          <div>
+                            <p className="text-muted-foreground text-xs">Término</p>
+                            <p>{formatDate(event.endDate)}</p>
+                          </div>
+                          <div className="col-span-2">
+                            <p className="text-muted-foreground text-xs">Local</p>
+                            <p className="truncate">{event.location}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end gap-2 pt-2 mt-2 border-t">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => handleEdit(event)}
+                            title="Editar"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => handlePrintBadges(event.id, event.title)}
+                            disabled={!event.badgeTemplateUrl}
+                            title={event.badgeTemplateUrl ? "Imprimir Crachás" : "Configure o modelo"}
+                          >
+                            <Printer className="h-4 w-4" />
+                          </Button>
+
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => handleSendCertificates(event.id, event.title)}
+                            disabled={!event.certificateTemplateUrl || sendCertificatesMutation.isPending}
+                            title={event.certificateTemplateUrl ? "Enviar Certificados" : "Configure o modelo"}
+                          >
+                            <Send className="h-4 w-4" />
+                          </Button>
+
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => handleDelete(event.id)}
+                            title="Excluir"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+
+              {/* DESKTOP VIEW: Table */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Título</TableHead>
+                      <TableHead>Local</TableHead>
+                      <TableHead>Visibilidade</TableHead>
+                      <TableHead>Início</TableHead>
+                      <TableHead>Término</TableHead>
+                      <TableHead>Capacidade</TableHead>
+                      <TableHead className="text-center">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {eventsLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center">
+                          Carregando...
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : events?.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center">
+                          Nenhum evento cadastrado
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      events?.map((event) => (
+                        <TableRow key={event.id}>
+                          <TableCell className="font-medium">
+                            {event.title}
+                          </TableCell>
+                          <TableCell>{event.location}</TableCell>
+                          <TableCell>
+                            {event.isPrivate ? (
+                              <Badge variant="secondary">Privado</Badge>
+                            ) : (
+                              <Badge variant="outline">Público</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>{formatDate(event.startDate)}</TableCell>
+                          <TableCell>{formatDate(event.endDate)}</TableCell>
+                          <TableCell>
+                            {event.maxAttendees || "Ilimitado"}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex justify-between items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEdit(event)}
+                                title="Editar Evento"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  handlePrintBadges(event.id, event.title)
+                                }
+                                disabled={!event.badgeTemplateUrl}
+                                title={
+                                  event.badgeTemplateUrl
+                                    ? "Imprimir Crachás em Lote"
+                                    : "Configure o modelo de crachá para habilitar a impressão"
+                                }
+                              >
+                                <Printer className="h-4 w-4" />
+                              </Button>
+
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  handleSendCertificates(event.id, event.title)
+                                }
+                                disabled={
+                                  !event.certificateTemplateUrl ||
+                                  sendCertificatesMutation.isPending
+                                }
+                                title={
+                                  event.certificateTemplateUrl
+                                    ? "Enviar Certificados por E-mail"
+                                    : "Configure o modelo de certificado para habilitar o envio"
+                                }
+                              >
+                                <Send className="h-4 w-4" />
+                              </Button>
+
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(event.id)}
+                                title="Excluir Evento"
+                              >
+                                <Trash2 className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

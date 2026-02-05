@@ -91,8 +91,45 @@ const requireCheckinPermission = (req, res, next) => {
   }
 };
 
+// Middleware to optionally authenticate token (for public routes that adjust content based on auth)
+const authenticateOptional = async (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
+
+  if (!token) {
+    req.user = null;
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+      },
+    });
+
+    if (user) {
+      req.user = user;
+    } else {
+      req.user = null;
+    }
+    next();
+  } catch (error) {
+    // If token is invalid, treat as anonymous
+    req.user = null;
+    next();
+  }
+};
+
 module.exports = {
   authenticateToken,
+  authenticateOptional,
   requireAdmin,
   requireOwnershipOrAdmin,
   requireCheckinPermission,

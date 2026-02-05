@@ -156,6 +156,36 @@ const uploadEventThumbnail = multer({
   },
 }).single("eventThumbnail"); // 'eventThumbnail' é o nome do campo no FormData
 
+// --- CONFIGURAÇÃO PARA FOTOS DE PALESTRANTE ---
+const speakerPhotoStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = "uploads/speakers/";
+    ensureDirectoryExists(dir);
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + req.params.id;
+    const extension = path.extname(file.originalname);
+    cb(null, uniqueSuffix + extension);
+  },
+});
+
+const uploadSpeakerPhoto = multer({
+  storage: speakerPhotoStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const filetypes = /jpeg|jpg|png|gif|webp/;
+    const mimetype = filetypes.test(file.mimetype);
+    const extname = filetypes.test(
+      path.extname(file.originalname).toLowerCase()
+    );
+    if (mimetype && extname) {
+      return cb(null, true);
+    }
+    cb(new Error("Erro: Apenas arquivos de imagem são permitidos!"));
+  },
+}).single("speakerPhoto"); // Campo 'speakerPhoto'
+
 module.exports = {
   uploadProfilePhoto,
   uploadBadgeTemplate,
@@ -163,4 +193,5 @@ module.exports = {
   handleUploadError,
   uploadCertificate,
   uploadEventThumbnail,
+  uploadSpeakerPhoto,
 };

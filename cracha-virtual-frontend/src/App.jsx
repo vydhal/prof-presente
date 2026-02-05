@@ -21,12 +21,14 @@ const EventDetails = lazy(() => import("./pages/EventDetails"));
 const MyEnrollments = lazy(() => import("./pages/MyEnrollments"));
 const CheckIn = lazy(() => import("./pages/CheckIn"));
 const Admin = lazy(() => import("./pages/Admin"));
+
 const Evaluations = lazy(() => import("./pages/Evaluations"));
 const EvaluateEnrollment = lazy(() => import("./pages/EvaluateEnrollment"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Rankings = lazy(() => import("./pages/Rankings"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const LandingPage = lazy(() => import("./pages/LandingPage"));
 
 import "./App.css";
 
@@ -83,6 +85,15 @@ function App() {
                 }
               />
 
+              <Route
+                path="/events/:id"
+                element={
+                  <LazyWrapper>
+                    <EventDetails />
+                  </LazyWrapper>
+                }
+              />
+
               {/* Rotas protegidas */}
               <Route
                 path="/dashboard"
@@ -110,18 +121,7 @@ function App() {
                 }
               />
 
-              <Route
-                path="/events/:id"
-                element={
-                  <ProtectedRoute>
-                    <Layout>
-                      <LazyWrapper>
-                        <EventDetails />
-                      </LazyWrapper>
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              />
+
 
               <Route
                 path="/my-enrollments"
@@ -214,12 +214,21 @@ function App() {
                 }
               />
 
-              {/* Rota padrão */}
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+              {/* Rota Landing Page (Pública) */}
+              <Route
+                path="/"
+                element={
+                  <LazyWrapper>
+                    <LandingPage />
+                  </LazyWrapper>
+                }
+              />
 
               {/* Rota 404 */}
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+
           </Router>
         </AuthProvider>
       </NotificationProvider>

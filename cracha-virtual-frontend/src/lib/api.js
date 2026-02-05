@@ -1,5 +1,5 @@
 import axios from "axios";
-import Cookies from "js-cookie";
+// import Cookies from "js-cookie"; // Removido
 
 // Configuração base da API
 const API_BASE_URL =
@@ -17,7 +17,8 @@ const api = axios.create({
 // Interceptor para adicionar token de autenticação
 api.interceptors.request.use(
   (config) => {
-    const token = Cookies.get("auth_token");
+    // const token = Cookies.get("auth_token");
+    const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -31,11 +32,24 @@ api.interceptors.request.use(
 // Interceptor para tratar respostas e erros
 api.interceptors.response.use(
   (response) => {
+    // Verificação para APIs que retornam 200 OK mas com erro no corpo
+    if (response.data && (response.data.code === 401 || response.data.code === 403)) {
+      // Simula um erro para cair no catch do interceptor ou do componente
+      const error = {
+        config: response.config,
+        response: response,
+        isCustomError: true // Flag para identificar que foi gerado manualmente
+      };
+      return Promise.reject(error);
+    }
     return response;
   },
   (error) => {
-    // Verifica se o erro é 401 ou 403
-    if (error.response?.status === 401 || error.response?.status === 403) {
+    // Verifica se o erro é 401 ou 403 (HTTP status ou código no corpo da resposta verificado acima)
+    const status = error.response?.status;
+    const code = error.response?.data?.code;
+    
+    if (status === 401 || status === 403 || code === 401 || code === 403) {
       // Pega a URL da requisição original que falhou
       // (Ex: "/auth/login" ou "/events")
       const originalRequestUrl = error.config.url;
@@ -54,9 +68,13 @@ api.interceptors.response.use(
         console.log(
           "Interceptor: Token expirado ou inválido em rota protegida. Deslogando."
         );
-        Cookies.remove("auth_token");
-        Cookies.remove("user_data");
-        window.location.href = "/login";
+        // Cookies.remove("auth_token"); // Removido para usar localStorage e manter consistência
+        // Cookies.remove("user_data");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        // Dispara evento para o useAuth lidar com a atualização de estado
+        window.dispatchEvent(new Event("auth:logout"));
+        // window.location.href = "/login"; // Desativado reload forçado
       }
     }
     // Sempre rejeita o erro para que o 'catch' local (no useAuth / Login.jsx)

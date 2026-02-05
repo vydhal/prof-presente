@@ -14,28 +14,48 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const initAuth = async () => {
+      console.log("useAuth: Iniciando verificação de autenticação");
       const token = localStorage.getItem("token");
-      if (token && user) {
-        // Define o header para requisições futuras
-        api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      } else if (token && !user) {
-        // Se tem token mas não tem usuário, busca no perfil
+
+      if (token) {
         try {
+          // Define cookie/header
           api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+          // SEMPRE valida o token com o backend, não confia no localStorage
+          console.log("useAuth: Validando token com backend...");
           const response = await api.get("/auth/profile");
+          console.log("useAuth: Token válido, usuário:", response.data);
+
           setUser(response.data);
           localStorage.setItem("user", JSON.stringify(response.data));
         } catch (error) {
-          console.error("Token inválido, limpando autenticação:", error);
-          // Limpa se o token for inválido
+          console.error("useAuth: Token inválido ou erro na validação:", error);
           localStorage.removeItem("token");
           localStorage.removeItem("user");
+          setUser(null);
           delete api.defaults.headers.common["Authorization"];
         }
+      } else {
+        console.log("useAuth: Nenhum token encontrado");
+        setUser(null);
       }
       setLoading(false);
     };
+
     initAuth();
+
+    // Listener para evento global de logout (vindo do interceptor)
+    const handleLogoutEvent = () => {
+      console.log("useAuth: Evento de logout recebido");
+      logout();
+    };
+
+    window.addEventListener("auth:logout", handleLogoutEvent);
+
+    return () => {
+      window.removeEventListener("auth:logout", handleLogoutEvent);
+    };
   }, []); // Roda apenas uma vez ao iniciar
 
   const login = async (credentials) => {
@@ -58,17 +78,17 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await api.post("/auth/register", userData);
-      
+
       // Auto-login logic
       const { user: registeredUser, token } = response.data;
-      
+
       if (token) {
         localStorage.setItem("token", token);
         localStorage.setItem("user", JSON.stringify(registeredUser));
         setUser(registeredUser);
         api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
       }
-      
+
       return { success: true, user: registeredUser };
     } catch (error) {
       console.error("Erro no registro:", error.response?.data);
@@ -84,7 +104,10 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     delete api.defaults.headers.common["Authorization"];
-    window.location.href = "/login";
+    // Only redirect if NOT on the landing page (public)
+    if (window.location.pathname !== "/") {
+      window.location.href = "/login";
+    }
   };
 
   // --- FUNÇÃO DE ATUALIZAÇÃO UNIFICADA E APRIMORADA ---

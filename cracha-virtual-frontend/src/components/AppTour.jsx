@@ -127,7 +127,9 @@ const AppTour = ({ user, setSidebarOpen }) => {
         currentSteps = profileSteps;
       }
 
-      if (currentSteps.length > 0) {
+      const localSeen = localStorage.getItem("has_seen_tour");
+
+      if (currentSteps.length > 0 && !localSeen) {
         const firstTarget = currentSteps[0].target;
         intervalRef.current = setInterval(() => {
           if (document.querySelector(firstTarget)) {
@@ -191,12 +193,18 @@ const AppTour = ({ user, setSidebarOpen }) => {
       }
 
       setStepIndex(nextStepIndex);
-    } else if (status === STATUS.FINISHED) {
+    } else if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
+      // Se terminou ou PULOU, marca como visto para não encher o saco
+      localStorage.setItem("has_seen_tour", "true");
+      setRun(false);
+
+      // Tenta persistir no backend também
+      completeOnboarding();
+
       const finalProfileTarget = profileSteps[profileSteps.length - 1].target;
 
       // --- Dashboard Mobile (último passo) ---
       if (tourStage === "dashboard" && step?.target === "#nav-link-eventos") {
-        setRun(false);
         navigate("/events");
         setTourStage("events");
         return;
@@ -204,7 +212,6 @@ const AppTour = ({ user, setSidebarOpen }) => {
 
       // --- Dashboard Desktop ---
       if (tourStage === "dashboard") {
-        setRun(false);
         navigate("/events");
         setTourStage("events");
         return;
@@ -215,7 +222,6 @@ const AppTour = ({ user, setSidebarOpen }) => {
         tourStage === "events" &&
         step?.target === eventsSteps[eventsSteps.length - 1].target
       ) {
-        setRun(false);
         navigate("/profile");
         setTourStage("profile");
         return;
@@ -223,8 +229,12 @@ const AppTour = ({ user, setSidebarOpen }) => {
 
       // --- Profile (último passo global) ---
       if (tourStage === "profile" && step?.target === finalProfileTarget) {
-        setRun(false);
-        completeOnboarding();
+        // Já chamou completeOnboarding acima
+        return;
+      }
+
+      // Se foi SKIPPED em qualquer etapa, paramos por aqui
+      if (status === STATUS.SKIPPED) {
         return;
       }
 
@@ -255,9 +265,8 @@ const AppTour = ({ user, setSidebarOpen }) => {
         last: "Entendido!",
         next: "Próximo",
         skip: "Pular",
-        nextLabelWithProgress: `Avançar: etapa ${stepIndex + 1} de ${
-          steps.length
-        }`,
+        nextLabelWithProgress: `Avançar: etapa ${stepIndex + 1} de ${steps.length
+          }`,
       }}
     />
   );

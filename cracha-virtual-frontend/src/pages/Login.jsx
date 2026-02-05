@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "../components/ui/card";
 import { Alert, AlertDescription } from "../components/ui/alert";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, ArrowLeft } from "lucide-react";
 import Logo from "../assets/logo-prof-presente-white.svg"; // Importe o seu logo
 
 const Login = () => {
@@ -135,6 +135,16 @@ const Login = () => {
                   Cadastre-se
                 </Link>
               </p>
+            </div>
+
+            <div className="mt-6 text-center">
+              <Link
+                to="/"
+                className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Voltar ao site
+              </Link>
             </div>
           </CardContent>
         </Card>

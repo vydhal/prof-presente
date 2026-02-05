@@ -69,38 +69,44 @@ const getAllEvents = async (req, res) => {
     // Construção da cláusula final de visibilidade
     let finalWhere = { ...baseWhere };
 
-    if (user && user.role !== "ADMIN") {
-      if (user.role === "GESTOR_ESCOLA") {
-        // CORREÇÃO: Gestor vê APENAS os eventos que ele mesmo criou
-        finalWhere.creatorId = user.id;
-      } else {
-        // Usuário comum vê eventos públicos OU os privados da sua escola
-        const userWithWorkplaces = await prisma.user.findUnique({
-          where: { id: user.id },
-          select: { workplaces: { select: { id: true } } },
-        });
-        const userWorkplaceIds =
-          userWithWorkplaces?.workplaces.map((w) => w.id) || [];
-
-        if (userWorkplaceIds.length > 0) {
-          const managers = await prisma.user.findMany({
-            where: {
-              role: "GESTOR_ESCOLA",
-              workplaces: { some: { id: { in: userWorkplaceIds } } },
-            },
-            select: { id: true },
-          });
-          const managerIds = managers.map((m) => m.id);
-
-          finalWhere.OR = [
-            { isPrivate: false },
-            { creatorId: { in: managerIds } },
-          ];
+    if (user) {
+      if (user.role !== "ADMIN") {
+        if (user.role === "GESTOR_ESCOLA") {
+          // CORREÇÃO: Gestor vê APENAS os eventos que ele mesmo criou
+          finalWhere.creatorId = user.id;
         } else {
-          // Se o usuário não tem escola, só vê eventos públicos
-          finalWhere.isPrivate = false;
+          // Usuário comum vê eventos públicos OU os privados da sua escola
+          const userWithWorkplaces = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { workplaces: { select: { id: true } } },
+          });
+          const userWorkplaceIds =
+            userWithWorkplaces?.workplaces.map((w) => w.id) || [];
+
+          if (userWorkplaceIds.length > 0) {
+            const managers = await prisma.user.findMany({
+              where: {
+                role: "GESTOR_ESCOLA",
+                workplaces: { some: { id: { in: userWorkplaceIds } } },
+              },
+              select: { id: true },
+            });
+            const managerIds = managers.map((m) => m.id);
+
+            finalWhere.OR = [
+              { isPrivate: false },
+              { creatorId: { in: managerIds } },
+            ];
+          } else {
+            // Se o usuário não tem escola, só vê eventos públicos
+            finalWhere.isPrivate = false;
+          }
         }
       }
+      // Se for ADMIN, vê tudo (não aplica filtros extras)
+    } else {
+      // Usuário ANÔNIMO: Vê apenas eventos públicos
+      finalWhere.isPrivate = false;
     }
 
     // Combina a cláusula base com a de visibilidade, se necessário
@@ -126,6 +132,11 @@ const getAllEvents = async (req, res) => {
         certificateTemplateUrl: true,
         certificateTemplateConfig: true,
         parentId: true,
+        schedule: true,
+        speakerName: true,
+        speakerRole: true,
+        speakerPhotoUrl: true,
+        mapLink: true,
         _count: {
           select: {
             enrollments: {
@@ -234,6 +245,11 @@ const createEvent = async (req, res) => {
       maxAttendees,
       imageUrl,
       parentId,
+      mapLink,
+      schedule,
+      speakerName,
+      speakerRole,
+      speakerPhotoUrl,
     } = req.body;
 
     // 1. Pegamos o usuário logado que está fazendo a requisição
@@ -255,6 +271,11 @@ const createEvent = async (req, res) => {
       maxAttendees: maxAttendees ? parseInt(maxAttendees) : null,
       imageUrl: imageUrl || null,
       parentId: parentId || null,
+      mapLink,
+      schedule,
+      speakerName,
+      speakerRole,
+      speakerPhotoUrl,
     };
 
     // 3. Se o criador for um GESTOR_ESCOLA, marcamos o evento como privado e associamos o criador
@@ -294,6 +315,11 @@ const updateEvent = async (req, res) => {
       maxAttendees,
       imageUrl,
       parentId,
+      mapLink,
+      schedule,
+      speakerName,
+      speakerRole,
+      speakerPhotoUrl,
     } = req.body;
 
     // Verificar se o evento existe
@@ -321,10 +347,14 @@ const updateEvent = async (req, res) => {
     if (startDate) updateData.startDate = new Date(startDate);
     if (endDate) updateData.endDate = new Date(endDate);
     if (location) updateData.location = location;
-    if (maxAttendees !== undefined)
-      updateData.maxAttendees = maxAttendees ? parseInt(maxAttendees) : null;
-    if (imageUrl !== undefined) updateData.imageUrl = imageUrl || null;
+    if (maxAttendees !== undefined) updateData.maxAttendees = maxAttendees ? parseInt(maxAttendees) : null;
+    if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
     if (parentId !== undefined) updateData.parentId = parentId || null;
+    if (mapLink !== undefined) updateData.mapLink = mapLink;
+    if (schedule !== undefined) updateData.schedule = schedule;
+    if (speakerName !== undefined) updateData.speakerName = speakerName;
+    if (speakerRole !== undefined) updateData.speakerRole = speakerRole;
+    if (speakerPhotoUrl !== undefined) updateData.speakerPhotoUrl = speakerPhotoUrl;
 
     // Atualizar evento
     const updatedEvent = await prisma.event.update({
@@ -939,6 +969,39 @@ const uploadEventThumbnailController = async (req, res) => {
   }
 };
 
+// Upload da foto do palestrante
+const uploadSpeakerPhotoController = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ error: "Nenhum arquivo enviado" });
+    }
+
+    const event = await prisma.event.findUnique({ where: { id } });
+    if (!event) {
+      return res.status(404).json({ error: "Evento não encontrado" });
+    }
+
+    // Normaliza o caminho do arquivo (com slash inicial)
+    const imageUrl = `/${file.path.replace(/\\/g, "/")}`;
+
+    const updatedEvent = await prisma.event.update({
+      where: { id },
+      data: { speakerPhotoUrl: imageUrl },
+    });
+
+    res.json({
+      message: "Foto do palestrante enviada com sucesso",
+      event: updatedEvent,
+    });
+  } catch (error) {
+    console.error("Erro ao fazer upload da foto do palestrante:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+};
+
 module.exports = {
   getAllEvents,
   getEventById,
@@ -952,4 +1015,5 @@ module.exports = {
   sendEventCertificates,
   getCertificateLogsForEvent,
   uploadEventThumbnailController,
+  uploadSpeakerPhotoController,
 };

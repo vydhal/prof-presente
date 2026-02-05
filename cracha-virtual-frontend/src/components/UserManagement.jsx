@@ -43,8 +43,9 @@ import {
   PaginationPrevious,
 } from "./ui/pagination";
 import { Badge } from "./ui/badge";
-import { Shield, Key, Search } from "lucide-react";
+import { Shield, Key, Search, Plus, UserPlus } from "lucide-react";
 import { toast } from "sonner";
+import AdminUserRegister from "./AdminUserRegister";
 
 const UserManagement = () => {
   const queryClient = useQueryClient();
@@ -55,6 +56,7 @@ const UserManagement = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false); // NOVO
   const [newRole, setNewRole] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -182,8 +184,8 @@ const UserManagement = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="mb-4">
-            <div className="relative">
+          <div className="mb-4 flex flex-col sm:flex-row gap-4 justify-between items-center">
+            <div className="relative w-full sm:w-auto flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Buscar por nome ou email..."
@@ -195,45 +197,38 @@ const UserManagement = () => {
                 className="pl-10"
               />
             </div>
+            <Button onClick={() => setIsRegisterDialogOpen(true)}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Novo Usuário
+            </Button>
           </div>
 
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center py-8">
-                      Buscando...
-                    </TableCell>
-                  </TableRow>
-                ) : users.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={4}
-                      className="text-center py-8 text-gray-500"
-                    >
-                      Nenhum usuário encontrado
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{getRoleBadge(user.role)}</TableCell>
-                      <TableCell className="text-right space-x-2">
+          <div className="rounded-md border-none md:border">
+            {/* MOBILE VIEW: Cards */}
+            <div className="md:hidden space-y-4">
+              {isLoading ? (
+                <div className="text-center p-4">Carregando...</div>
+              ) : users.length === 0 ? (
+                <div className="text-center p-4 text-gray-500">Nenhum usuário encontrado</div>
+              ) : (
+                users.map((user) => (
+                  <Card key={user.id} className="overflow-hidden border shadow-sm">
+                    <div className="bg-gray-50 px-4 py-2 border-b flex justify-between items-center">
+                      <span className="font-semibold truncate max-w-[200px]">{user.name}</span>
+                      {getRoleBadge(user.role)}
+                    </div>
+                    <CardContent className="p-4 space-y-3">
+                      <div>
+                        <p className="text-muted-foreground text-xs font-medium uppercase">Email</p>
+                        <p className="text-sm break-all">{user.email}</p>
+                      </div>
+
+                      <div className="flex justify-end gap-2 pt-2 border-t">
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => openRoleDialog(user)}
+                          className="h-8"
                         >
                           <Shield className="h-4 w-4 mr-1" />
                           Tipo
@@ -242,16 +237,75 @@ const UserManagement = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => openPasswordDialog(user)}
+                          className="h-8"
                         >
                           <Key className="h-4 w-4 mr-1" />
                           Senha
                         </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+
+            {/* DESKTOP VIEW: Table */}
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-8">
+                        Buscando...
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ) : users.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={4}
+                        className="text-center py-8 text-gray-500"
+                      >
+                        Nenhum usuário encontrado
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    users.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">{user.name}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>{getRoleBadge(user.role)}</TableCell>
+                        <TableCell className="text-right space-x-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openRoleDialog(user)}
+                          >
+                            <Shield className="h-4 w-4 mr-1" />
+                            Tipo
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openPasswordDialog(user)}
+                          >
+                            <Key className="h-4 w-4 mr-1" />
+                            Senha
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
 
           {/* COMPONENTE DE PAGINAÇÃO */}
@@ -390,6 +444,25 @@ const UserManagement = () => {
               {resetPasswordMutation.isPending ? "Redefinindo..." : "Redefinir"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para Novo Usuário */}
+      <Dialog open={isRegisterDialogOpen} onOpenChange={setIsRegisterDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Cadastrar Novo Usuário</DialogTitle>
+            <DialogDescription>
+              Preencha os dados abaixo para criar uma nova conta manualmente.
+            </DialogDescription>
+          </DialogHeader>
+          <AdminUserRegister
+            onSuccess={() => {
+              setIsRegisterDialogOpen(false);
+              queryClient.invalidateQueries(["admin-users"]);
+            }}
+            onCancel={() => setIsRegisterDialogOpen(false)}
+          />
         </DialogContent>
       </Dialog>
     </div>

@@ -38,6 +38,7 @@ import {
 import Logo from "../assets/logo-prof-presente.svg"; // Importe o seu logo
 import { getAssetUrl } from "../lib/utils"; // NOVO: Importa a função auxiliar
 import AppTour from "./AppTour";
+import BottomNavbar from "./BottomNavbar";
 
 const Layout = ({ children }) => {
   const { user, logout, isAdmin, isOrg } = useAuth();
@@ -143,11 +144,10 @@ const Layout = ({ children }) => {
               id={item.id}
               to={item.href}
               onClick={() => setSidebarOpen(false)}
-              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                isActive(item.href)
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              }`}
+              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${isActive(item.href)
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                }`}
             >
               <Icon className="w-5 h-5 mr-3" />
               {item.name}
@@ -299,8 +299,11 @@ const Layout = ({ children }) => {
         </header>
 
         {/* Conteúdo da página */}
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 pb-20 lg:pb-0">{children}</main>
         {user && <AppTour user={user} setSidebarOpen={setSidebarOpen} />}
+
+        {/* Global Bottom Nav */}
+        <BottomNavbar />
       </div>
     </div>
   );
