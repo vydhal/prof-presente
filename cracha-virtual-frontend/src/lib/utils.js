@@ -6,7 +6,7 @@ export function cn(...inputs) {
 }
 
 // O '.origin' de uma URL pega apenas o protocolo e o domínio (ex: https://api.checkin.simplisoft.com.br)
-const getApiBaseUrl = () => {
+export const getApiBaseUrl = () => {
   try {
     const url = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
     // Tenta construir a URL para validar e pegar a origem

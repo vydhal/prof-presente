@@ -10,15 +10,12 @@ export const NotificationProvider = ({ children }) => {
     typeof Notification !== "undefined" ? Notification.permission : "default"
   );
 
+  /* 
   useEffect(() => {
-    if (typeof Notification === "undefined") return;
-
-    if (Notification.permission === "default") {
-      Notification.requestPermission().then((perm) => {
-        setPermission(perm);
-      });
-    }
+    // Removido auto-request para evitar erro "permission handled: false" ou bloqueios do navegador.
+    // A permissão deve ser solicitada apenas via interação do usuário (ex: botão).
   }, []);
+  */
 
   const showNotification = (title, options = {}) => {
     if (typeof Notification === "undefined") {

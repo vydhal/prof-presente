@@ -7,6 +7,8 @@ import { Button } from "../components/ui/button";
 import { useAuth } from "../hooks/useAuth";
 import { toast } from "sonner"; // Assuming sonner is used for notifications based on context, or use standard alert if not
 import { getAssetUrl } from "../lib/utils";
+import QuestionList from "../components/Interactions/QuestionList";
+import GiveawayDisplay from "../components/Interactions/GiveawayDisplay";
 
 const EventDetails = () => {
   const { id } = useParams();
@@ -40,6 +42,7 @@ const EventDetails = () => {
   });
 
   const isEnrolled = !!enrollmentData;
+  const isCreator = user && event && (user.id === event.creatorId || user.role === 'ADMIN' || user.role === 'SPEAKER');
 
   const enrollMutation = useMutation({
     mutationFn: () => enrollmentsAPI.enroll(id),
@@ -113,6 +116,8 @@ const EventDetails = () => {
 
   return (
     <div className="min-h-screen bg-[#f6f7f8] dark:bg-[#101922] text-[#0d141b] dark:text-slate-100 font-sans">
+      {/* Componente de Sorteio (Overlay) */}
+      <GiveawayDisplay eventId={id} />
 
       {/* HEADER: Condicional */}
       <header className="sticky top-0 z-50 bg-white/80 dark:bg-[#101922]/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
@@ -204,6 +209,14 @@ const EventDetails = () => {
               >
                 Palestrantes
               </button>
+              <button
+                onClick={() => setActiveTab("interaction")}
+                className={`px-6 py-4 text-sm font-bold whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'interaction' ? 'text-[#137fec] border-b-2 border-[#137fec]' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                <div className="flex items-center gap-2">
+                  Interações
+                </div>
+              </button>
             </div>
 
             {/* Content Sections */}
@@ -273,6 +286,10 @@ const EventDetails = () => {
                     <p className="text-slate-500 italic">Nenhum palestrante cadastrado ainda.</p>
                   )}
                 </>
+              )}
+
+              {activeTab === "interaction" && (
+                <QuestionList eventId={id} isSpeakerOrAdmin={isCreator} />
               )}
             </section>
 

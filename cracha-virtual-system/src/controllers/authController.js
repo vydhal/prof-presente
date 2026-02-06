@@ -156,9 +156,9 @@ const register = async (req, res) => {
           phone: phone || null,
           address: address || null,
           neighborhood: neighborhood || null,
-          workShifts,
+          workShifts: Array.isArray(workShifts) ? workShifts.join(",") : workShifts,
           contractType: contractType || null,
-          teachingSegments,
+          teachingSegments: Array.isArray(teachingSegments) ? teachingSegments.join(",") : teachingSegments,
           photoUrl: null,
           profession: professionName
             ? { connectOrCreate: professionConnectOrCreate }

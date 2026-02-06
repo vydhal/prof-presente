@@ -63,6 +63,12 @@ const UserManagement = () => {
   const [selectedUserForEnrollments, setSelectedUserForEnrollments] = useState(null);
   const [isEnrollmentsDialogOpen, setIsEnrollmentsDialogOpen] = useState(false);
 
+  // Edit User State
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [userToEdit, setUserToEdit] = useState(null);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+
   // QUERY: Histórico de inscrições do usuário
   const { data: userEnrollments, isLoading: isLoadingEnrollments } = useQuery({
     queryKey: ["user-enrollments", selectedUserForEnrollments?.id],
@@ -131,6 +137,22 @@ const UserManagement = () => {
     },
   });
 
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ userId, data }) => {
+      const response = await api.put(`/users/${userId}`, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["admin-users"]);
+      toast.success("Dados do usuário atualizados com sucesso!");
+      setIsEditDialogOpen(false);
+      setUserToEdit(null);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.error || "Erro ao atualizar usuário");
+    },
+  });
+
   const handleRoleChange = () => {
     if (!newRole) {
       toast.error("Selecione um tipo de usuário");
@@ -138,6 +160,25 @@ const UserManagement = () => {
     }
     updateRoleMutation.mutate({ userId: selectedUser.id, role: newRole });
   };
+
+  const handleEditClick = (user) => {
+    setUserToEdit(user);
+    setEditName(user.name);
+    setEditEmail(user.email);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateUser = () => {
+    if (!editName.trim() || !editEmail.trim()) {
+      toast.error("Nome e Email são obrigatórios");
+      return;
+    }
+    updateUserMutation.mutate({
+      userId: userToEdit.id,
+      data: { name: editName, email: editEmail }
+    });
+  };
+
 
   const handlePasswordReset = () => {
     if (!newPassword || newPassword.length < 6) {
@@ -299,6 +340,15 @@ const UserManagement = () => {
                           <Button
                             size="sm"
                             variant="outline"
+                            onClick={() => handleEditClick(user)}
+                            title="Editar"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil mr-1"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                            Editar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
                             onClick={() => openRoleDialog(user)}
                           >
                             <Shield className="h-4 w-4 mr-1" />
@@ -405,24 +455,58 @@ const UserManagement = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsRoleDialogOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setIsRoleDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button
-              onClick={handleRoleChange}
-              disabled={updateRoleMutation.isPending}
-            >
-              {updateRoleMutation.isPending ? "Salvando..." : "Salvar"}
+            <Button onClick={handleRoleChange} disabled={updateRoleMutation.isPending}>
+              {updateRoleMutation.isPending ? "Salvando..." : "Salvar Alterações"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* DIALOG DE EDIÇÃO DE USUÁRIO */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Usuário</DialogTitle>
+            <DialogDescription>
+              Atualize o nome ou email do usuário.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Nome Completo</Label>
+              <Input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Nome do usuário"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+                placeholder="email@exemplo.com"
+                type="email"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleUpdateUser} disabled={updateUserMutation.isPending}>
+              {updateUserMutation.isPending ? "Salvando..." : "Salvar Alterações"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
       {/* Dialog para redefinir senha */}
-      <Dialog
+      < Dialog
         open={isPasswordDialogOpen}
         onOpenChange={setIsPasswordDialogOpen}
       >
@@ -470,11 +554,11 @@ const UserManagement = () => {
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog >
 
       <Dialog open={isRegisterDialogOpen} onOpenChange={setIsRegisterDialogOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-2">
             <DialogTitle>Cadastrar Novo Usuário</DialogTitle>
             <DialogDescription>
               Preencha os dados abaixo para criar uma nova conta manualmente.
@@ -569,7 +653,7 @@ const UserManagement = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </div >
   );
 };
 

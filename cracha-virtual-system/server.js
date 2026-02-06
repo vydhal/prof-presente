@@ -1,6 +1,7 @@
 const app = require('./src/app');
 const { disconnectDatabase } = require('./src/config/database');
 const { startEmailWorker } = require('./src/workers/emailWorker');
+const setupSockets = require('./src/sockets');
 
 const PORT = process.env.PORT || 3000;
 const HOST = '0.0.0.0'; // Permitir acesso externo
@@ -13,6 +14,9 @@ const server = app.listen(PORT, HOST, () => {
   console.log(`📚 Documentação da API: http://${HOST}:${PORT}/api`);
   console.log(`🌍 Ambiente: ${process.env.NODE_ENV || 'development'}`);
 });
+
+// Inicializar Sockets
+const io = setupSockets(server);
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {

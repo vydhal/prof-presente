@@ -54,5 +54,6 @@ export default defineConfig({
   },
   server: {
     port: 3001,
+    strictPort: true, // Fail if port is busy instead of switching
   },
 });

@@ -16,6 +16,37 @@ enum UserRole {
   CHECKIN_COORDINATOR
   TEACHER
   GESTOR_ESCOLA
+  SPEAKER // Novo perfil
+}
+
+
+
+model Question {
+  id        String   @id @default(uuid())
+  text      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  
+  isApproved Boolean @default(false)
+  isAnswered Boolean @default(false)
+  votes      Int     @default(0)
+
+  @@index([eventId])
+}
+
+model Giveaway {
+  id        String   @id @default(uuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  prize     String
+  winnerId  String?
+  winner    User?    @relation(fields: [winnerId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([eventId])
 }
 
 enum EnrollmentStatus {
@@ -79,6 +110,8 @@ model User {
   profession    Profession? @relation(fields: [professionId], references: [id], onDelete: SetNull) // Novo relacionamento
   workplaces    Workplace[] @relation("UserWorkplaces")
   createdEvents Event[] @relation("CreatedEvents") // Eventos criados pelo usuário
+  questions     Question[]
+  wonGiveaways  Giveaway[]
 
 
   @@index([email])
@@ -143,6 +176,8 @@ model Event {
 
   // Relacionamentos
   enrollments Enrollment[]
+  questions   Question[]
+  giveaways   Giveaway[]
 
   @@index([startDate])
   @@index([endDate])
