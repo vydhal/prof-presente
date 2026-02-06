@@ -1,8 +1,12 @@
 const app = require('./src/app');
 const { disconnectDatabase } = require('./src/config/database');
+const { startEmailWorker } = require('./src/workers/emailWorker');
 
 const PORT = process.env.PORT || 3000;
 const HOST = '0.0.0.0'; // Permitir acesso externo
+
+// Inicializar Worker de Email (RabbitMQ)
+startEmailWorker().catch(err => console.error("Failed to start Email Worker:", err));
 
 const server = app.listen(PORT, HOST, () => {
   console.log(`🚀 Servidor rodando em http://${HOST}:${PORT}`);

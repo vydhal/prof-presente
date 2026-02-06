@@ -18,6 +18,8 @@ services:
       - EMAIL_FROM=${EMAIL_FROM}
       - PUBLIC_API_URL=${PUBLIC_API_URL}
       - PUBLIC_LOGO_URL=${PUBLIC_LOGO_URL}
+      - AMQP_URL=amqp://guest:guest@rabbitmq:5672
+      - REDIS_URL=redis://redis:6379
       - FACIAL_SERVICE_URL=http://facial-service-py:3002/api
     volumes:
       - backend_uploads:/app/uploads
@@ -37,7 +39,7 @@ services:
         npm start
       "
     deploy:
-      replicas: 1
+      replicas: 4
       labels:
         - "traefik.enable=true"
         - "traefik.docker.network=SimpliSoft"
@@ -45,6 +47,17 @@ services:
         - "traefik.http.routers.prof-presente-api.entrypoints=websecure"
         - "traefik.http.routers.prof-presente-api.tls.certresolver=letsencryptresolver"
         - "traefik.http.services.prof-presente-api.loadbalancer.server.port=3000"
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - prof-presente-internal
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [ node.role == manager ]
 
   # Serviço do Frontend (React + Nginx)
   frontend:
@@ -77,13 +90,13 @@ services:
     networks:
       - prof-presente-internal
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 10s
       timeout: 5s
       retries: 5
     deploy:
       placement:
-        constraints: [node.role == manager]
+        constraints: [ node.role == manager ]
 
   facial-service-py:
     # Use a imagem que você construiu com o Dockerfile Python
@@ -109,6 +122,7 @@ services:
 volumes:
   db_data:
   backend_uploads:
+
 
 networks:
   prof-presente-internal:

@@ -155,3 +155,12 @@
 - [ ] 15.2. Relatório por série/ano
 - [ ] 15.4. Relatório por região
 - [ ] 15.4. Relatório por vinculo
+
+### Fase 16: Robustez e Confiabilidade (Opção A) 🛡️
+- [ ] 16.1. Integrar RabbitMQ ao `docker-compose.dev.yml`.
+- [ ] 16.2. Instalar dependências de fila (`amqplib`) no backend.
+- [ ] 16.3. Implementar Producer/Consumer para envio de emails (Certificados).
+- [ ] 16.4. Configurar ambiente de testes (`Jest` + `Supertest`).
+- [ ] 16.5. Criar testes unitários para fluxo de inscrição.
+- [ ] 16.6. Implementar Rate Limiting na API (`express-rate-limit`).
+- [ ] 16.7. Implementar `helmet` para segurança de headers HTTP.

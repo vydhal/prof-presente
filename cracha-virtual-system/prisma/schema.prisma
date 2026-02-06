@@ -6,8 +6,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum UserRole {
@@ -263,6 +263,7 @@ model UserCheckin {
   @@index([eventId])
   @@index([checkinTime])
   @@index([createdAt])
+  @@index([eventId, userBadgeId]) // OTIMIZAÇÃO: Busca rápida de checkin específico
   @@map("user_checkins")
 }
 

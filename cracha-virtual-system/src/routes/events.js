@@ -15,6 +15,7 @@ const {
   getCertificateLogsForEvent,
   uploadEventThumbnailController,
   uploadSpeakerPhotoController,
+  getEventEnrollments,
 } = require("../controllers/eventController");
 
 const { authenticateToken, authenticateOptional, requireAdmin } = require("../middleware/auth"); // <-- Update import
@@ -25,12 +26,13 @@ const {
   uploadEventThumbnail,
   uploadSpeakerPhoto,
 } = require("../middleware/upload");
+const { cacheMiddleware } = require("../services/cacheService");
 
 // Listar todos os eventos (público - authentication optional)
-router.get("/", authenticateOptional, getAllEvents);
+router.get("/", authenticateOptional, cacheMiddleware(60), getAllEvents);
 
 // Obter evento por ID (público)
-router.get("/:id", getEventById);
+router.get("/:id", cacheMiddleware(60), getEventById);
 
 // Rota para gerar o PDF com os crachás para impressão em lote
 router.get(
@@ -101,6 +103,13 @@ router.get(
   authenticateToken,
   requireAdmin,
   getCertificateLogsForEvent // Nova função no controller
+);
+
+router.get(
+  "/:id/enrollments",
+  authenticateToken,
+  requireAdmin,
+  getEventEnrollments
 );
 
 module.exports = router;

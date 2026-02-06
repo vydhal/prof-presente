@@ -931,41 +931,7 @@ const Admin = () => {
                     </div>
                   </div>
 
-                  {/* Upload Foto Palestrante */}
-                  <div className="p-4 border rounded-lg space-y-4 bg-slate-50 dark:bg-slate-900/50">
-                    <h3 className="font-semibold text-sm">Foto do Palestrante</h3>
-
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden shrink-0 border border-slate-300 dark:border-slate-700">
-                        {speakerPhotoPreviewUrl ? (
-                          <img src={speakerPhotoPreviewUrl} alt="Preview" className="w-full h-full object-cover" />
-                        ) : editingEvent?.speakerPhotoUrl ? (
-                          <img src={getAssetUrl(editingEvent.speakerPhotoUrl)} alt="Atual" className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-slate-400">
-                            <Users className="w-8 h-8" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 space-y-2">
-                        <Input
-                          type="file"
-                          onChange={handleSpeakerPhotoChange}
-                          accept="image/*"
-                          className="text-xs"
-                        />
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="sm"
-                          onClick={handleSpeakerPhotoSubmit}
-                          disabled={uploadSpeakerPhotoMutation.isPending || !speakerPhotoFile}
-                        >
-                          {uploadSpeakerPhotoMutation.isPending ? "Enviando..." : "Salvar Foto"}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+                  {/* Upload de Foto removido daqui e movido para área de edição pós-criação */}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -1048,6 +1014,49 @@ const Admin = () => {
                   </div>
                 </form>
 
+
+                {/* ===== INÍCIO DO BLOCO DE FOTO DO PALESTRANTE (MOVIDO PARA CIMA) ===== */}
+                {editingEvent && (
+                  <form onSubmit={handleSpeakerPhotoSubmit} className="space-y-4 pt-4">
+                    <Separator />
+                    <h3 className="text-lg font-semibold pt-4">Foto do Palestrante</h3>
+                    <div className="p-4 border rounded-lg space-y-4 bg-slate-50 dark:bg-slate-900/50">
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden shrink-0 border border-slate-300 dark:border-slate-700">
+                          {speakerPhotoPreviewUrl ? (
+                            <img src={speakerPhotoPreviewUrl} alt="Preview" className="w-full h-full object-cover" />
+                          ) : editingEvent?.speakerPhotoUrl ? (
+                            <img src={getAssetUrl(editingEvent.speakerPhotoUrl)} alt="Atual" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-slate-400">
+                              <Users className="w-8 h-8" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 space-y-2">
+                          <input
+                            type="file"
+                            onChange={(e) => {
+                              console.log("File selected:", e.target.files[0]);
+                              handleSpeakerPhotoChange(e);
+                            }}
+                            accept="image/*"
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-xs ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          />
+                          <Button
+                            type="submit"
+                            variant="secondary"
+                            size="sm"
+                            disabled={uploadSpeakerPhotoMutation.isPending}
+                          >
+                            {uploadSpeakerPhotoMutation.isPending ? "Enviando..." : "Salvar Foto"}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </form>
+                )}
+
                 {/* ===== INÍCIO DO NOVO BLOCO DE UPLOAD DE CAPA ===== */}
                 {editingEvent && (
                   <form
@@ -1115,6 +1124,8 @@ const Admin = () => {
                       </div>
                     </div>
                   </form>
+                )}
+
                 )}
 
                 {editingEvent && (

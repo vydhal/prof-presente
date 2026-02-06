@@ -12,6 +12,7 @@ const {
   resetUserPassword,
   completeOnboarding,
   updateFacialConsent,
+  getUserEnrollments,
 } = require("../controllers/userController");
 
 const {
@@ -68,5 +69,12 @@ router.post(
 );
 
 router.put("/me/consent-facial", authenticateToken, updateFacialConsent);
+
+router.get(
+  "/:id/enrollments",
+  authenticateToken,
+  requireOwnershipOrAdmin,
+  getUserEnrollments
+);
 
 module.exports = router;

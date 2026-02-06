@@ -604,6 +604,45 @@ const updateFacialConsent = async (req, res) => {
   }
 };
 
+// --- NOVA FUNÇÃO: LISTAR HISTÓRICO DE EVENTOS DO USUÁRIO ---
+const getUserEnrollments = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const enrollments = await prisma.enrollment.findMany({
+      where: { userId: id },
+      include: {
+        event: {
+          select: {
+            id: true,
+            title: true,
+            startDate: true,
+            endDate: true,
+            location: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const formattedHistory = enrollments.map(enrollment => ({
+      eventId: enrollment.event.id,
+      eventTitle: enrollment.event.title,
+      eventDate: enrollment.event.startDate,
+      location: enrollment.event.location,
+      status: enrollment.status,
+      enrolledAt: enrollment.createdAt,
+      checkInTime: enrollment.checkInTime,
+      certificateUrl: enrollment.certificateUrl // Se tiver certificado gerado
+    }));
+
+    res.json(formattedHistory);
+  } catch (error) {
+    console.error("Erro ao buscar histórico do usuário:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+};
+
 module.exports = {
   getAllUsers,
   getUserById,
@@ -615,4 +654,5 @@ module.exports = {
   resetUserPassword,
   completeOnboarding,
   updateFacialConsent,
+  getUserEnrollments, // Exportar nova função
 };

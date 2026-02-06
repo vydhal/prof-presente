@@ -5,8 +5,13 @@ require("dotenv").config();
 
 const { connectDatabase } = require("./config/database");
 const routes = require("./routes");
+const { setupSecurity, apiLimiter } = require('./middleware/security');
 
 const app = express();
+
+// Segurança (Headers + Rate Limit)
+setupSecurity(app);
+app.use(apiLimiter);
 
 // Conectar ao banco de dados
 connectDatabase();

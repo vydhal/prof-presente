@@ -107,7 +107,9 @@ const EventDetails = () => {
   const canRegister = (!isClosed && !isFull) || isEnrolled; // Se já inscrito, ok (para visualizar)
 
   // Default image if missing
-  const bgImage = event.imageUrl || "https://images.unsplash.com/photo-1544531586-fde5298cdd40?q=80&w=2070&auto=format&fit=crop";
+  const bgImage = event.imageUrl
+    ? getAssetUrl(event.imageUrl)
+    : "https://images.unsplash.com/photo-1544531586-fde5298cdd40?q=80&w=2070&auto=format&fit=crop";
 
   return (
     <div className="min-h-screen bg-[#f6f7f8] dark:bg-[#101922] text-[#0d141b] dark:text-slate-100 font-sans">
@@ -164,6 +166,7 @@ const EventDetails = () => {
           <img
             src={bgImage}
             alt={event.title}
+            onError={(e) => console.error("Erro ao carregar imagem de capa:", bgImage, e)}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
           <div className="absolute bottom-0 left-0 p-6 md:p-10 z-20">
@@ -244,7 +247,16 @@ const EventDetails = () => {
                       <div className="bg-white dark:bg-slate-800 rounded-xl p-6 flex flex-col md:flex-row items-center gap-6 shadow-sm border border-slate-100 dark:border-slate-700">
                         <div className="w-32 h-32 rounded-full bg-slate-200 overflow-hidden shrink-0 border-4 border-white dark:border-slate-700 shadow-md">
                           {event.speakerPhotoUrl ? (
-                            <img src={getAssetUrl(event.speakerPhotoUrl)} alt={event.speakerName} className="w-full h-full object-cover" />
+                            <img
+                              src={getAssetUrl(event.speakerPhotoUrl)}
+                              alt={event.speakerName}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                console.error("Erro Loading Speaker:", getAssetUrl(event.speakerPhotoUrl));
+                                e.target.src = ""; // Prevent loop
+                                e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center text-slate-400 bg-slate-100"><svg class="w-12 h-12" ...><path d="..." /></svg></div>'; // Fallback manually? Or just let it hide.
+                              }}
+                            />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-slate-400 bg-slate-100">
                               <Users className="w-12 h-12" />

@@ -43,7 +43,7 @@ import {
   PaginationPrevious,
 } from "./ui/pagination";
 import { Badge } from "./ui/badge";
-import { Shield, Key, Search, Plus, UserPlus } from "lucide-react";
+import { Shield, Key, Search, Plus, UserPlus, Calendar, MapPin, Clock } from "lucide-react";
 import { toast } from "sonner";
 import AdminUserRegister from "./AdminUserRegister";
 
@@ -60,6 +60,19 @@ const UserManagement = () => {
   const [newRole, setNewRole] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [selectedUserForEnrollments, setSelectedUserForEnrollments] = useState(null);
+  const [isEnrollmentsDialogOpen, setIsEnrollmentsDialogOpen] = useState(false);
+
+  // QUERY: Histórico de inscrições do usuário
+  const { data: userEnrollments, isLoading: isLoadingEnrollments } = useQuery({
+    queryKey: ["user-enrollments", selectedUserForEnrollments?.id],
+    queryFn: async () => {
+      if (!selectedUserForEnrollments) return [];
+      const response = await api.get(`/users/${selectedUserForEnrollments.id}/enrollments`);
+      return response.data;
+    },
+    enabled: !!selectedUserForEnrollments,
+  });
 
   // QUERY ATUALIZADA para paginação e busca
   const { data, isLoading } = useQuery({
@@ -299,6 +312,18 @@ const UserManagement = () => {
                             <Key className="h-4 w-4 mr-1" />
                             Senha
                           </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedUserForEnrollments(user);
+                              setIsEnrollmentsDialogOpen(true);
+                            }}
+                            title="Ver Inscrições"
+                          >
+                            <Calendar className="h-4 w-4 mr-1" />
+                            Histórico
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))
@@ -447,7 +472,6 @@ const UserManagement = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog para Novo Usuário */}
       <Dialog open={isRegisterDialogOpen} onOpenChange={setIsRegisterDialogOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
@@ -463,6 +487,86 @@ const UserManagement = () => {
             }}
             onCancel={() => setIsRegisterDialogOpen(false)}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para Histórico de Inscrições */}
+      <Dialog open={isEnrollmentsDialogOpen} onOpenChange={setIsEnrollmentsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Histórico de Inscrições</DialogTitle>
+            <DialogDescription>
+              Eventos participados por <strong>{selectedUserForEnrollments?.name}</strong>
+            </DialogDescription>
+          </DialogHeader>
+
+          {isLoadingEnrollments ? (
+            <div className="py-8 text-center bg-gray-50 rounded-lg">
+              <p className="text-gray-500">Carregando histórico...</p>
+            </div>
+          ) : userEnrollments && userEnrollments.length > 0 ? (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Evento</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Local</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Check-in</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {userEnrollments.map((enrollment) => (
+                    <TableRow key={enrollment.eventId}>
+                      <TableCell className="font-medium">{enrollment.eventTitle}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center text-sm text-gray-500">
+                          <Calendar className="w-3 h-3 mr-1" />
+                          {new Date(enrollment.eventDate).toLocaleDateString()}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center text-sm text-gray-500">
+                          <MapPin className="w-3 h-3 mr-1" />
+                          {enrollment.location}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {enrollment.status === "APPROVED" ? (
+                          <Badge className="bg-green-100 text-green-800 hover:bg-green-200 border-none">Confirmado</Badge>
+                        ) : enrollment.status === "PENDING" ? (
+                          <Badge variant="outline" className="text-yellow-600 border-yellow-200 bg-yellow-50">Pendente</Badge>
+                        ) : (
+                          <Badge variant="destructive">Cancelado</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {enrollment.checkInTime ? (
+                          <div className="flex items-center text-green-600 font-medium text-xs">
+                            <Clock className="w-3 h-3 mr-1" />
+                            {new Date(enrollment.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="py-12 text-center bg-gray-50 rounded-lg border border-dashed">
+              <Calendar className="w-10 h-10 mx-auto text-gray-300 mb-3" />
+              <p className="text-gray-500 font-medium">Nenhuma inscrição encontrada</p>
+              <p className="text-sm text-gray-400">Este usuário ainda não se inscreveu em eventos.</p>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEnrollmentsDialogOpen(false)}>Fechar</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

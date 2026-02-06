@@ -32,6 +32,7 @@ import {
   UserX,
   Star,
   MessageSquare,
+  List,
 } from "lucide-react";
 import {
   Accordion,
@@ -601,6 +602,21 @@ const ReportsDashboard = () => {
                       <Users />{" "}
                       {eventSummaryData.participationSummary.totalEnrollments}
                     </p>
+                    <Button
+                      variant="link"
+                      className="text-xs h-auto p-0 mt-2 text-blue-600"
+                      onClick={() => {
+                        setSelectedEventId(eventSummaryData.event.id);
+                        generateEventReport(eventSummaryData.event.id);
+                        // Scroll suave até a área do relatório
+                        setTimeout(() => {
+                          const element = document.getElementById('frequency-report-section');
+                          if (element) element.scrollIntoView({ behavior: 'smooth' });
+                        }, 500);
+                      }}
+                    >
+                      Ver lista completa
+                    </Button>
                   </CardContent>
                 </Card>
                 <Card>
@@ -692,7 +708,7 @@ const ReportsDashboard = () => {
         </Card>
       )}
 
-      <Card>
+      <Card id="frequency-report-section">
         <CardHeader>
           <CardTitle>Relatório de Frequência por Evento</CardTitle>
           <CardDescription>
@@ -807,7 +823,7 @@ const ReportsDashboard = () => {
                         {
                           item.checkinTime
                             ? // Formata a data para exibir apenas a hora
-                              format(new Date(item.checkinTime), "HH:mm:ss")
+                            format(new Date(item.checkinTime), "HH:mm:ss")
                             : "—" // Exibe um traço se não houver check-in
                         }
                       </TableCell>
@@ -907,22 +923,22 @@ const ReportsDashboard = () => {
                     Período:
                     <strong>
                       {workplaceReportData.period?.startDate &&
-                      workplaceReportData.period.startDate !== "Início"
+                        workplaceReportData.period.startDate !== "Início"
                         ? format(
-                            new Date(workplaceReportData.period.startDate),
-                            "dd/MM/yyyy"
-                          )
+                          new Date(workplaceReportData.period.startDate),
+                          "dd/MM/yyyy"
+                        )
                         : "Início"}
                     </strong>{" "}
                     a
                     <strong>
                       {" "}
                       {workplaceReportData.period?.endDate &&
-                      workplaceReportData.period.endDate !== "Fim"
+                        workplaceReportData.period.endDate !== "Fim"
                         ? format(
-                            new Date(workplaceReportData.period.endDate),
-                            "dd/MM/yyyy"
-                          )
+                          new Date(workplaceReportData.period.endDate),
+                          "dd/MM/yyyy"
+                        )
                         : "Fim"}
                     </strong>
                   </span>
