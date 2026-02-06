@@ -57,13 +57,51 @@ const setupSockets = (server) => {
       }
     });
 
+    socket.on("highlight_question", async ({ questionId, eventId }) => {
+      try {
+        // Desmarcar destaque anterior
+        await prisma.question.updateMany({
+          where: { eventId, isHighlighted: true },
+          data: { isHighlighted: false },
+        });
+
+        if (questionId) {
+          // Marcar novo destaque
+          const question = await prisma.question.update({
+            where: { id: questionId },
+            data: { isHighlighted: true },
+            include: { user: { select: { name: true, photoUrl: true } } }
+          });
+          io.to(eventId).emit("question_highlighted", question);
+        } else {
+          // Apenas limpou o destaque
+          io.to(eventId).emit("question_highlighted", null);
+        }
+      } catch (error) {
+        console.error("Erro ao destacar pergunta:", error);
+      }
+    });
+
+    socket.on("toggle_approval", async ({ questionId, eventId, isApproved }) => {
+      try {
+        const question = await prisma.question.update({
+          where: { id: questionId },
+          data: { isApproved },
+        });
+        io.to(eventId).emit("question_updated", question);
+      } catch (error) {
+        console.error("Erro ao moderar pergunta:", error);
+      }
+    });
+
     socket.on("mark_answered", async ({ questionId, eventId }) => {
       try {
         const question = await prisma.question.update({
           where: { id: questionId },
-          data: { isAnswered: true },
+          data: { isAnswered: true, isHighlighted: false }, // Remove destaque se respondida
         });
         io.to(eventId).emit("question_updated", question);
+        io.to(eventId).emit("question_highlighted", null); // Limpa destaque no telão
       } catch (error) {
         console.error("Erro ao marcar respondida:", error);
       }

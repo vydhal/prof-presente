@@ -213,6 +213,7 @@ const UserManagement = () => {
       CHECKIN_COORDINATOR: { label: "Coord. Check-in", variant: "secondary" },
       TEACHER: { label: "Professor", variant: "outline" },
       USER: { label: "Usuário", variant: "outline" },
+      SPEAKER: { label: "Palestrante", variant: "default" }, // Usando variant default para destaque
     };
     const config = roleConfig[role] || roleConfig.USER;
     return <Badge variant={config.variant}>{config.label}</Badge>;
@@ -449,6 +450,7 @@ const UserManagement = () => {
                   <SelectItem value="GESTOR_ESCOLA">
                     Gestor Educacional
                   </SelectItem>
+                  <SelectItem value="SPEAKER">Palestrante</SelectItem>
                   <SelectItem value="ADMIN">Administrador</SelectItem>
                 </SelectContent>
               </Select>

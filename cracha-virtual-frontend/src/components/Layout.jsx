@@ -34,6 +34,7 @@ import {
   Star,
   Shield,
   Trophy,
+  MessageSquare,
 } from "lucide-react";
 import Logo from "../assets/logo-prof-presente.svg"; // Importe o seu logo
 import { getAssetUrl } from "../lib/utils"; // NOVO: Importa a função auxiliar
@@ -98,6 +99,12 @@ const Layout = ({ children }) => {
       href: "/events",
       icon: Calendar,
       id: "nav-link-eventos",
+    },
+    {
+      name: "Interações em Tempo Real",
+      href: "/interactions",
+      icon: MessageSquare, // Need to import this
+      id: "nav-link-interactions",
     },
     {
       name: "Minhas Inscrições",

@@ -35,18 +35,23 @@ const registerValidation = [
     .matches(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/)
     .withMessage("CPF deve estar no formato XXX.XXX.XXX-XX"),
   body("contractType")
-    .isIn(["EFETIVO", "PRESTADOR", "ESTUDANTE"])
+    .optional()
+    .isIn(["EFETIVO", "PRESTADOR", "ESTUDANTE", "EXTERNO"])
     .withMessage("Tipo de vínculo inválido"),
   body("workShifts")
-    .isArray({ min: 1 })
-    .withMessage("Selecione pelo menos um turno."),
+    .optional()
+    .isArray()
+    .withMessage("Turno deve ser um array."),
   body("workShifts.*")
+    .optional()
     .isIn(["MANHA", "TARDE", "NOITE", "INTEGRAL"])
     .withMessage("Turno inválido."),
   body("teachingSegments")
-    .isArray({ min: 1 })
-    .withMessage("Selecione pelo menos um segmento de ensino."),
+    .optional()
+    .isArray()
+    .withMessage("Segmento de ensino deve ser um array."),
   body("teachingSegments.*")
+    .optional()
     .isIn(["INFANTIL", "FUNDAMENTAL1", "FUNDAMENTAL2", "EJA", "ADMINISTRATIVO", "SUPERIOR"])
     .withMessage("Segmento de ensino inválido."),
 ];

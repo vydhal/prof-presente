@@ -29,6 +29,9 @@ const Rankings = lazy(() => import("./pages/Rankings"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const LandingPage = lazy(() => import("./pages/LandingPage"));
+const PresentationPage = lazy(() => import("./pages/PresentationPage"));
+const InteractionsSelection = lazy(() => import("./pages/InteractionsSelection"));
+const InteractionsRoom = lazy(() => import("./pages/InteractionsRoom"));
 
 import "./App.css";
 
@@ -95,6 +98,41 @@ function App() {
               />
 
               {/* Rotas protegidas */}
+              <Route
+                path="/events/:id/presentation"
+                element={
+                  <ProtectedRoute>
+                    <LazyWrapper>
+                      <PresentationPage />
+                    </LazyWrapper>
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/interactions"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <LazyWrapper>
+                        <InteractionsSelection />
+                      </LazyWrapper>
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/interactions/:id"
+                element={
+                  <ProtectedRoute>
+                    <LazyWrapper>
+                      <InteractionsRoom />
+                    </LazyWrapper>
+                  </ProtectedRoute>
+                }
+              />
+
               <Route
                 path="/dashboard"
                 element={

@@ -384,6 +384,7 @@ const updateUserRole = async (req, res) => {
       "CHECKIN_COORDINATOR",
       "TEACHER",
       "USER",
+      "SPEAKER",
     ];
     if (!role || !validRoles.includes(role)) {
       return res.status(400).json({

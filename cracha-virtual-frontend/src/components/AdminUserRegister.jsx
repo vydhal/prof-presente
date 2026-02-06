@@ -191,12 +191,13 @@ const AdminUserRegister = ({ onSuccess, onCancel }) => {
         if (!formData.phone) return "Telefone é obrigatório";
         if (!formData.address) return "Endereço é obrigatório";
         if (!formData.neighborhood) return "Bairro é obrigatório";
-        if (!formData.professionName) return "Profissão é obrigatória";
 
-        if (!formData.contractType) return "Tipo de vínculo é obrigatório";
-        if (formData.workShifts.length === 0) return "Selecione pelo menos um turno de trabalho";
-        if (formData.teachingSegments.length === 0) return "Selecione pelo menos um segmento de ensino";
-        if (formData.workplaceIds.length === 0) return "Selecione pelo menos uma unidade educacional";
+        // Dados profissionais agora são opcionais
+        // if (!formData.professionName) return "Profissão é obrigatória";
+        // if (!formData.contractType) return "Tipo de vínculo é obrigatório";
+        // if (formData.workShifts.length === 0) return "Selecione pelo menos um turno de trabalho";
+        // if (formData.teachingSegments.length === 0) return "Selecione pelo menos um segmento de ensino";
+        // if (formData.workplaceIds.length === 0) return "Selecione pelo menos uma unidade educacional";
 
         return null;
     };
@@ -389,13 +390,14 @@ const AdminUserRegister = ({ onSuccess, onCancel }) => {
                                         <SelectItem value="EFETIVO">Efetivo</SelectItem>
                                         <SelectItem value="PRESTADOR">Prestador</SelectItem>
                                         <SelectItem value="ESTUDANTE">Estudante</SelectItem>
+                                        <SelectItem value="EXTERNO">Externo</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </FieldWrapper>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
-                            <FieldWrapper label="Turno(s)" required>
+                            <FieldWrapper label="Turno(s)">
                                 <Popover open={openShiftPopover} onOpenChange={setOpenShiftPopover}>
                                     <PopoverTrigger asChild>
                                         <div className="flex min-h-[40px] w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer">
@@ -428,7 +430,7 @@ const AdminUserRegister = ({ onSuccess, onCancel }) => {
                                 </Popover>
                             </FieldWrapper>
 
-                            <FieldWrapper label="Segmento(s)" required>
+                            <FieldWrapper label="Segmento(s)">
                                 <Popover open={openSegmentPopover} onOpenChange={setOpenSegmentPopover}>
                                     <PopoverTrigger asChild>
                                         <div className="flex min-h-[40px] w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer">
@@ -463,7 +465,7 @@ const AdminUserRegister = ({ onSuccess, onCancel }) => {
                         </div>
 
                         <div className="">
-                            <FieldWrapper label="Unidade(s) Educacional(is)" required>
+                            <FieldWrapper label="Unidade(s) Educacional(is)">
                                 <Popover open={openWorkplacePopover} onOpenChange={setOpenWorkplacePopover}>
                                     <PopoverTrigger asChild>
                                         <div className="flex min-h-[40px] w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer">
@@ -500,7 +502,7 @@ const AdminUserRegister = ({ onSuccess, onCancel }) => {
                         </div>
                     </div>
                 </section>
-            </div>
+            </div >
 
             <div className="p-6 grid grid-cols-2 gap-4 bg-background border-t mt-auto">
                 <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
@@ -511,7 +513,7 @@ const AdminUserRegister = ({ onSuccess, onCancel }) => {
                 </Button>
             </div>
 
-        </form>
+        </form >
     );
 };
 

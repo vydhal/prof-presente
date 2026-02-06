@@ -111,6 +111,7 @@ export const eventsAPI = {
   create: (data) => api.post("/events", data),
   update: (id, data) => api.put(`/events/${id}`, data),
   delete: (id) => api.delete(`/events/${id}`),
+  getQuestions: (id) => api.get(`/events/${id}/questions`),
 };
 
 // Funções de inscrições

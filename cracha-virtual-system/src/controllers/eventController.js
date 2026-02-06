@@ -828,6 +828,31 @@ const getEventEnrollments = async (req, res) => {
   }
 };
 
+// --- NOVA FUNÇÃO: LISTAR PERGUNTAS DO EVENTO ---
+const getEventQuestions = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Busca todas as perguntas do evento
+    const questions = await prisma.question.findMany({
+      where: { eventId: id },
+      include: {
+        user: { select: { id: true, name: true, photoUrl: true } }
+      },
+      orderBy: [
+         { isHighlighted: 'desc' },
+         { votes: 'desc' },
+         { createdAt: 'desc' }
+      ]
+    });
+
+    res.json(questions);
+  } catch (error) {
+    console.error("Erro ao buscar perguntas:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+};
+
 module.exports = {
   getAllEvents,
   getEventById,
@@ -842,5 +867,6 @@ module.exports = {
   getCertificateLogsForEvent,
   uploadEventThumbnailController,
   uploadSpeakerPhotoController,
-  getEventEnrollments, // Exportar nova função
+  getEventEnrollments,
+  getEventQuestions // Export here
 };

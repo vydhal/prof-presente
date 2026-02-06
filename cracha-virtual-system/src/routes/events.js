@@ -16,6 +16,7 @@ const {
   uploadEventThumbnailController,
   uploadSpeakerPhotoController,
   getEventEnrollments,
+  getEventQuestions,
 } = require("../controllers/eventController");
 
 const { authenticateToken, authenticateOptional, requireAdmin } = require("../middleware/auth"); // <-- Update import
@@ -110,6 +111,12 @@ router.get(
   authenticateToken,
   requireAdmin,
   getEventEnrollments
+);
+
+router.get(
+  "/:id/questions",
+  authenticateToken,
+  getEventQuestions
 );
 
 module.exports = router;
