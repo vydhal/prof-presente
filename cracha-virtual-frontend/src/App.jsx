@@ -11,6 +11,7 @@ import { NotificationProvider } from "./components/NotificationProvider";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 import LazyWrapper from "./components/LazyWrapper";
+import { SocketProvider } from "./contexts/SocketContext";
 
 // Lazy loading das páginas
 const Login = lazy(() => import("./pages/Login"));
@@ -47,229 +48,232 @@ const queryClient = new QueryClient({
   },
 });
 
+import { ThemeProvider } from "./contexts/ThemeContext";
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <NotificationProvider>
-        <AuthProvider>
-          <Router>
-            <Routes>
-              {/* Rotas públicas */}
-              <Route
-                path="/login"
-                element={
-                  <LazyWrapper>
-                    <Login />
-                  </LazyWrapper>
-                }
-              />
-              <Route
-                path="/register"
-                element={
-                  <LazyWrapper>
-                    <Register />
-                  </LazyWrapper>
-                }
-              />
-              <Route
-                path="/forgot-password"
-                element={
-                  <LazyWrapper>
-                    <ForgotPassword />
-                  </LazyWrapper>
-                }
-              />
-              <Route
-                path="/reset-password"
-                element={
-                  <LazyWrapper>
-                    <ResetPassword />
-                  </LazyWrapper>
-                }
-              />
-
-              <Route
-                path="/events/:id"
-                element={
-                  <LazyWrapper>
-                    <EventDetails />
-                  </LazyWrapper>
-                }
-              />
-
-              {/* Rotas protegidas */}
-              <Route
-                path="/events/:id/presentation"
-                element={
-                  <ProtectedRoute>
-                    <LazyWrapper>
-                      <PresentationPage />
-                    </LazyWrapper>
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/interactions"
-                element={
-                  <ProtectedRoute>
-                    <Layout>
+      <ThemeProvider>
+        <NotificationProvider>
+          <AuthProvider>
+            <SocketProvider>
+              <Router>
+                <Routes>
+                  {/* Rotas públicas */}
+                  <Route
+                    path="/login"
+                    element={
                       <LazyWrapper>
-                        <InteractionsSelection />
+                        <Login />
                       </LazyWrapper>
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/interactions/:id"
-                element={
-                  <ProtectedRoute>
-                    <LazyWrapper>
-                      <InteractionsRoom />
-                    </LazyWrapper>
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <Layout>
+                    }
+                  />
+                  <Route
+                    path="/register"
+                    element={
                       <LazyWrapper>
-                        <Dashboard />
+                        <Register />
                       </LazyWrapper>
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/events"
-                element={
-                  <ProtectedRoute>
-                    <Layout>
+                    }
+                  />
+                  <Route
+                    path="/forgot-password"
+                    element={
                       <LazyWrapper>
-                        <Events />
+                        <ForgotPassword />
                       </LazyWrapper>
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              />
-
-
-
-              <Route
-                path="/my-enrollments"
-                element={
-                  <ProtectedRoute>
-                    <Layout>
+                    }
+                  />
+                  <Route
+                    path="/reset-password"
+                    element={
                       <LazyWrapper>
-                        <MyEnrollments />
+                        <ResetPassword />
                       </LazyWrapper>
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              />
+                    }
+                  />
 
-              <Route
-                path="/check-in"
-                element={
-                  <ProtectedRoute>
-                    <Layout>
+                  <Route
+                    path="/events/:id"
+                    element={
                       <LazyWrapper>
-                        <CheckIn />
+                        <EventDetails />
                       </LazyWrapper>
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              />
+                    }
+                  />
 
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute>
-                    <Layout>
+                  {/* Rotas protegidas */}
+                  <Route
+                    path="/events/:id/presentation"
+                    element={
+                      <ProtectedRoute>
+                        <LazyWrapper>
+                          <PresentationPage />
+                        </LazyWrapper>
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
+                    path="/interactions"
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <LazyWrapper>
+                            <InteractionsSelection />
+                          </LazyWrapper>
+                        </Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
+                    path="/interactions/:id"
+                    element={
+                      <ProtectedRoute>
+                        <LazyWrapper>
+                          <InteractionsRoom />
+                        </LazyWrapper>
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <LazyWrapper>
+                            <Dashboard />
+                          </LazyWrapper>
+                        </Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
+                    path="/events"
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <LazyWrapper>
+                            <Events />
+                          </LazyWrapper>
+                        </Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
+                    path="/my-enrollments"
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <LazyWrapper>
+                            <MyEnrollments />
+                          </LazyWrapper>
+                        </Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
+                    path="/check-in"
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <LazyWrapper>
+                            <CheckIn />
+                          </LazyWrapper>
+                        </Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
+                    path="/admin"
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <LazyWrapper>
+                            <Admin />
+                          </LazyWrapper>
+                        </Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
+                    path="/evaluations"
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <LazyWrapper>
+                            <Evaluations />
+                          </LazyWrapper>
+                        </Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
+                    path="/evaluate/:enrollmentId"
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <LazyWrapper>
+                            <EvaluateEnrollment />
+                          </LazyWrapper>
+                        </Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
+                    path="/profile"
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <LazyWrapper>
+                            <Profile />
+                          </LazyWrapper>
+                        </Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
+                    path="/ranking"
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <LazyWrapper>
+                            <Rankings />
+                          </LazyWrapper>
+                        </Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+
+
+                  {/* Rota Landing Page (Pública) */}
+                  <Route
+                    path="/"
+                    element={
                       <LazyWrapper>
-                        <Admin />
+                        <LandingPage />
                       </LazyWrapper>
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              />
+                    }
+                  />
 
-              <Route
-                path="/evaluations"
-                element={
-                  <ProtectedRoute>
-                    <Layout>
-                      <LazyWrapper>
-                        <Evaluations />
-                      </LazyWrapper>
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/evaluate/:enrollmentId"
-                element={
-                  <ProtectedRoute>
-                    <Layout>
-                      <LazyWrapper>
-                        <EvaluateEnrollment />
-                      </LazyWrapper>
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute>
-                    <Layout>
-                      <LazyWrapper>
-                        <Profile />
-                      </LazyWrapper>
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/ranking"
-                element={
-                  <ProtectedRoute>
-                    <Layout>
-                      <LazyWrapper>
-                        <Rankings />
-                      </LazyWrapper>
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              />
-
-
-              {/* Rota Landing Page (Pública) */}
-              <Route
-                path="/"
-                element={
-                  <LazyWrapper>
-                    <LandingPage />
-                  </LazyWrapper>
-                }
-              />
-
-              {/* Rota 404 */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-
-          </Router>
-        </AuthProvider>
-      </NotificationProvider>
+                  {/* Rota 404 */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </Router>
+            </SocketProvider>
+          </AuthProvider>
+        </NotificationProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

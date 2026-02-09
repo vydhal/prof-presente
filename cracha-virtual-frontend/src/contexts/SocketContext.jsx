@@ -18,8 +18,10 @@ export const SocketProvider = ({ children }) => {
         const socketUrl = apiUrl.replace('/api', '');
 
         const newSocket = io(socketUrl, {
-            transports: ['websocket'], // Forçar websocket para evitar polling inicial
+            transports: ['polling', 'websocket'], // Allow polling for better stability in dev
             reconnection: true,
+            reconnectionAttempts: Infinity,
+            reconnectionDelay: 1000,
         });
 
         setSocket(newSocket);
