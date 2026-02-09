@@ -399,8 +399,8 @@ const Admin = () => {
     e.preventDefault();
     const data = {
       ...eventForm,
-      startDate: `${eventForm.startDate}:00.000Z`,
-      endDate: `${eventForm.endDate}:00.000Z`,
+      startDate: new Date(eventForm.startDate).toISOString(),
+      endDate: new Date(eventForm.endDate).toISOString(),
       maxAttendees: eventForm.maxAttendees
         ? parseInt(eventForm.maxAttendees)
         : null,
@@ -414,13 +414,19 @@ const Admin = () => {
   };
 
   const handleEdit = (event) => {
+    const toLocalISO = (dateStr) => {
+      const date = new Date(dateStr);
+      const offset = date.getTimezoneOffset() * 60000;
+      return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+    };
+
     setEditingEvent(event);
     setEventForm({
       title: event.title,
       description: event.description,
       location: event.location,
-      startDate: event.startDate.slice(0, 16),
-      endDate: event.endDate.slice(0, 16),
+      startDate: toLocalISO(event.startDate),
+      endDate: toLocalISO(event.endDate),
       maxAttendees: event.maxAttendees || "",
       parentId: event.parentId || "",
       mapLink: event.mapLink || "",
@@ -1124,8 +1130,6 @@ const Admin = () => {
                       </div>
                     </div>
                   </form>
-                )}
-
                 )}
 
                 {editingEvent && (

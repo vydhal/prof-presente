@@ -1,5 +1,6 @@
 const { body, validationResult } = require("express-validator");
 const { prisma } = require("../config/database");
+const { client: redis } = require("../services/cacheService");
 const sharp = require("sharp");
 const { PDFDocument, rgb, StandardFonts } = require("pdf-lib");
 const fs = require("fs/promises");
@@ -8,12 +9,18 @@ const { publishToQueue } = require("../services/queueService");
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/**
- * Corrige a data armazenada no banco (que foi salva como UTC por engano)
- * para um objeto Date que reflete o fuso horário correto (-03:00) para comparação.
- * @param {Date} storedDate O objeto Date vindo do Prisma.
- * @returns {Date} Um novo objeto Date com o fuso horário corrigido.
- */
+// Função auxiliar para invalidar cache de eventos
+const invalidateEventCache = async () => {
+  try {
+    const keys = await redis.keys("express_cache:/api/events*");
+    if (keys.length > 0) {
+      await redis.del(...keys);
+      console.log(`[Cache] Invalidando ${keys.length} chaves de eventos.`);
+    }
+  } catch (error) {
+    console.error("[Cache] Erro ao invalidar cache:", error);
+  }
+};
 const getCorrectedDate = (storedDate) => {
   if (!storedDate) return null;
   const isoString = storedDate.toISOString();
@@ -63,7 +70,9 @@ const getAllEvents = async (req, res) => {
     }
 
     if (upcoming === "true") {
-      baseWhere.endDate = { gte: new Date() };
+      // O evento permanece visível por até 4 horas (14.400.000 ms) após o término
+      const visibilityThreshold = new Date(Date.now() - 4 * 60 * 60 * 1000);
+      baseWhere.endDate = { gte: visibilityThreshold };
     }
 
     // Construção da cláusula final de visibilidade
@@ -286,6 +295,9 @@ const createEvent = async (req, res) => {
 
     const event = await prisma.event.create({ data });
 
+    // Invalidar cache após criação
+    await invalidateEventCache();
+
     res.status(201).json({ message: "Evento criado com sucesso", event });
   } catch (error) {
     console.error("Erro ao criar evento:", error);
@@ -362,6 +374,9 @@ const updateEvent = async (req, res) => {
       data: updateData,
     });
 
+    // Invalidar cache após atualização
+    await invalidateEventCache();
+
     res.json({
       message: "Evento atualizado com sucesso",
       event: updatedEvent,
@@ -407,8 +422,11 @@ const deleteEvent = async (req, res) => {
       where: { id },
     });
 
+    // Invalidar cache após deleção
+    await invalidateEventCache();
+
     res.json({
-      message: "Evento deletado com sucesso",
+      message: "Deletado com sucesso",
     });
   } catch (error) {
     console.error("Erro ao deletar evento:", error);

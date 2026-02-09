@@ -32,12 +32,19 @@ const EventCard = ({ event }) => {
 
   const getEventStatus = (startDate, endDate) => {
     const now = new Date();
-    const start = new Date(startDate.slice(0, -1));
-    const end = new Date(endDate.slice(0, -1));
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const buffer = 4 * 60 * 60 * 1000; // 4 horas em ms
+
     if (now < start)
       return { label: "Próximo", color: "bg-blue-100 text-blue-800" };
-    if (now >= start && now <= end)
-      return { label: "Em andamento", color: "bg-green-100 text-green-800" };
+
+    if (now >= start && now <= new Date(end.getTime() + buffer))
+      return {
+        label: now <= end ? "Em andamento" : "Finalizado (Recente)",
+        color: now <= end ? "bg-green-100 text-green-800" : "bg-orange-100 text-orange-800"
+      };
+
     return { label: "Finalizado", color: "bg-gray-100 text-gray-800" };
   };
 
