@@ -4,12 +4,15 @@ const { generateBadgeHtml } = require("../utils/badgeService");
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
-  secure: process.env.SMTP_SECURE === "true", // Sua configuração está ótima
+  port: parseInt(process.env.SMTP_PORT) || 587,
+  secure: process.env.SMTP_SECURE === "true", 
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
+  tls: {
+    rejectUnauthorized: false
+  }
 });
 
 /**
@@ -21,19 +24,23 @@ const transporter = nodemailer.createTransport({
  */
 const sendEmail = async ({ to, subject, html, attachments }) => {
   // Verificação para garantir que o 'from' está configurado
-  const fromAddress = process.env.EMAIL_FROM || `"<${process.env.SMTP_USER}>"`;
+  const fromAddress = process.env.EMAIL_FROM || process.env.SMTP_USER;
 
   try {
-    await transporter.sendMail({
+    console.log(`[EMAIL] Tentando enviar para: ${to} | Assunto: ${subject}`);
+    const info = await transporter.sendMail({
       from: fromAddress,
       to,
       subject,
       html,
       attachments,
     });
-    console.log(`E-mail enviado com sucesso para ${to}`);
+    console.log(`[EMAIL] Sucesso! ID: ${info.messageId}`);
   } catch (error) {
-    console.error(`Erro ao enviar e-mail para ${to}:`, error);
+    console.error(`[EMAIL-ERROR] Falha ao enviar para ${to}:`, error.message);
+    if (error.code === 'ESOCKET') {
+        console.error(`[EMAIL-ERROR] Dica: Verifique a conexão com ${process.env.SMTP_HOST}`);
+    }
   }
 };
 

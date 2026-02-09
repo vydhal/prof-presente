@@ -24,7 +24,7 @@ const ForgotPassword = () => {
     e.preventDefault();
     setLoading(true);
     setError("");
-    
+
     try {
       await authAPI.forgotPassword(email);
       setSuccess(true);
@@ -38,69 +38,90 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="auth-container min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <Card className="max-w-md w-full">
-        <CardHeader>
-          <CardTitle>Recuperar Senha</CardTitle>
-          <CardDescription>
-            Digite seu e-mail para receber um link de redefinição de senha.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {success ? (
-            <div className="text-center space-y-4">
-              <div className="flex justify-center">
-                <CheckCircle className="h-12 w-12 text-green-500" />
-              </div>
-              <p className="text-gray-600">
-                Se o e-mail estiver cadastrado, você receberá um link para
-                redefinir sua senha em instantes. Verifique sua caixa de entrada
-                e spam.
-              </p>
-              <Link to="/login">
-                <Button className="w-full mt-4" variant="outline">
-                  Voltar para o Login
-                </Button>
-              </Link>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
+    <div className="auth-container min-h-screen flex items-center justify-center p-4">
+      {/* Decorative background elements */}
+      <div className="fixed inset-0 overflow-hidden -z-10 pointer-events-none">
+        <div className="absolute -top-[10%] -right-[10%] w-[40%] h-[40%] bg-blue-500/10 blur-[120px] rounded-full" />
+        <div className="absolute -bottom-[10%] -left-[10%] w-[40%] h-[40%] bg-purple-500/10 blur-[120px] rounded-full" />
+      </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-white mb-2">Recuperar Senha</h2>
+          <p className="text-gray-400">Enviaremos um link seguro para o seu e-mail</p>
+        </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Enviar Link
-              </Button>
-
-              <div className="text-center">
-                <Link
-                  to="/login"
-                  className="text-sm text-gray-500 hover:text-gray-700 flex items-center justify-center gap-1"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  Voltar para o Login
+        <Card className="bg-slate-900/50 backdrop-blur-xl border-white/10 shadow-2xl">
+          <CardHeader>
+            <CardTitle className="text-xl text-white">Esqueceu sua senha?</CardTitle>
+            <CardDescription className="text-gray-400">
+              Não se preocupe, acontece com os melhores. Digite seu e-mail abaixo.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {success ? (
+              <div className="text-center space-y-6 py-4">
+                <div className="flex justify-center">
+                  <div className="p-3 bg-green-500/10 rounded-full">
+                    <CheckCircle className="h-12 w-12 text-green-500" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-white font-medium">E-mail de recuperação enviado!</p>
+                  <p className="text-gray-400 text-sm">
+                    Se o e-mail estiver cadastrado, você receberá um link para
+                    redefinir sua senha em instantes. Verifique também sua caixa de spam.
+                  </p>
+                </div>
+                <Link to="/login" className="block">
+                  <Button className="w-full group" variant="outline">
+                    <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                    Voltar para o Login
+                  </Button>
                 </Link>
               </div>
-            </form>
-          )}
-        </CardContent>
-      </Card>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {error && (
+                  <Alert variant="destructive" className="bg-red-500/10 border-red-500/20 text-red-400">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-gray-300">Endereço de E-mail</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="seu@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:ring-blue-500/50"
+                    required
+                  />
+                </div>
+
+                <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20" disabled={loading}>
+                  {loading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  Enviar Link de Redefinição
+                </Button>
+
+                <div className="text-center pt-2">
+                  <Link
+                    to="/login"
+                    className="text-sm text-gray-400 hover:text-white transition-colors flex items-center justify-center gap-2 group"
+                  >
+                    <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                    Voltar para o Login
+                  </Link>
+                </div>
+              </form>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

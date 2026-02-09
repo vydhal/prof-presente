@@ -1,3 +1,4 @@
+require('dotenv').config();
 const app = require('./src/app');
 const { disconnectDatabase } = require('./src/config/database');
 const { startEmailWorker } = require('./src/workers/emailWorker');

@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "../components/ui/card";
 import { Alert, AlertDescription } from "../components/ui/alert";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 const ResetPassword = () => {
@@ -66,81 +66,104 @@ const ResetPassword = () => {
 
   if (!token) {
     return (
-      <div className="auth-container min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <Card className="max-w-md w-full text-center">
-            <CardContent className="pt-6">
-                <h2 className="text-xl font-semibold text-red-600 mb-2">Link Inválido</h2>
-                <p className="text-gray-600 mb-4">Token de redefinição não encontrado.</p>
-                <Link to="/login">
-                <Button variant="outline">Voltar para o Login</Button>
-                </Link>
-            </CardContent>
+      <div className="auth-container min-h-screen flex items-center justify-center p-4">
+        <Card className="max-w-md w-full text-center bg-slate-900/50 backdrop-blur-xl border-white/10 shadow-2xl">
+          <CardContent className="pt-10 pb-10 space-y-6">
+            <div className="flex justify-center">
+              <div className="p-3 bg-red-500/10 rounded-full">
+                <AlertCircle className="h-12 w-12 text-red-500" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-white">link Inválido</h2>
+              <p className="text-gray-400">O token de redefinição não foi encontrado ou é inválido.</p>
+            </div>
+            <Link to="/login" className="block">
+              <Button variant="outline" className="w-full">Voltar para o Login</Button>
+            </Link>
+          </CardContent>
         </Card>
       </div>
     );
   }
 
   return (
-    <div className="auth-container min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <Card className="max-w-md w-full">
-        <CardHeader>
-          <CardTitle>Nova Senha</CardTitle>
-          <CardDescription>Crie uma nova senha para sua conta.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+    <div className="auth-container min-h-screen flex items-center justify-center p-4">
+      <div className="fixed inset-0 overflow-hidden -z-10 pointer-events-none">
+        <div className="absolute -top-[10%] -right-[10%] w-[40%] h-[40%] bg-blue-500/10 blur-[120px] rounded-full" />
+        <div className="absolute -bottom-[10%] -left-[10%] w-[40%] h-[40%] bg-purple-500/10 blur-[120px] rounded-full" />
+      </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="newPassword">Nova Senha</Label>
-              <div className="relative">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-white mb-2">Nova Senha</h2>
+          <p className="text-gray-400">Escolha uma senha forte para sua segurança</p>
+        </div>
+
+        <Card className="bg-slate-900/50 backdrop-blur-xl border-white/10 shadow-2xl">
+          <CardHeader>
+            <CardTitle className="text-xl text-white">Redefinir Senha</CardTitle>
+            <CardDescription className="text-gray-400">Insira sua nova senha abaixo.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <Alert variant="destructive" className="bg-red-500/10 border-red-500/20 text-red-400">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="newPassword" title="text-gray-300">Nova Senha</Label>
+                <div className="relative">
+                  <Input
+                    id="newPassword"
+                    name="newPassword"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.newPassword}
+                    onChange={handleChange}
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:ring-blue-500/50"
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-gray-500"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" title="text-gray-300">Confirmar Nova Senha</Label>
                 <Input
-                  id="newPassword"
-                  name="newPassword"
-                  type={showPassword ? "text" : "password"}
-                  value={formData.newPassword}
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  value={formData.confirmPassword}
                   onChange={handleChange}
+                  className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:ring-blue-500/50"
                   required
                 />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Redefinir Senha
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20" disabled={loading}>
+                {loading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
+                Salvar Nova Senha
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
