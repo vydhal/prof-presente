@@ -21,6 +21,7 @@ const invalidateEventCache = async () => {
     console.error("[Cache] Erro ao invalidar cache:", error);
   }
 };
+exports.invalidateEventCache = invalidateEventCache; // Export explicitly
 const getCorrectedDate = (storedDate) => {
   if (!storedDate) return null;
   const isoString = storedDate.toISOString();
@@ -79,40 +80,54 @@ const getAllEvents = async (req, res) => {
     let finalWhere = { ...baseWhere };
 
     if (user) {
-      if (user.role !== "ADMIN") {
-        if (user.role === "GESTOR_ESCOLA") {
-          // CORREÇÃO: Gestor vê APENAS os eventos que ele mesmo criou
-          finalWhere.creatorId = user.id;
-        } else {
-          // Usuário comum vê eventos públicos OU os privados da sua escola
-          const userWithWorkplaces = await prisma.user.findUnique({
-            where: { id: user.id },
-            select: { workplaces: { select: { id: true } } },
-          });
-          const userWorkplaceIds =
-            userWithWorkplaces?.workplaces.map((w) => w.id) || [];
+      if (user.role === "ADMIN") {
+        // ADMIN vê tudo
+      } else if (user.role === "GESTOR_ESCOLA") {
+        // CORREÇÃO: Gestor vê APENAS os eventos que ele mesmo criou
+        finalWhere.creatorId = user.id;
+      } else if (["CHECKIN_COORDINATOR", "SPEAKER"].includes(user.role)) {
+        // --- ALTERAÇÃO PRINCIPAL ---
+        // Coordenadores e Palestrantes veem APENAS eventos onde estão na equipe (staff)
+        // OU eventos públicos (dependendo da regra de negócio, mas geralmente staff vê o restrito)
+        // Vamos assumir que eles veem os eventos onde são staff.
 
-          if (userWorkplaceIds.length > 0) {
-            const managers = await prisma.user.findMany({
-              where: {
-                role: "GESTOR_ESCOLA",
-                workplaces: { some: { id: { in: userWorkplaceIds } } },
-              },
-              select: { id: true },
-            });
-            const managerIds = managers.map((m) => m.id);
-
-            finalWhere.OR = [
-              { isPrivate: false },
-              { creatorId: { in: managerIds } },
-            ];
-          } else {
-            // Se o usuário não tem escola, só vê eventos públicos
-            finalWhere.isPrivate = false;
+        finalWhere.staff = {
+          some: {
+            userId: user.id
           }
+        };
+
+        // Opcional: Se quiser que eles TAMBÉM vejam eventos públicos como participantes normais,
+        // use um OR. Mas o pedido foi para "aparecerão os eventos em que ele foi vinculado".
+        // Então mantemos restrito.
+      } else {
+        // Usuário comum (TEACHER, etc) vê eventos públicos OU os privados da sua escola
+        const userWithWorkplaces = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { workplaces: { select: { id: true } } },
+        });
+        const userWorkplaceIds =
+          userWithWorkplaces?.workplaces.map((w) => w.id) || [];
+
+        if (userWorkplaceIds.length > 0) {
+          const managers = await prisma.user.findMany({
+            where: {
+              role: "GESTOR_ESCOLA",
+              workplaces: { some: { id: { in: userWorkplaceIds } } },
+            },
+            select: { id: true },
+          });
+          const managerIds = managers.map((m) => m.id);
+
+          finalWhere.OR = [
+            { isPrivate: false },
+            { creatorId: { in: managerIds } },
+          ];
+        } else {
+          // Se o usuário não tem escola, só vê eventos públicos
+          finalWhere.isPrivate = false;
         }
       }
-      // Se for ADMIN, vê tudo (não aplica filtros extras)
     } else {
       // Usuário ANÔNIMO: Vê apenas eventos públicos
       finalWhere.isPrivate = false;
@@ -532,11 +547,9 @@ const generatePrintableBadges = async (req, res) => {
       // Cria um SVG para o texto (nome do usuário)
       const nameSvg = `
         <svg width="400" height="100">
-          <text x="0" y="${
-            config.name.fontSize || 24
-          }" font-family="sans-serif" font-size="${
-        config.name.fontSize || 24
-      }" fill="${config.name.color || "#000000"}">
+          <text x="0" y="${config.name.fontSize || 24
+        }" font-family="sans-serif" font-size="${config.name.fontSize || 24
+        }" fill="${config.name.color || "#000000"}">
             ${user.name}
           </text>
         </svg>
@@ -660,15 +673,15 @@ const sendEventCertificates = async (req, res) => {
 
     // Publica na fila para processamento assíncrono
     const queueResult = await publishToQueue('email_queue', {
-        type: 'SEND_CERTIFICATES',
-        payload: {
-            eventId: parentEventId,
-            adminEmail: adminEmail // Opcional: para notificar quando terminar
-        }
+      type: 'SEND_CERTIFICATES',
+      payload: {
+        eventId: parentEventId,
+        adminEmail: adminEmail // Opcional: para notificar quando terminar
+      }
     });
 
     if (!queueResult) {
-        return res.status(500).json({ error: "Falha ao conectar com serviço de filas. Tente novamente." });
+      return res.status(500).json({ error: "Falha ao conectar com serviço de filas. Tente novamente." });
     }
 
     // Retorna a resposta para o admin imediatamente
@@ -809,7 +822,7 @@ const uploadSpeakerPhotoController = async (req, res) => {
 const getEventEnrollments = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Busca inscrições com dados do usuário
     const enrollments = await prisma.enrollment.findMany({
       where: { eventId: id },
@@ -850,7 +863,7 @@ const getEventEnrollments = async (req, res) => {
 const getEventQuestions = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Busca todas as perguntas do evento
     const questions = await prisma.question.findMany({
       where: { eventId: id },
@@ -858,9 +871,9 @@ const getEventQuestions = async (req, res) => {
         user: { select: { id: true, name: true, photoUrl: true } }
       },
       orderBy: [
-         { isHighlighted: 'desc' },
-         { votes: 'desc' },
-         { createdAt: 'desc' }
+        { isHighlighted: 'desc' },
+        { votes: 'desc' },
+        { createdAt: 'desc' }
       ]
     });
 

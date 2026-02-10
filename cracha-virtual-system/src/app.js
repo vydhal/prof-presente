@@ -54,6 +54,7 @@ app.get("/", (req, res) => {
 
 // Middleware de tratamento de erros 404
 app.use((req, res) => {
+  console.log(`[404] Endpoint não encontrado: ${req.method} ${req.originalUrl}`);
   res.status(404).json({
     error: "Endpoint não encontrado",
     message: `A rota ${req.method} ${req.originalUrl} não existe`,

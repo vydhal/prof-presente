@@ -44,6 +44,9 @@ const authenticateToken = async (req, res, next) => {
 
 // Middleware para verificar se o usuário é admin
 const requireAdmin = (req, res, next) => {
+  if (!req.user) {
+    return res.status(500).json({ error: "Erro interno: Usuário não autenticado." });
+  }
   if (req.user.role !== "ADMIN") {
     return res.status(403).json({
       error: "Acesso negado. Permissões de administrador requeridas.",

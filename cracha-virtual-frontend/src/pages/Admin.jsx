@@ -43,25 +43,27 @@ import {
 } from "../components/ui/tabs";
 import { Separator } from "../components/ui/separator";
 import {
-  Plus,
-  Trash2,
   Users,
   Calendar,
-  Award,
-  ChartBar as BarChart,
-  Upload,
-  Printer,
-  Building,
-  Briefcase,
-  FileText,
-  Send,
-  Pencil,
+  MapPin,
+  Trash2,
+  Edit,
+  Plus,
+  Search,
   CheckCircle2,
   XCircle,
   Clock,
-
-  Sparkles,
-  Mail,
+  Printer, // Adicionado
+  Target,
+  Send,
+  Upload,
+  ChartBar as BarChart, // Re-adicionado
+  Award, // Re-adicionado
+  Building, // Re-adicionado
+  Briefcase, // Re-adicionado
+  FileText, // Re-adicionado
+  Sparkles, // Re-adicionado
+  Pencil, // Re-adicionado
 } from "lucide-react";
 import { toast } from "sonner";
 import UserManagement from "../components/UserManagement";
@@ -71,6 +73,7 @@ import WorkplaceManagement from "../components/WorkplaceManagement";
 import ProfessionManagement from "../components/ProfessionManagement";
 import ReportsDashboard from "../components/ReportsDashboard";
 import CertificatePreview from "../components/CertificatePreview";
+import EventStaffManager from "../components/EventStaffManager";
 import { Badge } from "../components/ui/badge";
 import { Combobox } from "../components/ui/combobox";
 import { getAssetUrl } from "../lib/utils";
@@ -843,705 +846,446 @@ const Admin = () => {
                     {editingEvent ? "Editar Evento" : "Criar Novo Evento"}
                   </DialogTitle>
                   <DialogDescription>
-                    Preencha os detalhes do evento abaixo
+                    Gerencie os detalhes, personalização e equipe do evento.
                   </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="title">Título</Label>
-                    <Input
-                      id="title"
-                      value={eventForm.title}
-                      onChange={(e) =>
-                        setEventForm({ ...eventForm, title: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Descrição</Label>
-                    <Textarea
-                      id="description"
-                      value={eventForm.description}
-                      onChange={(e) =>
-                        setEventForm({
-                          ...eventForm,
-                          description: e.target.value,
-                        })
-                      }
-                      rows={4}
-                      required
-                    />
-                  </div>
+                <Tabs defaultValue="details" className="w-full">
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="details">Detalhes</TabsTrigger>
+                    <TabsTrigger value="badge" disabled={!editingEvent}>Crachá</TabsTrigger>
+                    <TabsTrigger value="certificate" disabled={!editingEvent}>Certificado</TabsTrigger>
+                    <TabsTrigger value="staff" disabled={!editingEvent}>Equipe</TabsTrigger>
+                  </TabsList>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Local</Label>
-                    <Input
-                      id="location"
-                      value={eventForm.location}
-                      onChange={(e) =>
-                        setEventForm({ ...eventForm, location: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Evento Pai (Opcional)</Label>
-                    <Combobox
-                      options={[
-                        {
-                          value: "",
-                          label: "Nenhum (Este é um evento principal)",
-                        },
-                        ...(events
-                          ?.filter((e) => e.id !== editingEvent?.id)
-                          .map((e) => ({ value: e.id, label: e.title })) || []),
-                      ]}
-                      value={eventForm.parentId}
-                      onSelect={(value) =>
-                        setEventForm({ ...eventForm, parentId: value })
-                      }
-                      placeholder="Selecione o evento principal..."
-                      searchPlaceholder="Pesquisar evento..."
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Selecione se este evento faz parte de um evento maior (ex:
-                      uma palestra dentro de um congresso).
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="mapLink">Link do Mapa (URL)</Label>
-                      <Input
-                        id="mapLink"
-                        value={eventForm.mapLink}
-                        onChange={(e) =>
-                          setEventForm({ ...eventForm, mapLink: e.target.value })
-                        }
-                        placeholder="https://maps.google.com/..."
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="schedule">Programação (Resumo)</Label>
-                      <Textarea
-                        id="schedule"
-                        value={eventForm.schedule}
-                        onChange={(e) =>
-                          setEventForm({ ...eventForm, schedule: e.target.value })
-                        }
-                        placeholder="Descreva a programação..."
-                        rows={3}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="speakerName">Nome do Palestrante</Label>
-                      <Input
-                        id="speakerName"
-                        value={eventForm.speakerName}
-                        onChange={(e) =>
-                          setEventForm({ ...eventForm, speakerName: e.target.value })
-                        }
-                        placeholder="Ex: Dr. Fulano"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="speakerRole">Cargo do Palestrante</Label>
-                      <Input
-                        id="speakerRole"
-                        value={eventForm.speakerRole}
-                        onChange={(e) =>
-                          setEventForm({ ...eventForm, speakerRole: e.target.value })
-                        }
-                        placeholder="Ex: Secretário de Educação"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Upload de Foto removido daqui e movido para área de edição pós-criação */}
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="startDate">Data de Início</Label>
-                      <Input
-                        id="startDate"
-                        type="datetime-local"
-                        value={eventForm.startDate}
-                        onChange={(e) =>
-                          setEventForm({
-                            ...eventForm,
-                            startDate: e.target.value,
-                          })
-                        }
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="endDate">Data de Término</Label>
-                      <Input
-                        id="endDate"
-                        type="datetime-local"
-                        value={eventForm.endDate}
-                        onChange={(e) =>
-                          setEventForm({
-                            ...eventForm,
-                            endDate: e.target.value,
-                          })
-                        }
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="maxAttendees">
-                      Máximo de Participantes (opcional)
-                    </Label>
-                    <Input
-                      id="maxAttendees"
-                      type="number"
-                      min="1"
-                      value={eventForm.maxAttendees}
-                      onChange={(e) =>
-                        setEventForm({
-                          ...eventForm,
-                          maxAttendees: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setEditingEvent(null);
-                        setIsCreateDialogOpen(false);
-                        resetForm();
-                      }}
-                    >
-                      Cancelar
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={
-                        createEventMutation.isPending ||
-                        updateEventMutation.isPending
-                      }
-                    >
-                      {createEventMutation.isPending ||
-                        updateEventMutation.isPending
-                        ? "Salvando..."
-                        : editingEvent
-                          ? "Atualizar"
-                          : "Criar"}
-                    </Button>
-                  </div>
-                </form>
-
-
-                {/* ===== INÍCIO DO BLOCO DE FOTO DO PALESTRANTE (MOVIDO PARA CIMA) ===== */}
-                {editingEvent && (
-                  <form onSubmit={handleSpeakerPhotoSubmit} className="space-y-4 pt-4">
-                    <Separator />
-                    <h3 className="text-lg font-semibold pt-4">Foto do Palestrante</h3>
-                    <div className="p-4 border rounded-lg space-y-4 bg-slate-50 dark:bg-slate-900/50">
-                      <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden shrink-0 border border-slate-300 dark:border-slate-700">
-                          {speakerPhotoPreviewUrl ? (
-                            <img src={speakerPhotoPreviewUrl} alt="Preview" className="w-full h-full object-cover" />
-                          ) : editingEvent?.speakerPhotoUrl ? (
-                            <img src={getAssetUrl(editingEvent.speakerPhotoUrl)} alt="Atual" className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-slate-400">
-                              <Users className="w-8 h-8" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 space-y-2">
-                          <input
-                            type="file"
-                            onChange={(e) => {
-                              console.log("File selected:", e.target.files[0]);
-                              handleSpeakerPhotoChange(e);
-                            }}
-                            accept="image/*"
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-xs ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          />
-                          <Button
-                            type="submit"
-                            variant="secondary"
-                            size="sm"
-                            disabled={uploadSpeakerPhotoMutation.isPending}
-                          >
-                            {uploadSpeakerPhotoMutation.isPending ? "Enviando..." : "Salvar Foto"}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </form>
-                )}
-
-                {/* ===== INÍCIO DO NOVO BLOCO DE UPLOAD DE CAPA ===== */}
-                {editingEvent && (
-                  <form
-                    onSubmit={handleThumbnailSubmit}
-                    className="space-y-4 pt-4"
-                  >
-                    <Separator />
-                    <h3 className="text-lg font-semibold pt-4">
-                      Imagem de Capa do Evento
-                    </h3>
-                    <div className="p-4 border rounded-lg space-y-4">
+                  <TabsContent value="details" className="space-y-4 py-4">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      {/* ... Campos do formulário Principal ... */}
                       <div className="space-y-2">
-                        <Label htmlFor="eventThumbnail">
-                          Anexar Imagem (.jpg, .png)
-                        </Label>
+                        <Label htmlFor="title">Título</Label>
                         <Input
-                          id="eventThumbnail"
-                          type="file"
-                          onChange={handleThumbnailFileChange}
-                          accept="image/png, image/jpeg, image/webp"
+                          id="title"
+                          value={eventForm.title}
+                          onChange={(e) =>
+                            setEventForm({ ...eventForm, title: e.target.value })
+                          }
+                          required
                         />
                       </div>
 
-                      {/* Preview da Imagem */}
-                      <div className="w-full">
-                        <p className="text-sm font-medium mb-2">
-                          Pré-visualização:
+                      <div className="space-y-2">
+                        <Label htmlFor="description">Descrição</Label>
+                        <Textarea
+                          id="description"
+                          value={eventForm.description}
+                          onChange={(e) =>
+                            setEventForm({
+                              ...eventForm,
+                              description: e.target.value,
+                            })
+                          }
+                          rows={4}
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="location">Local</Label>
+                        <Input
+                          id="location"
+                          value={eventForm.location}
+                          onChange={(e) =>
+                            setEventForm({ ...eventForm, location: e.target.value })
+                          }
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Evento Pai (Opcional)</Label>
+                        <Combobox
+                          options={[
+                            {
+                              value: "",
+                              label: "Nenhum (Este é um evento principal)",
+                            },
+                            ...(events
+                              ?.filter((e) => e.id !== editingEvent?.id)
+                              .map((e) => ({ value: e.id, label: e.title })) || []),
+                          ]}
+                          value={eventForm.parentId}
+                          onSelect={(value) =>
+                            setEventForm({ ...eventForm, parentId: value })
+                          }
+                          placeholder="Selecione o evento principal..."
+                          searchPlaceholder="Pesquisar evento..."
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Selecione se este evento faz parte de um evento maior (ex:
+                          uma palestra dentro de um congresso).
                         </p>
-                        <div className="w-full aspect-video bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-                          {/* Prioriza o preview do novo upload */}
-                          {eventThumbnailPreviewUrl ? (
-                            <img
-                              src={eventThumbnailPreviewUrl}
-                              alt="Preview"
-                              className="w-full h-full object-cover"
-                            />
-                          ) : // Se não houver, mostra a imagem atual salva no evento
-                            editingEvent.imageUrl ? (
-                              <img
-                                src={getAssetUrl(editingEvent.imageUrl)} // <-- USE A FUNÇÃO AQUI                              alt="Imagem Atual"
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              // Placeholder
-                              <span className="text-sm text-gray-500">
-                                Sem imagem de capa
-                              </span>
-                            )}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="mapLink">Link do Mapa (URL)</Label>
+                          <Input
+                            id="mapLink"
+                            value={eventForm.mapLink}
+                            onChange={(e) =>
+                              setEventForm({ ...eventForm, mapLink: e.target.value })
+                            }
+                            placeholder="https://maps.google.com/..."
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="schedule">Programação (Resumo)</Label>
+                          <Textarea
+                            id="schedule"
+                            value={eventForm.schedule}
+                            onChange={(e) =>
+                              setEventForm({ ...eventForm, schedule: e.target.value })
+                            }
+                            placeholder="Descreva a programação..."
+                            rows={3}
+                          />
                         </div>
                       </div>
 
-                      <div className="flex justify-end pt-2">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="speakerName">Nome do Palestrante</Label>
+                          <Input
+                            id="speakerName"
+                            value={eventForm.speakerName}
+                            onChange={(e) =>
+                              setEventForm({ ...eventForm, speakerName: e.target.value })
+                            }
+                            placeholder="Ex: Dr. Fulano"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="speakerRole">Cargo do Palestrante</Label>
+                          <Input
+                            id="speakerRole"
+                            value={eventForm.speakerRole}
+                            onChange={(e) =>
+                              setEventForm({ ...eventForm, speakerRole: e.target.value })
+                            }
+                            placeholder="Ex: Secretário de Educação"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Upload de Foto removido daqui e movido para área de edição pós-criação */}
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="startDate">Data de Início</Label>
+                          <Input
+                            id="startDate"
+                            type="datetime-local"
+                            value={eventForm.startDate}
+                            onChange={(e) =>
+                              setEventForm({
+                                ...eventForm,
+                                startDate: e.target.value,
+                              })
+                            }
+                            required
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="endDate">Data de Término</Label>
+                          <Input
+                            id="endDate"
+                            type="datetime-local"
+                            value={eventForm.endDate}
+                            onChange={(e) =>
+                              setEventForm({
+                                ...eventForm,
+                                endDate: e.target.value,
+                              })
+                            }
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="maxAttendees">
+                          Máximo de Participantes (opcional)
+                        </Label>
+                        <Input
+                          id="maxAttendees"
+                          type="number"
+                          min="1"
+                          value={eventForm.maxAttendees}
+                          onChange={(e) =>
+                            setEventForm({
+                              ...eventForm,
+                              maxAttendees: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            setEditingEvent(null);
+                            setIsCreateDialogOpen(false);
+                            resetForm();
+                          }}
+                        >
+                          Cancelar
+                        </Button>
                         <Button
                           type="submit"
                           disabled={
-                            !eventThumbnailFile ||
-                            uploadThumbnailMutation.isPending
+                            createEventMutation.isPending ||
+                            updateEventMutation.isPending
                           }
                         >
-                          <Upload className="h-4 w-4 mr-2" />
-                          {uploadThumbnailMutation.isPending
-                            ? "Salvando Imagem..."
-                            : "Salvar Imagem de Capa"}
-                        </Button>
-                      </div>
-                    </div>
-                  </form>
-                )}
-
-                {editingEvent && (
-                  <>
-                    <Separator className="my-4" />
-                    <div className="p-4 border rounded-lg space-y-4">
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">
-                          Modelo do Crachá Impresso
-                        </h3>
-                        <div className="space-y-4 p-4 border rounded-lg">
-                          <div className="space-y-2">
-                            <Label htmlFor="badgeTemplate">
-                              Imagem de Fundo
-                            </Label>
-                            <Input
-                              id="badgeTemplate"
-                              type="file"
-                              onChange={handleFileChange}
-                              accept="image/*"
-                            />
-                            {editingEvent.badgeTemplateUrl &&
-                              !badgeTemplateFile && (
-                                <p className="text-xs text-gray-500">
-                                  Um modelo já foi enviado. Envie um novo para
-                                  substituir.
-                                </p>
-                              )}
-                          </div>
-
-                          <h4 className="font-medium text-sm">
-                            Posição do Nome
-                          </h4>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                            <Input
-                              type="number"
-                              placeholder="X"
-                              value={badgeConfig.nameX}
-                              onChange={(e) =>
-                                setBadgeConfig({
-                                  ...badgeConfig,
-                                  nameX: e.target.value,
-                                })
-                              }
-                            />
-                            <Input
-                              type="number"
-                              placeholder="Y"
-                              value={badgeConfig.nameY}
-                              onChange={(e) =>
-                                setBadgeConfig({
-                                  ...badgeConfig,
-                                  nameY: e.target.value,
-                                })
-                              }
-                            />
-                            <Input
-                              type="number"
-                              placeholder="Fonte"
-                              value={badgeConfig.nameFontSize}
-                              onChange={(e) =>
-                                setBadgeConfig({
-                                  ...badgeConfig,
-                                  nameFontSize: e.target.value,
-                                })
-                              }
-                            />
-                            <Input
-                              type="color"
-                              title="Cor da fonte"
-                              value={badgeConfig.nameColor}
-                              onChange={(e) =>
-                                setBadgeConfig({
-                                  ...badgeConfig,
-                                  nameColor: e.target.value,
-                                })
-                              }
-                            />
-                          </div>
-
-                          <h4 className="font-medium text-sm">
-                            Posição do QR Code
-                          </h4>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                            <Input
-                              type="number"
-                              placeholder="X"
-                              value={badgeConfig.qrX}
-                              onChange={(e) =>
-                                setBadgeConfig({
-                                  ...badgeConfig,
-                                  qrX: e.target.value,
-                                })
-                              }
-                            />
-                            <Input
-                              type="number"
-                              placeholder="Y"
-                              value={badgeConfig.qrY}
-                              onChange={(e) =>
-                                setBadgeConfig({
-                                  ...badgeConfig,
-                                  qrY: e.target.value,
-                                })
-                              }
-                            />
-                            <Input
-                              type="number"
-                              placeholder="Tamanho"
-                              value={badgeConfig.qrSize}
-                              onChange={(e) =>
-                                setBadgeConfig({
-                                  ...badgeConfig,
-                                  qrSize: e.target.value,
-                                })
-                              }
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      <div className="space-y-4">
-                        <BadgePreview
-                          templateImage={
-                            badgeTemplatePreviewUrl ||
-                            getAssetUrl(editingEvent.badgeTemplateUrl)
-                          }
-                          config={badgeConfig}
-                          qrCodeImageSrc="/sample-qrcode.png"
-                          onConfigChange={setBadgeConfig}
-                        />
-                      </div>
-                      <div className="flex justify-end pt-2">
-                        <Button
-                          type="button"
-                          onClick={handleTemplateSubmit}
-                          disabled={uploadTemplateMutation.isPending}
-                        >
-                          <Upload className="h-4 w-4 mr-2" />
-                          {uploadTemplateMutation.isPending
+                          {createEventMutation.isPending ||
+                            updateEventMutation.isPending
                             ? "Salvando..."
-                            : "Salvar Modelo do Crachá"}
+                            : editingEvent
+                              ? "Atualizar"
+                              : "Criar"}
                         </Button>
-                      </div>
-                    </div>
-
-                    <Separator className="my-4" />
-
-                    <form
-                      onSubmit={handleCertificateTemplateSubmit}
-                      className="space-y-4"
-                    >
-                      <div className="p-4 border rounded-lg space-y-4">
-                        <div className="space-y-4">
-                          <h3 className="text-lg font-semibold">
-                            Modelo do Certificado
-                          </h3>
-                          <div className="p-4 border rounded-lg space-y-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="certificateTemplate">
-                                Imagem do Certificado
-                              </Label>
-                              <Input
-                                id="certificateTemplate"
-                                type="file"
-                                onChange={handleCertificateFileChange}
-                                accept="image/*"
-                              />
-                              {editingEvent.certificateTemplateUrl &&
-                                !certificateTemplateFile && (
-                                  <p className="text-xs text-muted-foreground">
-                                    Um modelo já foi enviado. Envie um novo para
-                                    substituir.
-                                  </p>
-                                )}
-                            </div>
-
-                            <h4 className="font-medium text-sm">
-                              Posição do Nome
-                            </h4>
-                            <div className="grid grid-cols-4 gap-2">
-                              <Input
-                                type="number"
-                                placeholder="X"
-                                value={certificateConfig.nameX}
-                                onChange={(e) =>
-                                  setCertificateConfig({
-                                    ...certificateConfig,
-                                    nameX: e.target.value,
-                                  })
-                                }
-                              />
-                              <Input
-                                type="number"
-                                placeholder="Y"
-                                value={certificateConfig.nameY}
-                                onChange={(e) =>
-                                  setCertificateConfig({
-                                    ...certificateConfig,
-                                    nameY: e.target.value,
-                                  })
-                                }
-                              />
-                              <Input
-                                type="number"
-                                placeholder="Fonte"
-                                value={certificateConfig.nameFontSize}
-                                onChange={(e) =>
-                                  setCertificateConfig({
-                                    ...certificateConfig,
-                                    nameFontSize: e.target.value,
-                                  })
-                                }
-                              />
-                              <Input
-                                type="color"
-                                title="Cor da fonte"
-                                value={certificateConfig.nameColor}
-                                onChange={(e) =>
-                                  setCertificateConfig({
-                                    ...certificateConfig,
-                                    nameColor: e.target.value,
-                                  })
-                                }
-                              />
-                            </div>
-
-                            <h4 className="font-medium text-sm">
-                              Posição das Horas
-                            </h4>
-                            <div className="grid grid-cols-4 gap-2">
-                              <Input
-                                type="number"
-                                placeholder="X"
-                                value={certificateConfig.hoursX}
-                                onChange={(e) =>
-                                  setCertificateConfig({
-                                    ...certificateConfig,
-                                    hoursX: e.target.value,
-                                  })
-                                }
-                              />
-                              <Input
-                                type="number"
-                                placeholder="Y"
-                                value={certificateConfig.hoursY}
-                                onChange={(e) =>
-                                  setCertificateConfig({
-                                    ...certificateConfig,
-                                    hoursY: e.target.value,
-                                  })
-                                }
-                              />
-                              <Input
-                                type="number"
-                                placeholder="Fonte"
-                                value={certificateConfig.hoursFontSize}
-                                onChange={(e) =>
-                                  setCertificateConfig({
-                                    ...certificateConfig,
-                                    hoursFontSize: e.target.value,
-                                  })
-                                }
-                              />
-                              <Input
-                                type="color"
-                                title="Cor da fonte"
-                                value={certificateConfig.hoursColor}
-                                onChange={(e) =>
-                                  setCertificateConfig({
-                                    ...certificateConfig,
-                                    hoursColor: e.target.value,
-                                  })
-                                }
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* CORREÇÃO: Passando a prop 'templateImage' e usando a nova URL de preview */}
-                        <CertificatePreview
-                          templateImage={
-                            certificateTemplatePreviewUrl ||
-                            getAssetUrl(editingEvent.certificateTemplateUrl)
-                          }
-                          config={certificateConfig}
-                          onConfigChange={setCertificateConfig}
-                        />
-                        <div className="flex justify-end pt-2">
-                          <Button
-                            type="submit"
-                            disabled={uploadCertificateMutation.isPending}
-                          >
-                            <Upload className="h-4 w-4 mr-2" />
-                            Salvar Modelo do Certificado
-                          </Button>
-                        </div>
                       </div>
                     </form>
 
-                    <Separator className="my-4" />
 
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold">
-                        Histórico de Envio de Certificados
-                      </h3>
-                      <div className="border rounded-lg max-h-64 overflow-y-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Participante</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead className="text-right">
-                                Data de Envio
-                              </TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {logsLoading ? (
-                              <TableRow>
-                                <TableCell colSpan={3} className="text-center">
-                                  <Clock className="h-4 w-4 mr-2 inline-block animate-spin" />
-                                  Carregando status...
-                                </TableCell>
-                              </TableRow>
-                            ) : certificateLogs &&
-                              certificateLogs.length > 0 ? (
-                              certificateLogs.map((report) => (
-                                <TableRow key={report.userId}>
-                                  <TableCell>
-                                    <div className="font-medium">
-                                      {report.userName}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">
-                                      {report.userEmail}
-                                    </div>
-                                  </TableCell>
-                                  <TableCell>
-                                    {/* Lógica para exibir o badge de acordo com o status */}
-                                    {report.status === "SUCCESS" && (
-                                      <Badge
-                                        variant="default"
-                                        className="bg-green-600"
-                                      >
-                                        <CheckCircle2 className="h-3 w-3 mr-1" />
-                                        Enviado
-                                      </Badge>
-                                    )}
-                                    {report.status === "FAILED" && (
-                                      <Badge variant="destructive">
-                                        <XCircle className="h-3 w-3 mr-1" />
-                                        Falhou
-                                      </Badge>
-                                    )}
-                                    {report.status === "PENDING" && (
-                                      <Badge variant="outline">
-                                        <Clock className="h-3 w-3 mr-1" />
-                                        Pendente
-                                      </Badge>
-                                    )}
-                                  </TableCell>
-                                  <TableCell className="text-right text-xs">
-                                    {/* Exibe a data apenas se houver uma */}
-                                    {report.sentAt
-                                      ? new Date(
-                                        report.CreatedAt
-                                      ).toLocaleString("pt-BR")
-                                      : "—"}
-                                  </TableCell>
-                                </TableRow>
-                              ))
-                            ) : (
-                              <TableRow>
-                                <TableCell
-                                  colSpan={3}
-                                  className="text-center text-muted-foreground"
-                                >
-                                  Nenhum participante inscrito neste evento.
-                                </TableCell>
-                              </TableRow>
+                    {/* FOTO DO PALESTRANTE E CAPA NO TAB DETALHES TAMBÉM */}
+                    {editingEvent && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
+                        <div>
+                          <h3 className="font-semibold mb-2">Foto do Palestrante</h3>
+                          <form onSubmit={handleSpeakerPhotoSubmit} className="space-y-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 rounded-full bg-slate-200 overflow-hidden shrink-0">
+                                {speakerPhotoPreviewUrl ? (
+                                  <img src={speakerPhotoPreviewUrl} alt="Preview" className="w-full h-full object-cover" />
+                                ) : editingEvent?.speakerPhotoUrl ? (
+                                  <img src={getAssetUrl(editingEvent.speakerPhotoUrl)} alt="Atual" className="w-full h-full object-cover" />
+                                ) : (
+                                  <Users className="w-6 h-6 m-3 text-slate-400" />
+                                )}
+                              </div>
+                              <div className="flex-1">
+                                <Input
+                                  type="file"
+                                  onChange={handleSpeakerPhotoChange}
+                                  accept="image/*"
+                                  className="h-8 text-xs"
+                                />
+                              </div>
+                            </div>
+                            <Button type="submit" size="sm" variant="secondary" className="w-full" disabled={uploadSpeakerPhotoMutation.isPending}>
+                              {uploadSpeakerPhotoMutation.isPending ? "Enviando..." : "Salvar Foto"}
+                            </Button>
+                          </form>
+                        </div>
+
+                        <div>
+                          <h3 className="font-semibold mb-2">Imagem de Capa</h3>
+                          <form onSubmit={handleThumbnailSubmit} className="space-y-3">
+                            <div className="space-y-2">
+                              <Input
+                                type="file"
+                                onChange={handleThumbnailFileChange}
+                                accept="image/*"
+                                className="h-8 text-xs"
+                              />
+                            </div>
+                            {/* Preview Simplificado */}
+                            {(eventThumbnailPreviewUrl || editingEvent.imageUrl) && (
+                              <div className="h-24 w-full bg-slate-100 rounded overflow-hidden">
+                                <img src={eventThumbnailPreviewUrl || getAssetUrl(editingEvent.imageUrl)} className="w-full h-full object-cover" />
+                              </div>
                             )}
-                          </TableBody>
-                        </Table>
+
+                            <Button type="submit" size="sm" variant="secondary" className="w-full" disabled={uploadThumbnailMutation.isPending}>
+                              {uploadThumbnailMutation.isPending ? "Enviando..." : "Salvar Capa"}
+                            </Button>
+                          </form>
+                        </div>
                       </div>
-                    </div>
-                  </>
-                )}
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="badge" className="space-y-4 py-4">
+                    {editingEvent && (
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <h3 className="text-lg font-semibold">Configuração do Crachá</h3>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePrintBadges(editingEvent.id, editingEvent.title)}
+                          >
+                            <Printer className="h-4 w-4 mr-2" />
+                            Imprimir Crachás
+                          </Button>
+                        </div>
+
+                        <div className="p-4 border rounded-lg space-y-4">
+                          {/* ... Conteúdo do Crachá (Simplificado para caber no replace) ... */}
+                          <form onSubmit={handleTemplateSubmit} className="space-y-4">
+                            <div className="space-y-2">
+                              <Label>Imagem de Fundo</Label>
+                              <Input type="file" onChange={handleFileChange} accept="image/*" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label>Posição Nome (X, Y)</Label>
+                                <div className="flex gap-2">
+                                  <Input type="number" placeholder="X" value={badgeConfig.nameX} onChange={e => setBadgeConfig({ ...badgeConfig, nameX: e.target.value })} />
+                                  <Input type="number" placeholder="Y" value={badgeConfig.nameY} onChange={e => setBadgeConfig({ ...badgeConfig, nameY: e.target.value })} />
+                                </div>
+                              </div>
+                              <div>
+                                <Label>Fonte (Tam, Cor)</Label>
+                                <div className="flex gap-2">
+                                  <Input type="number" placeholder="px" value={badgeConfig.nameFontSize} onChange={e => setBadgeConfig({ ...badgeConfig, nameFontSize: e.target.value })} />
+                                  <Input type="color" value={badgeConfig.nameColor} onChange={e => setBadgeConfig({ ...badgeConfig, nameColor: e.target.value })} />
+                                </div>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label>Posição QR (X, Y)</Label>
+                                <div className="flex gap-2">
+                                  <Input type="number" placeholder="X" value={badgeConfig.qrX} onChange={e => setBadgeConfig({ ...badgeConfig, qrX: e.target.value })} />
+                                  <Input type="number" placeholder="Y" value={badgeConfig.qrY} onChange={e => setBadgeConfig({ ...badgeConfig, qrY: e.target.value })} />
+                                </div>
+                              </div>
+                              <div>
+                                <Label>Tamanho QR</Label>
+                                <Input type="number" placeholder="px" value={badgeConfig.qrSize} onChange={e => setBadgeConfig({ ...badgeConfig, qrSize: e.target.value })} />
+                              </div>
+                            </div>
+
+                            <BadgePreview
+                              templateImage={badgeTemplatePreviewUrl || getAssetUrl(editingEvent.badgeTemplateUrl)}
+                              config={badgeConfig}
+                              onConfigChange={setBadgeConfig}
+                            />
+
+                            <Button type="submit" disabled={uploadTemplateMutation.isPending} className="w-full">
+                              <Upload className="h-4 w-4 mr-2" /> Salvar Modelo
+                            </Button>
+                          </form>
+                        </div>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="certificate" className="space-y-4 py-4">
+                    {editingEvent && (
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <h3 className="text-lg font-semibold">Configuração do Certificado</h3>
+                          <Button
+                            variant="outline"
+                            onClick={() => handleSendCertificates(editingEvent.id, editingEvent.title)}
+                          >
+                            <Send className="h-4 w-4 mr-2" /> Enviar Certificados
+                          </Button>
+                        </div>
+
+                        <form onSubmit={handleCertificateTemplateSubmit} className="space-y-4 border p-4 rounded-lg">
+                          <div className="space-y-2">
+                            <Label>Imagem de Fundo</Label>
+                            <Input type="file" onChange={handleCertificateFileChange} accept="image/*" />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            {/* Config Nome */}
+                            <div>
+                              <Label>Posição Nome</Label>
+                              <div className="flex gap-2">
+                                <Input placeholder="X" value={certificateConfig.nameX} onChange={e => setCertificateConfig({ ...certificateConfig, nameX: e.target.value })} />
+                                <Input placeholder="Y" value={certificateConfig.nameY} onChange={e => setCertificateConfig({ ...certificateConfig, nameY: e.target.value })} />
+                              </div>
+                            </div>
+                            <div>
+                              <Label>Estilo Nome</Label>
+                              <div className="flex gap-2">
+                                <Input placeholder="Font" value={certificateConfig.nameFontSize} onChange={e => setCertificateConfig({ ...certificateConfig, nameFontSize: e.target.value })} />
+                                <Input type="color" value={certificateConfig.nameColor} onChange={e => setCertificateConfig({ ...certificateConfig, nameColor: e.target.value })} />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            {/* Config Horas */}
+                            <div>
+                              <Label>Posição Carga Horária</Label>
+                              <div className="flex gap-2">
+                                <Input placeholder="X" value={certificateConfig.hoursX} onChange={e => setCertificateConfig({ ...certificateConfig, hoursX: e.target.value })} />
+                                <Input placeholder="Y" value={certificateConfig.hoursY} onChange={e => setCertificateConfig({ ...certificateConfig, hoursY: e.target.value })} />
+                              </div>
+                            </div>
+                            <div>
+                              <Label>Estilo Carga Horária</Label>
+                              <div className="flex gap-2">
+                                <Input placeholder="Font" value={certificateConfig.hoursFontSize} onChange={e => setCertificateConfig({ ...certificateConfig, hoursFontSize: e.target.value })} />
+                                <Input type="color" value={certificateConfig.hoursColor} onChange={e => setCertificateConfig({ ...certificateConfig, hoursColor: e.target.value })} />
+                              </div>
+                            </div>
+                          </div>
+
+                          <CertificatePreview
+                            templateImage={certificateTemplatePreviewUrl || getAssetUrl(editingEvent.certificateTemplateUrl)}
+                            config={certificateConfig}
+                            onConfigChange={setCertificateConfig}
+                          />
+
+                          <Button type="submit" disabled={uploadCertificateMutation.isPending} className="w-full">
+                            <Upload className="h-4 w-4 mr-2" /> Salvar Certificado
+                          </Button>
+                        </form>
+
+                        <div className="mt-6">
+                          <h4 className="font-semibold mb-2">Histórico de Envios</h4>
+                          <div className="border rounded-lg max-h-48 overflow-y-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Nome</TableHead>
+                                  <TableHead>Status</TableHead>
+                                  <TableHead>Data</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {logsLoading ? (
+                                  <TableRow><TableCell colSpan={3}>Carregando...</TableCell></TableRow>
+                                ) : certificateLogs?.map(log => (
+                                  <TableRow key={log.userId}>
+                                    <TableCell>{log.userName}</TableCell>
+                                    <TableCell>{log.status}</TableCell>
+                                    <TableCell>{log.sentAt ? new Date(log.sentAt).toLocaleDateString() : '-'}</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="staff" className="space-y-4 py-4">
+                    {editingEvent && (
+                      <EventStaffManager eventId={editingEvent.id} />
+                    )}
+                  </TabsContent>
+                </Tabs>
               </DialogContent>
             </Dialog>
           </div>

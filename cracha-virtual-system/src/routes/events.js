@@ -19,6 +19,12 @@ const {
   getEventQuestions,
 } = require("../controllers/eventController");
 
+const {
+  addStaffToEvent,
+  removeStaffFromEvent,
+  getEventStaff,
+} = require("../controllers/eventStaffController");
+
 const { authenticateToken, authenticateOptional, requireAdmin } = require("../middleware/auth"); // <-- Update import
 
 const {
@@ -28,6 +34,28 @@ const {
   uploadSpeakerPhoto,
 } = require("../middleware/upload");
 const { cacheMiddleware } = require("../services/cacheService");
+
+// --- ROTAS DE STAFF (EQUIPE) ---
+router.post(
+  "/:eventId/staff",
+  authenticateToken,
+  requireAdmin,
+  addStaffToEvent
+);
+
+router.delete(
+  "/:eventId/staff/:userId",
+  authenticateToken,
+  requireAdmin,
+  removeStaffFromEvent
+);
+
+router.get(
+  "/:eventId/staff",
+  authenticateToken,
+  requireAdmin,
+  getEventStaff
+);
 
 // Listar todos os eventos (público - authentication optional)
 router.get("/", authenticateOptional, cacheMiddleware(60), getAllEvents);
@@ -118,5 +146,7 @@ router.get(
   authenticateToken,
   getEventQuestions
 );
+
+
 
 module.exports = router;

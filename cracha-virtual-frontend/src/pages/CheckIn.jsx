@@ -64,13 +64,15 @@ const CheckIn = () => {
     },
   });
 
-  // NOVO: Filtra os eventos para mostrar apenas os que estão "Em Andamento"
+  // Filtra os eventos para mostrar apenas os "Ativos" (Próximos ou Em Andamento)
   const ongoingEvents = eventsData?.events?.filter((event) => {
     const now = new Date();
-    const start = new Date(event.startDate);
+    // O evento permanece visível até 4 horas depois de terminar (mesmo critério do backend)
+    const visibilityThreshold = new Date(now.getTime() - 4 * 60 * 60 * 1000);
     const end = new Date(event.endDate);
-    // Retorna true apenas se a data/hora atual estiver ENTRE o início e o fim
-    return start <= now && end >= now;
+
+    // Mostra se o evento ainda não terminou ou terminou há menos de 4 horas
+    return end >= visibilityThreshold;
   });
 
   // Buscar usuários por nome
@@ -287,12 +289,18 @@ const CheckIn = () => {
           {/* Prepara as opções para o Combobox */}
           {(() => {
             const eventOptions =
-              ongoingEvents?.map((event) => ({
-                value: event.id,
-                label: `${event.title} - ${new Date(
-                  event.startDate
-                ).toLocaleDateString("pt-BR")}`,
-              })) || [];
+              ongoingEvents?.map((event) => {
+                const now = new Date();
+                const start = new Date(event.startDate);
+                const status = now >= start ? "(Em Andamento)" : "(Próximo)";
+
+                return {
+                  value: event.id,
+                  label: `${event.title} ${status} - ${new Date(
+                    event.startDate
+                  ).toLocaleDateString("pt-BR")}`,
+                };
+              }) || [];
 
             return (
               <Combobox

@@ -6,6 +6,8 @@ O **Prof Presente** é uma plataforma completa para gerenciamento de eventos edu
 
 ### 📅 Gestão Avançada de Eventos
 - **Criação e Edição:** Configure título, descrição, datas, local e limite de vagas.
+- **Gestão de Equipe (Staff):** Vincule Coordenadores de Check-in e Palestrantes a eventos específicos.
+- **Visibilidade Inteligente:** Coordenadores e Palestrantes visualizam apenas os eventos aos quais estão vinculados, simplificando a operação.
 - **Página Pública do Evento:**
   - Visualização rica com **Imagem de Capa** personalizada.
   - **Mapa Interativo (Google Maps)** integrado para fácil localização.
@@ -17,11 +19,16 @@ O **Prof Presente** é uma plataforma completa para gerenciamento de eventos edu
 - **Crachás Digitais:** Geração automática de crachás com QR Code.
 - **Templates Personalizáveis:** Editor visual para posicionar nome, QR code e logo no crachá.
 - **App de Check-in:** (Módulo Facial/QR) Leitura ágil na entrada do evento.
+- **Filtros Adaptativos:** Lista de eventos para check-in inclui eventos "Próximos", permitindo preparação da equipe.
 
 ### 📜 Certificados Automatizados
 - **Editor de Certificados:** Upload de modelo de fundo e configuração dinâmica (Nome, Carga Horária, Data).
 - **Envio Automático:** Disparo de certificados por e-mail para participantes com presença confirmada.
 - **Histórico:** Logs de envio para garantir que todos receberam.
+
+### ⚡ Performance e Confiabilidade
+- **Invalidação de Cache:** Sistema inteligente que limpa o cache do Redis automaticamente ao alterar a equipe de um evento.
+- **Busca Otimizada:** Componente de busca de usuários com auto-complete para facilitar a gestão de equipes.
 
 ### 📊 Painel Administrativo
 - **Dashboard:** Estatísticas de eventos, inscritos e presença em tempo real.

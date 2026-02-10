@@ -26,6 +26,7 @@ async function main() {
     await prisma.courseEvaluation.deleteMany();
     await prisma.userCheckin.deleteMany();
     await prisma.userAward.deleteMany();
+    await prisma.eventStaff.deleteMany();
     await prisma.userBadge.deleteMany();
     await prisma.enrollment.deleteMany();
     await prisma.award.deleteMany();
@@ -49,7 +50,7 @@ async function main() {
         address: "Rua Admin, 123, São Paulo, SP",
       },
     });
-    /*
+
     const users = [];
     const userNames = [
       "João Silva",
@@ -70,7 +71,7 @@ async function main() {
           name: userNames[i],
           email: `user${i + 1}@cracha.com`,
           password: hashedPassword,
-          role: "USER",
+          role: "TEACHER", // Role válida
           birthDate: new Date(
             1990 + Math.floor(Math.random() * 20),
             Math.floor(Math.random() * 12),
@@ -84,9 +85,8 @@ async function main() {
             "0"
           )}`,
           phone: `(11) 9999${String(i + 1).padStart(4, "0")}`,
-          address: `Rua ${userNames[i].split(" ")[0]}, ${
-            (i + 1) * 10
-          }, São Paulo, SP`,
+          address: `Rua ${userNames[i].split(" ")[0]}, ${(i + 1) * 10
+            }, São Paulo, SP`,
         },
       });
       users.push(user);
@@ -102,8 +102,8 @@ async function main() {
         title: "Conferência de Tecnologia (Evento Passado)",
         description:
           "O maior evento de tecnologia do ano com palestrantes renomados e workshops práticos.",
-        startDate: getDynamicDate(30, true), // 30 dias no passado
-        endDate: getDynamicDate(28, true), // 28 dias no passado
+        startDate: getDynamicDate(30, true),
+        endDate: getDynamicDate(28, true),
         location: "Centro de Convenções Anhembi, São Paulo",
         maxAttendees: 500,
       },
@@ -111,8 +111,8 @@ async function main() {
         title: "Workshop de React e Node.js (Em Andamento)",
         description:
           "Workshop intensivo de desenvolvimento full-stack com React no frontend e Node.js no backend.",
-        startDate: getDynamicDate(1, true), // Ontem
-        endDate: getDynamicDate(1, false), // Amanhã
+        startDate: getDynamicDate(1, true),
+        endDate: getDynamicDate(1, false),
         location: "Laboratório de Informática - FIAP",
         maxAttendees: 50,
       },
@@ -120,8 +120,8 @@ async function main() {
         title: "Seminário de Inteligência Artificial (Próximo)",
         description:
           "Explore o futuro da IA com especialistas da área. Discussões sobre machine learning e deep learning.",
-        startDate: getDynamicDate(15, false), // Daqui a 15 dias
-        endDate: getDynamicDate(15, false), // Mesmo dia
+        startDate: getDynamicDate(15, false),
+        endDate: getDynamicDate(15, false),
         location: "Auditório da USP, São Paulo",
         maxAttendees: 200,
       },
@@ -129,8 +129,8 @@ async function main() {
         title: "Curso de DevOps e Cloud Computing (Futuro)",
         description:
           "Curso completo sobre DevOps, containerização com Docker, Kubernetes e deploy em nuvem AWS.",
-        startDate: getDynamicDate(45, false), // Daqui a 45 dias
-        endDate: getDynamicDate(49, false), // Dura 4 dias
+        startDate: getDynamicDate(45, false),
+        endDate: getDynamicDate(49, false),
         location: "Centro de Treinamento TechLab",
         maxAttendees: 30,
       },
@@ -138,8 +138,8 @@ async function main() {
         title: "Hackathon Inovação Digital (Futuro Distante)",
         description:
           "48 horas de pura criatividade e código. Desenvolva soluções inovadoras para problemas reais.",
-        startDate: getDynamicDate(90, false), // Daqui a 90 dias
-        endDate: getDynamicDate(92, false), // Dura 2 dias
+        startDate: getDynamicDate(90, false),
+        endDate: getDynamicDate(92, false),
         location: "Hub de Inovação - Vila Madalena",
         maxAttendees: 100,
       },
@@ -150,7 +150,7 @@ async function main() {
     );
     const events = await Promise.all(eventPromises);
     console.log(`✅ Criados ${events.length} eventos`);
-*/
+
     // Criar premiações
     console.log("🏆 Criando premiações...");
 
@@ -194,17 +194,14 @@ async function main() {
       });
       awards.push(award);
     }
-
     console.log(`✅ Criadas ${awards.length} premiações`);
-    /*
+
     // Criar inscrições
     console.log("📝 Criando inscrições...");
-
     const enrollments = [];
 
-    // Inscrever usuários em eventos (distribuição aleatória)
     for (const user of users) {
-      const numEnrollments = Math.floor(Math.random() * 3) + 1; // 1-3 inscrições por usuário
+      const numEnrollments = Math.floor(Math.random() * 3) + 1;
       const userEvents = events
         .sort(() => 0.5 - Math.random())
         .slice(0, numEnrollments);
@@ -214,208 +211,189 @@ async function main() {
           data: {
             userId: user.id,
             eventId: event.id,
-            status: Math.random() > 0.1 ? "APPROVED" : "PENDING", // 90% aprovadas
+            status: Math.random() > 0.1 ? "APPROVED" : "PENDING",
             enrollmentDate: new Date(
               Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000
-            ), // Últimos 30 dias
+            ),
           },
         });
         enrollments.push(enrollment);
       }
     }
-
     console.log(`✅ Criadas ${enrollments.length} inscrições`);
 
-    // Criar crachás para inscrições aprovadas
+    // Criar crachás (UM POR USUÁRIO)
     console.log("🎫 Criando crachás...");
-
-    const approvedEnrollments = enrollments.filter(
-      (e) => e.status === "APPROVED"
-    );
     const badges = [];
-
-    // Garantir que o diretório de QR codes existe
     const qrCodeDir = path.join(process.cwd(), "uploads", "qrcodes");
     await fs.mkdir(qrCodeDir, { recursive: true });
 
-    for (const enrollment of approvedEnrollments) {
-      // Dados para o QR code
+    for (const user of users) {
       const qrData = {
-        enrollmentId: enrollment.id,
-        userId: enrollment.userId,
-        eventId: enrollment.eventId,
+        userId: user.id,
         timestamp: Date.now(),
       };
 
-      // Gerar QR code
-      const qrCodeFileName = `badge_${enrollment.id}.png`;
+      const qrCodeFileName = `badge_${user.id}.png`;
       const qrCodePath = path.join(qrCodeDir, qrCodeFileName);
 
       await QRCode.toFile(qrCodePath, JSON.stringify(qrData), {
         width: 300,
         margin: 2,
-        color: {
-          dark: "#000000",
-          light: "#FFFFFF",
-        },
+        color: { dark: "#000000", light: "#FFFFFF" },
       });
 
-      // Criar crachá
-      const badge = await prisma.badge.create({
+      // Verifica se o usuário tem inscrições aprovadas antes de criar crachá?
+      // Opcional. Vamos criar para todos os usuários de teste para facilitar.
+      const badge = await prisma.userBadge.create({
         data: {
-          enrollmentId: enrollment.id,
+          userId: user.id,
           qrCodeUrl: `/uploads/qrcodes/${qrCodeFileName}`,
-          badgeImageUrl: `/uploads/badges/badge_${enrollment.id}.png`, // Placeholder
-          issuedAt: new Date(),
-          validUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // Válido por 1 ano
+          badgeImageUrl: `/uploads/badges/placeholder.png`,
+          badgeCode: `BADGE-${user.id.substring(0, 8).toUpperCase()}`,
         },
       });
       badges.push(badge);
     }
-
-    console.log(`✅ Criados ${badges.length} crachás com QR codes`);
+    console.log(`✅ Criados ${badges.length} crachás para usuários`);
 
     // Criar check-ins
     console.log("✅ Criando check-ins...");
-
     const checkins = [];
 
-    // Simular check-ins para alguns crachás
     for (const badge of badges) {
-      if (Math.random() > 0.3) {
-        // 70% dos crachás têm check-in
-        const numCheckins = Math.floor(Math.random() * 3) + 1; // 1-3 check-ins por crachá
+      // Buscar eventos em que o usuário está inscrito e APROVADO
+      const userEnrollments = await prisma.enrollment.findMany({
+        where: {
+          userId: badge.userId,
+          status: "APPROVED"
+        }
+      });
 
-        for (let i = 0; i < numCheckins; i++) {
-          const checkin = await prisma.checkin.create({
+      // Se tiver inscrições, criar checkins aleatórios
+      if (userEnrollments.length > 0) {
+        // Checkin em 1 ou 2 eventos
+        const eventsToCheckin = userEnrollments.slice(0, 2);
+        for (const enrollment of eventsToCheckin) {
+          const checkin = await prisma.userCheckin.create({
             data: {
-              badgeId: badge.id,
-              checkinTime: new Date(
-                Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000
-              ), // Últimos 7 dias
-              location: "Entrada Principal",
-            },
+              userBadgeId: badge.id,
+              eventId: enrollment.eventId,
+              checkinTime: new Date(Date.now() - Math.random() * 10000000),
+              location: "Recepção"
+            }
           });
           checkins.push(checkin);
         }
       }
     }
-
     console.log(`✅ Criados ${checkins.length} check-ins`);
 
     // Conceder premiações automáticas
     console.log("🏅 Concedendo premiações...");
-
     const userAwards = [];
 
     for (const user of users) {
-      const userCheckins = await prisma.checkin.count({
-        where: {
-          badge: {
-            enrollment: {
-              userId: user.id,
-            },
-          },
-        },
+      const userCheckins = await prisma.userCheckin.count({
+        where: { userBadge: { userId: user.id } },
       });
 
-      const userEvents = await prisma.enrollment.count({
-        where: {
-          userId: user.id,
-          status: "APPROVED",
-        },
+      const userEventsCount = await prisma.enrollment.count({
+        where: { userId: user.id, status: "APPROVED" },
       });
 
-      // Lógica de premiações
       const userAwardsToGrant = [];
-
-      if (userCheckins >= 1) {
-        userAwardsToGrant.push(
-          awards.find((a) => a.name === "Primeiro Check-in")
-        );
-      }
-
-      if (userEvents >= 3) {
-        userAwardsToGrant.push(
-          awards.find((a) => a.name === "Participante Assíduo")
-        );
-      }
-
-      if (userCheckins >= 5) {
-        userAwardsToGrant.push(
-          awards.find((a) => a.name === "Frequentador VIP")
-        );
-      }
-
-      if (userCheckins >= 10) {
-        userAwardsToGrant.push(
-          awards.find((a) => a.name === "Networking Master")
-        );
-      }
+      if (userCheckins >= 1) userAwardsToGrant.push(awards.find((a) => a.name === "Primeiro Check-in"));
+      if (userEventsCount >= 3) userAwardsToGrant.push(awards.find((a) => a.name === "Participante Assíduo"));
 
       for (const award of userAwardsToGrant.filter(Boolean)) {
-        const userAward = await prisma.userAward.create({
-          data: {
-            userId: user.id,
-            awardId: award.id,
-          },
+        const exists = await prisma.userAward.findUnique({
+          where: { userId_awardId: { userId: user.id, awardId: award.id } }
         });
-        userAwards.push(userAward);
+
+        if (!exists) {
+          const userAward = await prisma.userAward.create({
+            data: { userId: user.id, awardId: award.id },
+          });
+          userAwards.push(userAward);
+        }
       }
     }
-
     console.log(`✅ Concedidas ${userAwards.length} premiações`);
 
-   
-    // Criar algumas avaliações
+    // Avaliações
     console.log("⭐ Criando avaliações...");
-
     const evaluations = [];
+    const approvedEnrollments = enrollments.filter(e => e.status === "APPROVED");
 
-    // Avaliar eventos passados
-    const pastEnrollments = enrollments
-      .filter((e) => e.status === "APPROVED")
-      .slice(0, 10);
-
-    for (const enrollment of pastEnrollments) {
-      if (Math.random() > 0.4) {
-        // 60% das inscrições têm avaliação
-        const evaluation = await prisma.courseEvaluation.create({
-          data: {
-            enrollmentId: enrollment.id,
-            rating: Math.floor(Math.random() * 2) + 4, // 4-5 estrelas
-            comment: [
-              "Excelente evento, muito bem organizado!",
-              "Conteúdo de alta qualidade e palestrantes experientes.",
-              "Superou minhas expectativas, recomendo!",
-              "Ótima oportunidade de networking.",
-              "Aprendi muito, valeu a pena participar.",
-            ][Math.floor(Math.random() * 5)],
-          },
-        });
-        evaluations.push(evaluation);
-      }
+    for (const enrollment of approvedEnrollments.slice(0, 10)) {
+      const evaluation = await prisma.courseEvaluation.create({
+        data: {
+          enrollmentId: enrollment.id,
+          rating: 5,
+          comment: "Ótimo evento!"
+        }
+      });
+      evaluations.push(evaluation);
     }
-
     console.log(`✅ Criadas ${evaluations.length} avaliações`);
-*/
-    // Estatísticas finais
-    console.log("\n📊 Resumo dos dados criados:");
-    console.log(`👥 Usuários: 1 admin)`);
-    //console.log(`📅 Eventos: ${events.length}`);
-    console.log(`🏆 Premiações: ${awards.length}`);
-    //console.log(`📝 Inscrições: ${enrollments.length}`);
-    //console.log(`🎫 Crachás: ${badges.length}`);
-    //console.log(`✅ Check-ins: ${checkins.length}`);
-    //console.log(`🏅 Premiações concedidas: ${userAwards.length}`);
-    //console.log(`⭐ Avaliações: ${evaluations.length}`);
+
+    // --- STAFF ---
+    console.log("👔 Criando staff de teste...");
+
+    const coordinatorUser = await prisma.user.create({
+      data: {
+        name: "Coordenador Checkin",
+        email: "coord@cracha.com",
+        password: hashedPassword,
+        role: "CHECKIN_COORDINATOR",
+        birthDate: new Date("1990-01-01"),
+        cpf: "999.999.999-99",
+        phone: "(11) 98888-8888",
+        address: "Rua do Staff, 100",
+      },
+    });
+
+    const speakerUser = await prisma.user.create({
+      data: {
+        name: "Palestrante Real",
+        email: "speaker@cracha.com",
+        password: hashedPassword,
+        role: "SPEAKER",
+        birthDate: new Date("1980-01-01"),
+        cpf: "888.888.888-88",
+        phone: "(11) 97777-7777",
+        address: "Av. do Conhecimento, 200",
+      },
+    });
+
+    const targetEvent = events[1];
+    if (targetEvent) {
+      await prisma.eventStaff.create({
+        data: {
+          userId: coordinatorUser.id,
+          eventId: targetEvent.id,
+          role: "CHECKIN_COORDINATOR",
+        },
+      });
+
+      await prisma.eventStaff.create({
+        data: {
+          userId: speakerUser.id,
+          eventId: targetEvent.id,
+          role: "SPEAKER",
+        },
+      });
+      console.log(`✅ Staff vinculado ao evento: ${targetEvent.title}`);
+    }
 
     console.log("\n🎉 Seed concluído com sucesso!");
     console.log("\n📋 Credenciais de acesso:");
     console.log("👨‍💼 Admin: admin@cracha.com / 123456");
-    console.log(
-      "👤 Usuário: user1@cracha.com / 123456 (ou user2, user3, etc.)"
-    );
+    console.log("👔 Coordenador: coord@cracha.com / 123456");
+    console.log("🎤 Palestrante: speaker@cracha.com / 123456");
+    console.log("👤 Usuário: user1@cracha.com / 123456");
+
   } catch (error) {
     console.error("❌ Erro durante o seed:", error);
     throw error;
@@ -426,5 +404,4 @@ async function main() {
 
 main().catch((e) => {
   console.error(e);
-  process.exit(1);
 });

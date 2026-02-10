@@ -114,6 +114,7 @@ model User {
   createdEvents Event[] @relation("CreatedEvents") // Eventos criados pelo usuário
   questions     Question[]
   wonGiveaways  Giveaway[]
+  staffEvents   EventStaff[]
 
 
   @@index([email])
@@ -180,6 +181,7 @@ model Event {
   enrollments Enrollment[]
   questions   Question[]
   giveaways   Giveaway[]
+  staff       EventStaff[]
 
   @@index([startDate])
   @@index([endDate])
@@ -336,4 +338,21 @@ model CertificateLog {
 
   @@index([eventId])
   @@index([userId])
+}
+
+model EventStaff {
+  id        String   @id @default(uuid())
+  userId    String
+  eventId   String
+  role      UserRole // CHECKIN_COORDINATOR ou SPEAKER
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@index([userId])
+  @@index([eventId])
+  @@index([role])
+  @@map("event_staff")
 }

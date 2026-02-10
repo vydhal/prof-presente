@@ -164,3 +164,11 @@
 - [ ] 16.5. Criar testes unitários para fluxo de inscrição.
 - [ ] 16.6. Implementar Rate Limiting na API (`express-rate-limit`).
 - [ ] 16.7. Implementar `helmet` para segurança de headers HTTP.
+
+### Fase 17: Vínculo de Staff e Visibilidade Dinâmica ✅
+- [x] 17.1. Criar modelo `EventStaff` no Prisma para vinculação de usuários a eventos.
+- [x] 17.2. Desenvolver endpoints para adicionar/remover membros da equipe.
+- [x] 17.3. Implementar filtragem de eventos baseada em vínculo para Coordenadores e Palestrantes.
+- [x] 17.4. Desenvolver componente `EventStaffManager` com busca de usuários (Combobox).
+- [x] 17.5. Implementar sistema de invalidação de cache (Redis) para atualizações em tempo real.
+- [x] 17.6. Relaxar filtros de visualização no frontend para permitir preparação da equipe.
