@@ -8,8 +8,8 @@ const activeMedia = new Map();
 const setupSockets = (server) => {
   const io = new Server(server, {
     cors: {
-      origin: process.env.NODE_ENV === "production" 
-        ? "https://checkin.simplisoft.com.br" 
+      origin: process.env.NODE_ENV === "production"
+        ? "https://checkin.simplisoft.com.br"
         : ["http://localhost:5173", "http://localhost:3001"],
       methods: ["GET", "POST"],
     },
@@ -18,7 +18,7 @@ const setupSockets = (server) => {
   // Global monitoring
   io.on("connection", (socket) => {
     console.log(`[SOCKET-DEBUG] Novo socket conectado: ${socket.id}`);
-    
+
     socket.onAny((eventName, ...args) => {
       console.log(`[SOCKET-INCOMING] De: ${socket.id} | Evento: ${eventName}`, args);
     });
@@ -27,29 +27,29 @@ const setupSockets = (server) => {
     socket.on("join_event_room", async ({ eventId, user }) => {
       socket.join(eventId);
       console.log(`[SOCKET] Usuário ${user?.name || socket.id} entrou na sala ${eventId}`);
-      
+
       // Sincronizar estado atual assim que entrar
       try {
         // 1. Buscar pergunta em destaque no DB
         const highlightedQuestion = await prisma.question.findFirst({
-            where: { eventId, isHighlighted: true },
-            include: { user: { select: { name: true, photoUrl: true } } }
+          where: { eventId, isHighlighted: true },
+          include: { user: { select: { name: true, photoUrl: true } } }
         });
         if (highlightedQuestion) {
-            console.log(`[SOCKET] Sincronizando pergunta para ${socket.id}`);
-            socket.emit("question_highlighted", highlightedQuestion);
+          console.log(`[SOCKET] Sincronizando pergunta para ${socket.id}`);
+          socket.emit("question_highlighted", highlightedQuestion);
         }
 
         // 2. Buscar mídia em destaque na memória
         const currentMedia = activeMedia.get(eventId);
         if (currentMedia) {
-            console.log(`[SOCKET] Sincronizando mídia para ${socket.id}`);
-            socket.emit("media_highlighted", currentMedia);
+          console.log(`[SOCKET] Sincronizando mídia para ${socket.id}`);
+          socket.emit("media_highlighted", currentMedia);
         }
       } catch (err) {
         console.error("[SOCKET] Erro ao sincronizar estado inicial:", err);
       }
-      
+
       const roomSize = io.sockets.adapter.rooms.get(eventId)?.size || 0;
       console.log(`[SOCKET] Sala ${eventId} agora tem ${roomSize} participantes`);
       io.to(eventId).emit("room_update", { onlineCount: roomSize });
@@ -139,27 +139,27 @@ const setupSockets = (server) => {
 
     socket.on("highlight_media", ({ eventId, media }) => {
       console.log(`[SOCKET] Projetando mídia na sala ${eventId}:`, media);
-      
+
       // Salvar no estado global
       if (media) {
-          activeMedia.set(eventId, media);
+        activeMedia.set(eventId, media);
       } else {
-          activeMedia.delete(eventId);
+        activeMedia.delete(eventId);
       }
 
       // media: { type: 'youtube' | 'pdf' | 'web', url: '...' }
       io.to(eventId).emit("media_highlighted", activeMedia.get(eventId) || null);
-      
+
       const roomSize = io.sockets.adapter.rooms.get(eventId)?.size || 0;
       if (roomSize === 0) {
-          console.warn(`[SOCKET] Alerta: Mídia enviada para sala ${eventId} que não tem participantes!`);
+        console.warn(`[SOCKET] Alerta: Mídia enviada para sala ${eventId} que não tem participantes!`);
       }
     });
 
     // --- SORTEIOS (GIVEAWAYS) ---
     // --- SORTEIOS (GIVEAWAYS) ---
     socket.on("prepare_giveaway", ({ eventId, config, prize }) => {
-       io.to(eventId).emit("giveaway_prepared", { config, prize: prize || "Sorteio" });
+      io.to(eventId).emit("giveaway_prepared", { config, prize: prize || "Sorteio" });
     });
 
     socket.on("start_giveaway", async ({ eventId, config, prize }) => {
@@ -168,75 +168,80 @@ const setupSockets = (server) => {
       let displayTitle = prize || "Vencedor(a)";
 
       if (config) {
-          const qty = parseInt(config.quantity) || 1;
-          const options = config.options || {};
+        const qty = parseInt(config.quantity) || 1;
+        const options = config.options || {};
 
-          if (config.type === 'numbers') {
-               const min = parseInt(config.min);
-               const max = parseInt(config.max);
-               
-               let results = [];
-               if (options.allowRepeat) {
-                   for(let i=0; i<qty; i++) {
-                       results.push(Math.floor(Math.random() * (max - min + 1)) + min);
-                   }
-               } else {
-                   // Unique Random Numbers
-                   const pool = Array.from({length: max - min + 1}, (_, i) => i + min);
-                   const shuffled = pool.sort(() => 0.5 - Math.random());
-                   results = shuffled.slice(0, qty);
-               }
-               
-               if (options.sortResults) {
-                   results.sort((a, b) => a - b);
-               }
+        if (config.type === 'numbers') {
+          const min = parseInt(config.min);
+          const max = parseInt(config.max);
 
-               displayResult = results.join(", ");
-               winner = { name: displayResult }; 
-               // If no prize name, default to context
-               if (!prize) displayTitle = qty > 1 ? "Números Sorteados" : "Número Sorteado";
-          } 
-          else if (config.type === 'names') {
-               const items = config.items;
-               
-               if (items && items.length > 0) {
-                   let selected = [];
-                   if (options.allowRepeat) {
-                       for(let i=0; i<qty; i++) {
-                           selected.push(items[Math.floor(Math.random() * items.length)]);
-                       }
-                   } else {
-                       const shuffled = [...items].sort(() => 0.5 - Math.random());
-                       selected = shuffled.slice(0, qty);
-                   }
-                   
-                   if (options.sortResults) {
-                       selected.sort(); // Alphabetical sort
-                   }
-
-                   displayResult = selected.join(" e ");
-                   winner = { name: displayResult };
-                   if (!prize) displayTitle = qty > 1 ? "Vencedores" : "Vencedor(a)";
-               } else {
-                   winner = { name: "Lista Vazia" };
-                   displayTitle = "Erro";
-               }
+          let results = [];
+          if (options.allowRepeat) {
+            for (let i = 0; i < qty; i++) {
+              results.push(Math.floor(Math.random() * (max - min + 1)) + min);
+            }
+          } else {
+            // Unique Random Numbers
+            const pool = Array.from({ length: max - min + 1 }, (_, i) => i + min);
+            const shuffled = pool.sort(() => 0.5 - Math.random());
+            results = shuffled.slice(0, qty);
           }
+
+          if (options.sortResults) {
+            results.sort((a, b) => a - b);
+          }
+
+          displayResult = results.join(", ");
+          winner = { name: displayResult };
+          // If no prize name, default to context
+          if (!prize) displayTitle = qty > 1 ? "Números Sorteados" : "Número Sorteado";
+        }
+        else if (config.type === 'names') {
+          const items = config.items;
+
+          if (items && items.length > 0) {
+            let selected = [];
+            if (options.allowRepeat) {
+              for (let i = 0; i < qty; i++) {
+                selected.push(items[Math.floor(Math.random() * items.length)]);
+              }
+            } else {
+              const shuffled = [...items].sort(() => 0.5 - Math.random());
+              selected = shuffled.slice(0, qty);
+            }
+
+            if (options.sortResults) {
+              selected.sort(); // Alphabetical sort
+            }
+
+            displayResult = selected.join(" e ");
+            winner = { name: displayResult };
+            if (!prize) displayTitle = qty > 1 ? "Vencedores" : "Vencedor(a)";
+          } else {
+            winner = { name: "Lista Vazia" };
+            displayTitle = "Erro";
+          }
+        }
       } else {
-         winner = { name: "Configuração inválida" };
+        winner = { name: "Configuração inválida" };
       }
 
       io.to(eventId).emit("giveaway_started", { prize: prize || "Sorteando..." });
-      
+
       const duration = (config?.options?.countdown === false) ? 0 : 4000;
-      
+
       setTimeout(() => {
-          io.to(eventId).emit("giveaway_winner", { 
-              winner, 
-              prize: displayTitle, 
-              config 
-          });
-      }, duration); 
+        io.to(eventId).emit("giveaway_winner", {
+          winner,
+          prize: displayTitle,
+          config
+        });
+      }, duration);
+    });
+
+    socket.on("slide_action", ({ eventId, action }) => {
+      console.log(`[SOCKET] Slide Action na sala ${eventId}: ${action}`);
+      io.to(eventId).emit("slide_action_triggered", { action });
     });
 
     socket.on("disconnect", () => {

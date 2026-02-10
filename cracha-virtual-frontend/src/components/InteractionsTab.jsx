@@ -26,7 +26,10 @@ import {
     User,
     Check,
     X,
-    Info
+    Info,
+    ChevronLeft,
+    ChevronRight,
+    Maximize2
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -35,7 +38,7 @@ import {
     DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { toast } from "sonner";
-import { eventsAPI } from "../lib/api";
+import api, { eventsAPI } from "../lib/api";
 
 const InteractionsTab = ({ eventId, isEnrollmentApproved }) => {
     const socket = useSocket();
@@ -44,6 +47,8 @@ const InteractionsTab = ({ eventId, isEnrollmentApproved }) => {
     const [newQuestion, setNewQuestion] = useState("");
     const [mediaLink, setMediaLink] = useState("");
     const [mediaType, setMediaType] = useState("youtube"); // youtube | pdf | web
+    const [activeMedia, setActiveMedia] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
 
     const isModerator = user?.role === "ADMIN" || user?.role === "SPEAKER" || user?.role === "ORGANIZER";
 
@@ -82,12 +87,23 @@ const InteractionsTab = ({ eventId, isEnrollmentApproved }) => {
             );
         });
 
+        socket.on("media_highlighted", (media) => {
+            console.log("[SOCKET] Mídia em destaque atualizada:", media);
+            setActiveMedia(media);
+        });
+
         return () => {
             socket.off("question_received");
             socket.off("question_updated");
             socket.off("question_highlighted");
+            socket.off("media_highlighted");
         };
     }, [socket, eventId, user]);
+
+    const handleSlideAction = (action) => {
+        if (!socket || !eventId) return;
+        socket.emit("slide_action", { eventId, action });
+    };
 
     const handleSendQuestion = () => {
         if (!newQuestion.trim()) return;
@@ -116,26 +132,57 @@ const InteractionsTab = ({ eventId, isEnrollmentApproved }) => {
         socket.emit("toggle_approval", { questionId, eventId, isApproved: !currentStatus });
     };
 
-    const handleSendMedia = () => {
-        if (!mediaLink.trim()) return;
+    const handlePresentationUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file || !eventId) return;
+
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append("presentation", file);
+
+        try {
+            const response = await api.post(`/events/${eventId}/presentation`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            const url = response.data.url;
+            handleSendMedia(url, 'pdf');
+            toast.success("Apresentação carregada!");
+        } catch (error) {
+            console.error("Erro no upload:", error);
+            toast.error("Falha ao subir arquivo.");
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const handleSendMedia = (url = mediaLink, type = mediaType) => {
+        if (!url.trim()) return;
         const payload = {
             eventId,
-            media: { type: mediaType, url: mediaLink }
+            media: { type, url }
         };
-        console.log("[DEBUG] Enviando highlight_media:", payload);
         socket.emit("highlight_media", payload);
-        setMediaLink(""); // Reset input
+        if (type !== 'pdf') setMediaLink("");
         toast.success("Mídia enviada para o telão!");
     };
 
-    const handleClearMedia = () => {
-        const payload = {
-            eventId,
-            media: null
-        };
-        console.log("[DEBUG] Enviando clear_media:", payload);
-        socket.emit("highlight_media", payload);
-        toast.info("Limpando mídia do telão...");
+    const handleClearMedia = async () => {
+        if (!socket || !eventId) return;
+
+        // Cleanup: Se for um PDF subido pelo usuário, tentar limpar do servidor
+        if (activeMedia?.type === 'pdf' && activeMedia?.url?.includes('/uploads/presentations/')) {
+            try {
+                await api.delete(`/events/${eventId}/presentation`, {
+                    data: { url: activeMedia.url }
+                });
+            } catch (err) {
+                console.warn("[CLEANUP] Erro ao limpar arquivo:", err);
+            }
+        }
+
+        socket.emit("highlight_media", { eventId, media: null });
+        toast.info("Limpando mídia...");
     };
 
     // Sort and Filter questions
@@ -346,22 +393,45 @@ const InteractionsTab = ({ eventId, isEnrollmentApproved }) => {
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">URL do Conteúdo</label>
                                             <div className="flex gap-2">
-                                                <Input
-                                                    placeholder={
-                                                        mediaType === "youtube" ? "https://youtube.com/watch?v=..." :
-                                                            mediaType === "pdf" ? "Link para o arquivo PDF/Google Slides..." :
+                                                {mediaType === 'pdf' ? (
+                                                    <div className="flex-1">
+                                                        <input
+                                                            type="file"
+                                                            id="presentation-upload"
+                                                            className="hidden"
+                                                            accept=".pdf,.ppt,.pptx"
+                                                            onChange={handlePresentationUpload}
+                                                            disabled={isUploading}
+                                                        />
+                                                        <Button
+                                                            variant="outline"
+                                                            className="w-full h-12 border-dashed border-2 border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-black/40 text-slate-600 dark:text-slate-400 font-bold gap-2 hover:border-blue-500 hover:text-blue-500 transition-all"
+                                                            onClick={() => document.getElementById('presentation-upload').click()}
+                                                            disabled={isUploading}
+                                                        >
+                                                            <Plus className="w-5 h-5" />
+                                                            {isUploading ? "Subindo..." : "Selecionar PDF/PPT da Apresentação"}
+                                                        </Button>
+                                                    </div>
+                                                ) : (
+                                                    <Input
+                                                        placeholder={
+                                                            mediaType === "youtube" ? "https://youtube.com/watch?v=..." :
                                                                 "https://exemplo.com"
-                                                    }
-                                                    className="bg-slate-50 dark:bg-black/40 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 h-12 rounded-xl focus:ring-blue-500 transition-all"
-                                                    value={mediaLink}
-                                                    onChange={(e) => setMediaLink(e.target.value)}
-                                                />
-                                                <Button
-                                                    className="bg-blue-600 hover:bg-blue-700 h-12 px-8 font-bold shadow-lg shadow-blue-900/20"
-                                                    onClick={handleSendMedia}
-                                                >
-                                                    Projetar
-                                                </Button>
+                                                        }
+                                                        className="bg-slate-50 dark:bg-black/40 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 h-12 rounded-xl focus:ring-blue-500 transition-all"
+                                                        value={mediaLink}
+                                                        onChange={(e) => setMediaLink(e.target.value)}
+                                                    />
+                                                )}
+                                                {mediaType !== 'pdf' && (
+                                                    <Button
+                                                        className="bg-blue-600 hover:bg-blue-700 h-12 px-8 font-bold shadow-lg shadow-blue-900/20"
+                                                        onClick={() => handleSendMedia()}
+                                                    >
+                                                        Projetar
+                                                    </Button>
+                                                )}
                                                 <Button
                                                     variant="outline"
                                                     className="border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 h-12 px-4"
@@ -372,6 +442,47 @@ const InteractionsTab = ({ eventId, isEnrollmentApproved }) => {
                                             </div>
                                         </div>
                                     </div>
+
+                                    {activeMedia && (
+                                        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 animate-in fade-in slide-in-from-top-4 duration-500">
+                                            <div className="bg-slate-900 dark:bg-black rounded-2xl p-6 shadow-xl border border-blue-500/30">
+                                                <div className="flex items-center justify-between mb-6">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] mb-1">Controle de Slides</span>
+                                                        <h4 className="text-sm font-bold text-white truncate max-w-[200px]">
+                                                            {activeMedia.url?.split('/').pop() || "Apresentação Ativa"}
+                                                        </h4>
+                                                    </div>
+                                                    <Badge variant="outline" className="bg-blue-500 text-white border-none animate-pulse">
+                                                        AO VIVO
+                                                    </Badge>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <Button
+                                                        variant="outline"
+                                                        className="h-20 bg-slate-800 hover:bg-slate-700 border-slate-700 text-white flex flex-col gap-2 rounded-2xl transition-all active:scale-95"
+                                                        onClick={() => handleSlideAction('prev')}
+                                                    >
+                                                        <ChevronLeft className="w-8 h-8" />
+                                                        <span className="text-[10px] font-black uppercase tracking-widest">Anterior</span>
+                                                    </Button>
+                                                    <Button
+                                                        className="h-20 bg-blue-600 hover:bg-blue-500 text-white flex flex-col gap-2 rounded-2xl shadow-lg shadow-blue-900/40 transition-all active:scale-95"
+                                                        onClick={() => handleSlideAction('next')}
+                                                    >
+                                                        <ChevronRight className="w-8 h-8" />
+                                                        <span className="text-[10px] font-black uppercase tracking-widest font-mono">PRÓXIMO</span>
+                                                    </Button>
+                                                </div>
+
+                                                <div className="mt-4 flex items-center justify-center gap-2 text-slate-500 text-[10px] font-medium uppercase tracking-widest">
+                                                    <Maximize2 className="w-3 h-3" />
+                                                    Dica: Use no modo paisagem no celular
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     <div className="bg-blue-50/50 dark:bg-slate-900/50 p-4 rounded-xl border border-blue-100 dark:border-slate-800 flex items-start gap-4 transition-colors">
                                         <div className="bg-blue-500/10 p-2 rounded-lg">

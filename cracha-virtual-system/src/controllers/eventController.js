@@ -884,6 +884,52 @@ const getEventQuestions = async (req, res) => {
   }
 };
 
+// Upload de arquivo de apresentação (PDF/PPT)
+const uploadPresentationFile = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "Nenhum arquivo enviado" });
+    }
+
+    // Retorna a URL pública para o frontend
+    const fileUrl = `/${req.file.path.replace(/\\/g, "/")}`;
+
+    res.json({
+      message: "Arquivo de apresentação enviado com sucesso",
+      url: fileUrl
+    });
+  } catch (error) {
+    console.error("Erro no upload da apresentação:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+};
+
+// Deletar arquivo de apresentação (Cleanup)
+const deletePresentationFile = async (req, res) => {
+  try {
+    const { url } = req.body;
+    if (!url) {
+      return res.status(400).json({ error: "URL do arquivo não fornecida" });
+    }
+
+    // O caminho deve ser relativo à raiz do projeto (onde está a pasta uploads)
+    // A URL vem como /uploads/presentations/filename.ext
+    const filePath = path.join(process.cwd(), url.startsWith("/") ? url.slice(1) : url);
+
+    try {
+      await fs.unlink(filePath);
+      console.log(`[CLEANUP] Arquivo removido: ${filePath}`);
+    } catch (err) {
+      console.warn(`[CLEANUP] Erro ao tentar remover arquivo (pode já não existir): ${err.message}`);
+    }
+
+    res.json({ message: "Limpeza concluída" });
+  } catch (error) {
+    console.error("Erro na limpeza da apresentação:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+};
+
 module.exports = {
   getAllEvents,
   getEventById,
@@ -899,5 +945,7 @@ module.exports = {
   uploadEventThumbnailController,
   uploadSpeakerPhotoController,
   getEventEnrollments,
-  getEventQuestions // Export here
+  getEventQuestions,
+  uploadPresentationFile,
+  deletePresentationFile
 };

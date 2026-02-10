@@ -11,6 +11,8 @@ const {
   uploadEventBadgeTemplate,
   generatePrintableBadges,
   uploadCertificateTemplate,
+  uploadPresentationFile,
+  deletePresentationFile,
   sendEventCertificates,
   getCertificateLogsForEvent,
   uploadEventThumbnailController,
@@ -25,15 +27,35 @@ const {
   getEventStaff,
 } = require("../controllers/eventStaffController");
 
-const { authenticateToken, authenticateOptional, requireAdmin } = require("../middleware/auth"); // <-- Update import
+const {
+  authenticateToken,
+  authenticateOptional,
+  requireAdmin
+} = require("../middleware/auth");
 
 const {
   uploadBadgeTemplate,
   uploadCertificate,
   uploadEventThumbnail,
   uploadSpeakerPhoto,
+  uploadPresentation,
 } = require("../middleware/upload");
+
 const { cacheMiddleware } = require("../services/cacheService");
+
+// --- ROTAS DE APRESENTAÇÃO (PDF/PPT) ---
+router.post(
+  "/:id/presentation",
+  authenticateToken,
+  uploadPresentation,
+  uploadPresentationFile
+);
+
+router.delete(
+  "/:id/presentation",
+  authenticateToken,
+  deletePresentationFile
+);
 
 // --- ROTAS DE STAFF (EQUIPE) ---
 router.post(
@@ -146,7 +168,6 @@ router.get(
   authenticateToken,
   getEventQuestions
 );
-
 
 
 module.exports = router;

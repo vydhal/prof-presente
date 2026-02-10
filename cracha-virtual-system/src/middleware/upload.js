@@ -186,6 +186,37 @@ const uploadSpeakerPhoto = multer({
   },
 }).single("speakerPhoto"); // Campo 'speakerPhoto'
 
+// --- NOVO STORAGE PARA APRESENTAÇÕES (PDF/PPT) ---
+const presentationStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = "uploads/presentations/";
+    ensureDirectoryExists(dir);
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const extension = path.extname(file.originalname);
+    cb(null, `presentation-${uniqueSuffix}${extension}`);
+  },
+});
+
+const uploadPresentation = multer({
+  storage: presentationStorage,
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+  fileFilter: (req, file, cb) => {
+    const filetypes = /pdf|ppt|pptx/;
+    const mimetype = file.mimetype.includes("pdf") ||
+      file.mimetype.includes("powerpoint") ||
+      file.mimetype.includes("presentationml");
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+
+    if (mimetype || extname) {
+      return cb(null, true);
+    }
+    cb(new Error("Erro: Apenas arquivos PDF ou PPT são permitidos!"));
+  },
+}).single("presentation");
+
 module.exports = {
   uploadProfilePhoto,
   uploadBadgeTemplate,
@@ -194,4 +225,5 @@ module.exports = {
   uploadCertificate,
   uploadEventThumbnail,
   uploadSpeakerPhoto,
+  uploadPresentation,
 };

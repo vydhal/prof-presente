@@ -4,6 +4,18 @@ import { useSocket } from "../contexts/SocketContext";
 import { useAuth } from "../hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "../components/ui/card";
+import { pdfjs, Document, Page } from "react-pdf";
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
+import {
+    ChevronLeft,
+    ChevronRight,
+    Maximize2,
+    Minimize2
+} from "lucide-react";
+
+// Configuração do worker do PDF.js
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const PresentationPage = () => {
     const { id: eventId } = useParams();
@@ -16,6 +28,26 @@ const PresentationPage = () => {
     const [displayValue, setDisplayValue] = useState(""); // For animation
     const [isConnected, setIsConnected] = useState(false);
     const [lastEvent, setLastEvent] = useState("");
+    const [numPages, setNumPages] = useState(null);
+    const numPagesRef = React.useRef(null);
+    const [pageNumber, setPageNumber] = useState(1);
+    const [pdfScale, setPdfScale] = useState(1.0);
+
+    const API_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || "http://localhost:3000";
+
+    const onDocumentLoadSuccess = ({ numPages }) => {
+        setNumPages(numPages);
+        numPagesRef.current = numPages;
+        setPageNumber(1);
+    };
+
+    const changePage = (offset) => {
+        setPageNumber(prevPageNumber => {
+            const newPage = prevPageNumber + offset;
+            const total = numPagesRef.current || 1;
+            return Math.min(Math.max(1, newPage), total);
+        });
+    };
 
     useEffect(() => {
         socket.onAny((eventName, ...args) => {
@@ -79,6 +111,89 @@ const PresentationPage = () => {
             setGiveawayData(data);
         });
 
+        socket.on("slide_action_triggered", ({ action }) => {
+            console.log(`[PASSADOR] Comando recebido: ${action}`);
+
+            // Se tiver PDF ativo, muda a página localmente
+            if (action === "next") {
+                changePage(1);
+            } else if (action === "prev" || action === "previous") {
+                changePage(-1);
+            }
+
+            // Fallback para iframes
+            const isNext = action === "next";
+            const keyCode = isNext ? 39 : 37;
+            const key = isNext ? "ArrowRight" : "ArrowLeft";
+
+            const eventConfig = {
+                key: key,
+                code: isNext ? "ArrowRight" : "ArrowLeft",
+                keyCode: keyCode,
+                which: keyCode,
+                bubbles: true,
+                cancelable: true,
+                composed: true,
+                view: window
+            };
+
+            const triggerEvents = () => {
+                try {
+                    // Garantir que a janela principal tem foco
+                    window.focus();
+
+                    // Disparar em múltiplos níveis
+                    const event = new KeyboardEvent("keydown", eventConfig);
+                    document.dispatchEvent(event);
+                    window.dispatchEvent(event);
+
+                    if (isNext) {
+                        const spaceEvent = new KeyboardEvent("keydown", {
+                            key: " ", code: "Space", keyCode: 32, which: 32, bubbles: true
+                        });
+                        document.dispatchEvent(spaceEvent);
+                    }
+                } catch (err) {
+                    console.error("[PASSADOR] Erro ao disparar KeyboardEvent:", err);
+                }
+
+                // Tentar controlar iframes
+                const iframes = document.querySelectorAll('iframe');
+                iframes.forEach((iframe, idx) => {
+                    try {
+                        // Tentar dar foco ao iframe
+                        iframe.focus();
+
+                        // Lista de payloads comuns para diferentes players
+                        const payloads = [
+                            { method: isNext ? "next" : "previous", type: "slide" },
+                            { command: isNext ? "nextSlide" : "prevSlide" },
+                            { slide: isNext ? "next" : "prev" },
+                            { type: "google-slides", action: isNext ? "next" : "previous" }
+                        ];
+
+                        payloads.forEach(p => {
+                            iframe.contentWindow.postMessage(JSON.stringify(p), "*");
+                            iframe.contentWindow.postMessage(p, "*");
+                        });
+                    } catch (e) {
+                        // Erros de cross-origin são ignorados em postMessage
+                    }
+                });
+            };
+
+            // Disparar imediatamente e com um pequeno delay para garantir captura
+            triggerEvents();
+            setTimeout(triggerEvents, 100);
+        });
+
+        // Garantir foco inicial ao clicar em qualquer lugar da página (ajuda o passador)
+        const handleDocClick = () => {
+            const iframe = document.querySelector('iframe');
+            if (iframe) iframe.focus();
+        };
+        document.addEventListener('click', handleDocClick);
+
         return () => {
             socket.off("connect", onConnect);
             socket.off("disconnect", onDisconnect);
@@ -87,6 +202,8 @@ const PresentationPage = () => {
             socket.off("giveaway_prepared");
             socket.off("giveaway_started");
             socket.off("giveaway_winner");
+            socket.off("slide_action_triggered");
+            document.removeEventListener('click', handleDocClick);
         };
     }, [socket, eventId, user]);
 
@@ -148,15 +265,62 @@ const PresentationPage = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="absolute inset-0 flex items-center justify-center bg-black z-30"
+                        className="absolute inset-0 flex items-center justify-center bg-black z-30 overflow-hidden"
                     >
-                        <iframe
-                            className="w-full h-full border-none"
-                            src={getEmbedUrl(highlightedMedia)}
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                            title="Projeção de Mídia"
-                        />
+                        {highlightedMedia.type === 'pdf' ? (
+                            <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 group">
+                                <Document
+                                    file={highlightedMedia.url.startsWith('http') ? highlightedMedia.url : `${API_BASE_URL}${highlightedMedia.url}`}
+                                    onLoadSuccess={onDocumentLoadSuccess}
+                                    loading={<div className="text-white animate-pulse font-black text-2xl uppercase tracking-widest">Carregando Slides...</div>}
+                                    error={<div className="text-red-500 font-bold">Erro ao carregar PDF</div>}
+                                >
+                                    <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+                                        <AnimatePresence mode="wait">
+                                            <motion.div
+                                                key={pageNumber}
+                                                initial={{ x: 300, opacity: 0 }}
+                                                animate={{ x: 0, opacity: 1 }}
+                                                exit={{ x: -300, opacity: 0 }}
+                                                transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                                                className="shadow-2xl flex items-center justify-center"
+                                            >
+                                                <Page
+                                                    pageNumber={pageNumber}
+                                                    scale={pdfScale}
+                                                    renderTextLayer={true}
+                                                    renderAnnotationLayer={true}
+                                                    width={window.innerWidth * 0.95}
+                                                    height={window.innerHeight * 0.9}
+                                                    className="max-h-full max-w-full"
+                                                />
+                                            </motion.div>
+                                        </AnimatePresence>
+                                    </div>
+                                </Document>
+
+                                {/* Overlay de navegação (aparece no hover) */}
+                                <div className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md px-6 py-3 rounded-full border border-white/10 flex items-center gap-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    <button onClick={() => changePage(-1)} className="text-white hover:text-blue-400 transition-colors">
+                                        <ChevronLeft className="w-6 h-6" />
+                                    </button>
+                                    <span className="text-white font-black text-xs tracking-[0.2em] min-w-[100px] text-center uppercase">
+                                        Pág {pageNumber} / {numPages}
+                                    </span>
+                                    <button onClick={() => changePage(1)} className="text-white hover:text-blue-400 transition-colors">
+                                        <ChevronRight className="w-6 h-6" />
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <iframe
+                                className="w-full h-full border-none"
+                                src={getEmbedUrl(highlightedMedia)}
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                                title="Projeção de Mídia"
+                            />
+                        )}
                     </motion.div>
                 )}
 

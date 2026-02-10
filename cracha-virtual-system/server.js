@@ -1,5 +1,5 @@
 require('dotenv').config();
-const app = require('./src/app');
+const app = require('./src/app'); // Force restart for presentation routes
 const { disconnectDatabase } = require('./src/config/database');
 const { startEmailWorker } = require('./src/workers/emailWorker');
 const setupSockets = require('./src/sockets');
@@ -22,10 +22,10 @@ const io = setupSockets(server);
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('🛑 Recebido SIGTERM, encerrando servidor...');
-  
+
   server.close(async () => {
     console.log('✅ Servidor HTTP encerrado');
-    
+
     try {
       await disconnectDatabase();
       console.log('✅ Conexão com banco de dados encerrada');
@@ -39,10 +39,10 @@ process.on('SIGTERM', async () => {
 
 process.on('SIGINT', async () => {
   console.log('🛑 Recebido SIGINT, encerrando servidor...');
-  
+
   server.close(async () => {
     console.log('✅ Servidor HTTP encerrado');
-    
+
     try {
       await disconnectDatabase();
       console.log('✅ Conexão com banco de dados encerrada');
