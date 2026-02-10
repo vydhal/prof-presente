@@ -4,6 +4,7 @@ const {
   sendEnrollmentConfirmationEmail,
   sendEnrollmentCancellationEmail,
 } = require("../utils/email");
+const { findOrCreateUserBadge } = require("../services/badgeService");
 
 /**
  * Corrige a data armazenada no banco (que foi salva como UTC por engano)
@@ -29,7 +30,7 @@ const enrollInEvent = async (req, res) => {
       return res.status(400).json({ error: "eventId é obrigatório" });
     }
 
-    const [event, user, userBadge, userAwards] = await Promise.all([
+    const [event, user, userAwards] = await Promise.all([
       prisma.event.findUnique({
         where: { id: eventId },
         include: {
@@ -39,7 +40,6 @@ const enrollInEvent = async (req, res) => {
         },
       }),
       prisma.user.findUnique({ where: { id: userId } }),
-      prisma.userBadge.findUnique({ where: { userId } }),
       prisma.userAward.findMany({
         // Query para buscar as premiações
         where: { userId },
@@ -53,11 +53,14 @@ const enrollInEvent = async (req, res) => {
       return res.status(404).json({ error: "Evento não encontrado" });
     }
 
-    if (!user || !userBadge) {
+    if (!user) {
       return res
         .status(404)
-        .json({ error: "Dados do usuário ou crachá não encontrados." });
+        .json({ error: "Dados do usuário não encontrados." });
     }
+
+    // GARANTIA: Busca ou cria o crachá aqui para garantir que o QR Code exista
+    const userBadge = await findOrCreateUserBadge(userId);
 
     const existingEnrollment = await prisma.enrollment.findUnique({
       where: {
@@ -146,7 +149,8 @@ const enrollInEvent = async (req, res) => {
     });
 
     // ALTERAÇÃO: A geração automática de crachá foi removida daqui.
-    // O crachá universal do usuário será usado.
+    // O crachá universal do usuário será usando a variável já carregada acima.
+
     // --- MUDANÇA: Dispara o e-mail de confirmação ao reativar a inscrição ---
     sendEnrollmentConfirmationEmail(user, event, userBadge, userAwards);
 
@@ -406,6 +410,55 @@ const getMyEnrollments = async (req, res) => {
   }
 };
 
+// Reenviar e-mail de confirmação (Admin)
+const resendConfirmationEmail = async (req, res) => {
+  try {
+    const { enrollmentId } = req.params;
+
+    const enrollment = await prisma.enrollment.findUnique({
+      where: { id: enrollmentId },
+      include: {
+        user: true,
+        event: true,
+      },
+    });
+
+    if (!enrollment) {
+      return res.status(404).json({ error: "Inscrição não encontrada" });
+    }
+
+    if (enrollment.status !== "APPROVED") {
+      return res
+        .status(400)
+        .json({ error: "A inscrição não está aprovada para reenviar e-mail." });
+    }
+
+    // Busca ou cria o crachá para garantir o QR Code
+    const userBadge = await findOrCreateUserBadge(enrollment.userId);
+
+    // Busca premiações para compor o crachá no email
+    const userAwards = await prisma.userAward.findMany({
+      where: { userId: enrollment.userId },
+      include: { award: true },
+      orderBy: { awardedAt: "desc" },
+      take: 5,
+    });
+
+    // Reenvia o e-mail
+    await sendEnrollmentConfirmationEmail(
+      enrollment.user,
+      enrollment.event,
+      userBadge,
+      userAwards
+    );
+
+    res.json({ message: "E-mail de confirmação reenviado com sucesso." });
+  } catch (error) {
+    console.error("Erro ao reenviar e-mail:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+};
+
 module.exports = {
   enrollInEvent,
   getUserEnrollments,
@@ -413,4 +466,5 @@ module.exports = {
   getEventEnrollments,
   cancelEnrollment,
   updateEnrollmentStatus,
+  resendConfirmationEmail,
 };

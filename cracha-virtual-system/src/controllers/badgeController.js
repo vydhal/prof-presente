@@ -4,20 +4,9 @@ const { prisma } = require("../config/database");
 const { generateQRCode } = require("../utils/qrcode");
 const nodeHtmlToImage = require("node-html-to-image");
 const { generateBadgeHtml } = require("../utils/badgeService");
+const badgeService = require("../services/badgeService");
 
-// Função auxiliar para gerar um código legível para o crachá.
-const generateBadgeCode = (userName) => {
-  const names = userName.trim().split(" ");
-  const firstName = names[0].toUpperCase();
-  const lastName =
-    names.length > 1 ? names[names.length - 1].toUpperCase() : "";
-  const randomNumbers = Math.floor(1000 + Math.random() * 9000);
 
-  if (lastName) {
-    return `${firstName}-${lastName}-${randomNumbers}`;
-  }
-  return `${firstName}-${randomNumbers}`;
-};
 
 // Criar crachá universal do usuário. Geralmente chamado por um administrador.
 const createUserBadge = async (req, res) => {
@@ -35,54 +24,7 @@ const createUserBadge = async (req, res) => {
       });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      return res.status(404).json({ error: "Usuário não encontrado" });
-    }
-
-    let badgeCode;
-    let isUnique = false;
-    let attempts = 0;
-    while (!isUnique && attempts < 10) {
-      badgeCode = generateBadgeCode(user.name);
-      const existing = await prisma.userBadge.findUnique({
-        where: { badgeCode },
-      });
-      if (!existing) {
-        isUnique = true;
-      }
-      attempts++;
-    }
-
-    if (!isUnique) {
-      return res.status(500).json({
-        error: "Não foi possível gerar um código único para o crachá",
-      });
-    }
-
-    const qrData = JSON.stringify({
-      userId: user.id,
-      badgeCode,
-      badgeType: "user", // Mantemos um tipo para consistência, mesmo sendo o único.
-      timestamp: new Date().toISOString(),
-    });
-
-    const qrCodeFilename = `user_badge_${user.id}`;
-    await generateQRCode(qrData, qrCodeFilename);
-    const qrCodeUrl = `/uploads/qrcodes/${qrCodeFilename}.png`;
-    const badgeImageUrl = `/api/badges/${user.id}/image`; // Rota ajustada
-
-    const userBadge = await prisma.userBadge.create({
-      data: {
-        userId: user.id,
-        badgeCode,
-        qrCodeUrl,
-        badgeImageUrl,
-      },
-    });
+    const userBadge = await badgeService.findOrCreateUserBadge(userId);
 
     res.status(201).json({
       message: "Crachá universal criado com sucesso",
@@ -162,54 +104,17 @@ const getMyUserBadge = async (req, res) => {
     });
 
     // Se o crachá não existir, cria um na hora.
+    // Se o crachá não existir, cria um na hora.
     if (!userBadge) {
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-      });
+      // Usa o serviço para criar e já recebe o objeto completo (incluindo user se o serviço incluir, mas aqui precisamos garantir o retorno)
+      // O serviço findOrCreateUserBadge retorna o userBadge. Vamos buscá-lo novamente com os includes que precisamos ou confiar no serviço?
+      // O serviço retorna userBadge. Vamos usar ele.
 
-      if (!user) {
-        return res.status(404).json({ error: "Usuário não encontrado" });
-      }
+      const createdBadge = await badgeService.findOrCreateUserBadge(userId);
 
-      let badgeCode;
-      let isUnique = false;
-      let attempts = 0;
-      while (!isUnique && attempts < 10) {
-        badgeCode = generateBadgeCode(user.name);
-        const existing = await prisma.userBadge.findUnique({
-          where: { badgeCode },
-        });
-        if (!existing) {
-          isUnique = true;
-        }
-        attempts++;
-      }
-
-      if (!isUnique) {
-        return res.status(500).json({
-          error: "Não foi possível gerar um código único para o crachá",
-        });
-      }
-
-      const qrData = JSON.stringify({
-        userId: user.id,
-        badgeCode,
-        badgeType: "user",
-        timestamp: new Date().toISOString(),
-      });
-
-      const qrCodeFilename = `user_badge_${user.id}`;
-      await generateQRCode(qrData, qrCodeFilename);
-      const qrCodeUrl = `/uploads/qrcodes/${qrCodeFilename}.png`;
-      const badgeImageUrl = `/api/badges/${user.id}/image`; // Rota ajustada
-
-      userBadge = await prisma.userBadge.create({
-        data: {
-          userId: user.id,
-          badgeCode,
-          qrCodeUrl,
-          badgeImageUrl,
-        },
+      // Recarrega com os includes necessários para o frontend
+      userBadge = await prisma.userBadge.findUnique({
+        where: { userId },
         include: {
           user: {
             select: {
@@ -383,34 +288,8 @@ const generateMissingBadges = async (req, res) => {
       for (const user of usersWithoutBadge) {
         try {
           // Reutiliza a mesma lógica de criação de crachá
-          let badgeCode;
-          let isUnique = false;
-          while (!isUnique) {
-            badgeCode = generateBadgeCode(user.name);
-            const existing = await prisma.userBadge.findUnique({
-              where: { badgeCode },
-            });
-            if (!existing) isUnique = true;
-          }
-
-          const qrData = JSON.stringify({
-            userId: user.id,
-            badgeCode,
-            badgeType: "user",
-          });
-          const qrCodeFilename = `user_badge_${user.id}`;
-          await generateQRCode(qrData, qrCodeFilename);
-          const qrCodeUrl = `/uploads/qrcodes/${qrCodeFilename}.png`;
-          const badgeImageUrl = `/api/badges/${user.id}/image`;
-
-          await prisma.userBadge.create({
-            data: {
-              userId: user.id,
-              badgeCode,
-              qrCodeUrl,
-              badgeImageUrl,
-            },
-          });
+          // Reutiliza a mesma lógica de criação de crachá do serviço
+          await badgeService.findOrCreateUserBadge(user.id);
           console.log(
             `Crachá criado para o usuário: ${user.name} (${user.id})`
           );

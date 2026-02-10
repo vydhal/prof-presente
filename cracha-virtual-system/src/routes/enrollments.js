@@ -8,6 +8,7 @@ const {
   getEventEnrollments,
   cancelEnrollment,
   updateEnrollmentStatus,
+  resendConfirmationEmail,
 } = require("../controllers/enrollmentController");
 
 const {
@@ -99,6 +100,14 @@ router.patch(
   authenticateToken,
   requireAdmin,
   updateEnrollmentStatus
+);
+
+// Reenviar e-mail de confirmação (apenas admin)
+router.post(
+  "/:enrollmentId/resend-confirmation",
+  authenticateToken,
+  requireAdmin,
+  resendConfirmationEmail
 );
 
 module.exports = router;

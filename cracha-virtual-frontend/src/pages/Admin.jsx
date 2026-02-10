@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import {
+  useSearchParams,
+  useNavigate
+} from "react-router-dom";
 import api from "../lib/api";
 import { useAuth } from "../hooks/useAuth";
 import {
@@ -14,6 +17,7 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
+
 import {
   Dialog,
   DialogContent,
@@ -22,6 +26,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../components/ui/dialog";
+
 import {
   Table,
   TableBody,
@@ -54,7 +59,9 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
+
   Sparkles,
+  Mail,
 } from "lucide-react";
 import { toast } from "sonner";
 import UserManagement from "../components/UserManagement";
@@ -66,10 +73,11 @@ import ReportsDashboard from "../components/ReportsDashboard";
 import CertificatePreview from "../components/CertificatePreview";
 import { Badge } from "../components/ui/badge";
 import { Combobox } from "../components/ui/combobox";
-import { getAssetUrl } from "../lib/utils"; // <-- ADICIONE ESTA IMPORTAÇÃO
+import { getAssetUrl } from "../lib/utils";
 
 const Admin = () => {
   const { isAdmin } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const tabFromUrl = searchParams.get("tab") || "events";
@@ -77,8 +85,19 @@ const Admin = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
 
+
+
   // ALTERAÇÃO: Renomeado para refletir que guarda o arquivo, não a URL
-  const [certificateTemplateFile, setCertificateTemplateFile] = useState(null);
+
+
+
+
+
+
+
+
+
+
 
   // NOVO: Estado para a URL de preview do certificado
   const [certificateTemplatePreviewUrl, setCertificateTemplatePreviewUrl] =
@@ -128,6 +147,11 @@ const Admin = () => {
 
   const [speakerPhotoFile, setSpeakerPhotoFile] = useState(null);
   const [speakerPhotoPreviewUrl, setSpeakerPhotoPreviewUrl] = useState(null);
+
+  // NOVO: Estado para gerenciar inscrições
+  const [managingEnrollmentsEvent, setManagingEnrollmentsEvent] = useState(null);
+  const [enrollments, setEnrollments] = useState([]);
+  const [isLoadingEnrollments, setIsLoadingEnrollments] = useState(false);
 
   const { data: events, isLoading: eventsLoading } = useQuery({
     queryKey: ["admin-events"],
@@ -286,7 +310,7 @@ const Admin = () => {
 
   // NOVA MUTATION PARA GERAR CRACHÁS
   const generateMissingBadgesMutation = useMutation({
-    mutationFn: () => api.post("/badges/generate-missing"),
+    mutationFn: () => api.post("/badges/missing-count"),
     onSuccess: (data) => {
       toast.info(data.data.message);
       // Invalida a query da contagem para forçar a busca do novo valor (que será 0)
@@ -298,6 +322,8 @@ const Admin = () => {
       );
     },
   });
+
+
 
   // --- ADICIONE ESTA NOVA MUTATION ---
   const uploadThumbnailMutation = useMutation({
@@ -1704,6 +1730,15 @@ const Admin = () => {
                               >
                                 <Trash2 className="h-4 w-4 text-red-600" />
                               </Button>
+
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => navigate(`/admin/events/${event.id}/enrollments`)}
+                                title="Gerenciar Inscrições"
+                              >
+                                <Users className="h-4 w-4" />
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -1714,6 +1749,9 @@ const Admin = () => {
               </div>
             </CardContent>
           </Card>
+
+
+
         </TabsContent>
         {isAdmin && (
           <>

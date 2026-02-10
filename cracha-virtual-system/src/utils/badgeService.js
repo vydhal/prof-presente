@@ -57,7 +57,7 @@ const generateInitialsAvatar = (name) => {
 /**
  * Gera o HTML completo de um crachá para ser usado em e-mails e PNGs.
  */
-const generateBadgeHtml = (user, badge, awards = []) => {
+const generateBadgeHtml = (user, badge, awards = [], options = {}) => {
   // O seu log mostrou que estas variáveis ESTÃO SENDO CARREGADAS.
   const baseUrl = process.env.PUBLIC_API_URL;
   const logoUrl = process.env.PUBLIC_LOGO_URL;
@@ -71,12 +71,45 @@ const generateBadgeHtml = (user, badge, awards = []) => {
     `);
   }
 
-  const userPhotoSource = user.photoUrl
-    ? getAbsoluteUrl(baseUrl, user.photoUrl)
-    : generateInitialsAvatar(user.name);
+  // Lógica do Logo (Fallback para Wireframe/SVG se não houver URL)
+  let logoSource = logoUrl;
+  if (options && options.logoCid) {
+    logoSource = `cid:${options.logoCid}`;
+  }
 
-  // Lógica do QR Code simplificada
-  const qrCodeUrl = getAbsoluteUrl(baseUrl, badge.qrCodeUrl);
+  // Se não tem logo, usa um placeholder SVG (Wireframe)
+  const defaultLogoSvg = `data:image/svg+xml;base64,${Buffer.from(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 50" height="28">
+      <rect x="0" y="0" width="200" height="50" fill="#374151" rx="4"/>
+      <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#9CA3AF" font-family="sans-serif" font-size="24" font-weight="bold">LOGO SISTEMA</text>
+    </svg>
+  `).toString("base64")}`;
+
+  if (!logoSource) {
+    logoSource = defaultLogoSvg;
+  }
+
+  // Lógica da Foto do Usuário
+  // 1. Tenta usar o CID se fornecido (para emails com anexo)
+  // 2. Tenta usar a URL absoluta se existir
+  // 3. Fallback para iniciais
+  let userPhotoSource;
+
+  if (options && options.userPhotoCid) {
+    userPhotoSource = `cid:${options.userPhotoCid}`;
+  } else if (user.photoUrl) {
+    userPhotoSource = getAbsoluteUrl(baseUrl, user.photoUrl);
+  } else {
+    userPhotoSource = generateInitialsAvatar(user.name);
+  }
+
+  // Lógica do QR Code
+  let qrCodeUrl = getAbsoluteUrl(baseUrl, badge.qrCodeUrl); // Padrão
+
+  // Se um CID for fornecido (para e-mails), usa ele no lugar da URL
+  if (options && options.qrCodeCid) {
+    qrCodeUrl = `cid:${options.qrCodeCid}`;
+  }
 
   const latestAwards = Array.isArray(awards) ? awards.slice(0, 5) : [];
   const awardsHtml = latestAwards
@@ -94,7 +127,7 @@ const generateBadgeHtml = (user, badge, awards = []) => {
 
   // Este é o layout CORRETO (320x512)
   const badgeHtml = `
-    <div id="badge-container" style="width: 320px; height: 560px; border-radius: 1rem; color: white; background-color: #111827; background: linear-gradient(to bottom right, #1f2937, #111827, #000); padding: 24px; font-family: Arial, sans-serif; box-sizing: border-box;">
+    <div id="badge-container" style="width: 320px; height: 560px; border-radius: 1rem; color: white; background-color: #111827; background: linear-gradient(to bottom right, #1f2937, #111827, #000); padding: 24px; font-family: Arial, sans-serif; box-sizing: border-box; margin: 0 auto;">
       
       <table style="width: 100%; height: 100%; border-collapse: collapse;">
         
@@ -103,7 +136,7 @@ const generateBadgeHtml = (user, badge, awards = []) => {
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
                 <td style="padding: 0; text-align: left;">
-                  <img src="${logoUrl}" alt="Logo" style="height: 28px;" />
+                  <img src="${logoSource}" alt="Logo" style="height: 28px; max-width: 150px; object-fit: contain;" />
                 </td>
                 <td style="padding: 0; text-align: right;">
                   <div style="display: inline-block; gap: 8px;">
@@ -120,7 +153,7 @@ const generateBadgeHtml = (user, badge, awards = []) => {
             <img 
               src="${userPhotoSource}" 
               alt="${user.name}" 
-              style="width: 96px; height: 96px; border-radius: 50%; margin-bottom: 4px; border: 2px solid rgba(255,255,255,0.8); object-fit: cover;" 
+              style="width: 96px; height: 96px; border-radius: 50%; margin-bottom: 4px; border: 2px solid rgba(255,255,255,0.8); object-fit: cover; background-color: #374151;" 
             />
             <h2 style="font-size: 1.5rem; font-weight: bold; margin: 0; line-height: 1.2; word-wrap: break-word; color: #FFFFFF;">
               ${user.name}

@@ -1,11 +1,13 @@
 const nodemailer = require("nodemailer");
+const path = require("path");
+const fs = require("fs");
 
 const { generateBadgeHtml } = require("../utils/badgeService");
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: parseInt(process.env.SMTP_PORT) || 587,
-  secure: process.env.SMTP_SECURE === "true", 
+  secure: process.env.SMTP_SECURE === "true",
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
@@ -39,7 +41,7 @@ const sendEmail = async ({ to, subject, html, attachments }) => {
   } catch (error) {
     console.error(`[EMAIL-ERROR] Falha ao enviar para ${to}:`, error.message);
     if (error.code === 'ESOCKET') {
-        console.error(`[EMAIL-ERROR] Dica: Verifique a conexão com ${process.env.SMTP_HOST}`);
+      console.error(`[EMAIL-ERROR] Dica: Verifique a conexão com ${process.env.SMTP_HOST}`);
     }
   }
 };
@@ -67,8 +69,78 @@ const sendEnrollmentConfirmationEmail = async (
     return;
   }
 
-  // 2. Gera o HTML do crachá dinamicamente
-  const badgeHtml = await generateBadgeHtml(user, userBadge, awards);
+
+
+  // ... (existing code) ...
+
+  // 1. Identificar o caminho físico do QR code para anexar como CID
+  let attachments = [];
+  let qrCodeCid = null;
+  let userPhotoCid = null; // Novo
+
+  if (userBadge && userBadge.qrCodeUrl) {
+    // A URL é algo como "/uploads/qrcodes/user_badge_123.png"
+    // Removemos a barra inicial para o path.join funcionar corretamente a partir da raiz
+    const relativePath = userBadge.qrCodeUrl.startsWith("/")
+      ? userBadge.qrCodeUrl.slice(1)
+      : userBadge.qrCodeUrl;
+
+    const qrCodePath = path.join(process.cwd(), relativePath);
+    qrCodeCid = `qrcode_${userBadge.badgeCode}`;
+
+    if (fs.existsSync(qrCodePath)) {
+      attachments.push({
+        filename: "qrcode.png",
+        path: qrCodePath,
+        cid: qrCodeCid,
+      });
+    }
+  }
+
+  // Lógica para anexar a foto do usuário (se for local)
+  if (user.photoUrl && user.photoUrl.startsWith("/uploads")) {
+    const relativePath = user.photoUrl.startsWith("/")
+      ? user.photoUrl.slice(1)
+      : user.photoUrl;
+
+    const photoPath = path.join(process.cwd(), relativePath);
+
+    if (fs.existsSync(photoPath)) {
+      userPhotoCid = `userphoto_${user.id}`;
+      attachments.push({
+        filename: path.basename(photoPath),
+        path: photoPath,
+        cid: userPhotoCid
+      });
+    }
+  }
+
+  // Lógica para anexar o LOGO do sistema (local)
+  const logoPath = path.join(__dirname, "../assets/logo.png");
+  console.log(`[EMAIL-DEBUG] Tentando anexar logo de: ${logoPath}`);
+
+  let logoCid = null;
+  if (fs.existsSync(logoPath)) {
+    console.log("[EMAIL-DEBUG] Logo encontrado via fs.existsSync");
+    logoCid = "logo_prof_presente";
+    attachments.push({
+      filename: "logo.png",
+      path: logoPath,
+      cid: logoCid
+    });
+  } else {
+    console.warn(`[EMAIL-DEBUG] Logo NÃO encontrado no caminho: ${logoPath}`);
+  }
+
+  // 2. Gera o HTML do crachá dinamicamente, passando os CIDs
+  const badgeHtml = generateBadgeHtml(user, userBadge, awards, {
+    qrCodeCid,
+    userPhotoCid,
+    logoCid // Novo CID do logo
+  });
+
+  console.log(`[EMAIL-DEBUG] Attachments preparados: ${attachments.length} arquivos.`);
+  attachments.forEach(att => console.log(` - ${att.filename} (${att.cid}) -> ${att.path}`));
 
   const subject = `Crachá e Confirmação de Inscrição: ${event.title}`;
   const html = `
@@ -88,7 +160,7 @@ const sendEnrollmentConfirmationEmail = async (
     </div>
   `;
 
-  await sendEmail({ to: user.email, subject, html });
+  await sendEmail({ to: user.email, subject, html, attachments });
 };
 
 /**
