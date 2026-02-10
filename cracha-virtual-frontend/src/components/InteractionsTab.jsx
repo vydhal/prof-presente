@@ -264,27 +264,34 @@ const InteractionsTab = ({ eventId, isEnrollmentApproved }) => {
                                                             </Button>
                                                         </>
                                                     ) : (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className={`h-8 text-[11px] font-black uppercase gap-1.5 ${q.isHighlighted ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-white'}`}
-                                                            onClick={() => handleHighlight(q.isHighlighted ? null : q.id)}
-                                                        >
-                                                            <Monitor className="w-3.5 h-3.5" />
-                                                            {q.isHighlighted ? "Remover" : "Projetar"}
-                                                        </Button>
+                                                        <div className="flex items-center">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className={`h-8 text-[11px] font-black uppercase gap-1.5 ${q.isHighlighted ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-white'}`}
+                                                                onClick={() => handleHighlight(q.isHighlighted ? null : q.id)}
+                                                            >
+                                                                <Monitor className="w-3.5 h-3.5" />
+                                                                {q.isHighlighted ? "Remover" : "Projetar"}
+                                                            </Button>
+                                                            <div className="w-px h-4 bg-slate-800 mx-1" />
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-8 px-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400"
+                                                                onClick={() => handleVote(q.id)}
+                                                            >
+                                                                <ThumbsUp className={`w-4 h-4 ${q.votes > 0 ? 'text-blue-600 fill-blue-600' : ''}`} />
+                                                                <span className="ml-1.5 text-xs font-bold">{q.votes || 0}</span>
+                                                            </Button>
+                                                        </div>
                                                     )}
                                                 </div>
                                             ) : (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="flex flex-col h-auto py-2 px-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl"
-                                                    onClick={() => handleVote(q.id)}
-                                                >
-                                                    <ThumbsUp className={`w-5 h-5 ${q.votes > 0 ? 'text-blue-600 dark:text-blue-500 fill-blue-500' : 'text-slate-400 dark:text-slate-600'}`} />
-                                                    <span className="text-xs font-bold mt-1.5 text-slate-500 dark:text-slate-400">{q.votes || 0}</span>
-                                                </Button>
+                                                <div className="flex flex-col items-center justify-center py-2 px-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800/50">
+                                                    <ThumbsUp className={`w-5 h-5 ${q.votes > 0 ? 'text-blue-600 dark:text-blue-500 fill-blue-500' : 'text-slate-300 dark:text-slate-700'}`} />
+                                                    <span className="text-xs font-bold mt-1 text-slate-500 dark:text-slate-400">{q.votes || 0}</span>
+                                                </div>
                                             )}
                                         </div>
                                     </div>

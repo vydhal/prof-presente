@@ -48,7 +48,7 @@ api.interceptors.response.use(
     // Verifica se o erro é 401 ou 403 (HTTP status ou código no corpo da resposta verificado acima)
     const status = error.response?.status;
     const code = error.response?.data?.code;
-    
+
     if (status === 401 || status === 403 || code === 401 || code === 403) {
       // Pega a URL da requisição original que falhou
       // (Ex: "/auth/login" ou "/events")
@@ -121,6 +121,8 @@ export const enrollmentsAPI = {
     api.get(`/enrollments/users/${userId}`, { params }),
   getEventEnrollments: (eventId, params) =>
     api.get(`/enrollments/events/${eventId}`, { params }),
+  getByEventStatus: (eventId) =>
+    api.get(`/enrollments/event/${eventId}/status`),
   cancel: (enrollmentId) => api.patch(`/enrollments/${enrollmentId}/cancel`),
   updateStatus: (enrollmentId, status) =>
     api.patch(`/enrollments/${enrollmentId}/status`, { status }),

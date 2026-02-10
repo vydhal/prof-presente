@@ -2,7 +2,7 @@ import React from "react";
 import { useParams, Link } from "react-router-dom";
 import InteractionsTab from "../components/InteractionsTab";
 import { Button } from "../components/ui/button";
-import { ArrowLeft, Monitor, EyeOff, LayoutDashboard, Settings, Info, User } from "lucide-react";
+import { ArrowLeft, Monitor, EyeOff, Info, Calendar } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { eventsAPI, enrollmentsAPI } from "../lib/api";
 import { useAuth } from "../hooks/useAuth";
@@ -32,13 +32,13 @@ const InteractionsRoom = () => {
     const { data: enrollment } = useQuery({
         queryKey: ["enrollment", eventId, user?.id],
         queryFn: async () => {
-            const response = await enrollmentsAPI.getByEvent(eventId);
+            const response = await enrollmentsAPI.getByEventStatus(eventId);
             return response.data;
         },
         enabled: !!eventId && !!user?.id
     });
 
-    const isEnrollmentApproved = enrollment?.status === "APPROVED";
+    const isEnrollmentApproved = enrollment?.enrolled && enrollment?.status === "APPROVED";
 
     const isModerator = user?.role === "ADMIN" || user?.role === "SPEAKER" || user?.role === "ORGANIZER";
 
@@ -92,26 +92,20 @@ const InteractionsRoom = () => {
                             <div className="bg-blue-600 p-2 rounded-lg text-white">
                                 <Monitor className="w-5 h-5" />
                             </div>
-                            <span className="hidden lg:block font-bold text-white tracking-tight">PRO <span className="text-blue-500">PRESENTE</span></span>
+                            <span className="hidden lg:block font-bold text-white tracking-tight text-xl">PRO <span className="text-blue-500">PRESENTE</span></span>
                         </Link>
                     </div>
 
                     <nav className="flex-1 w-full px-3 space-y-2">
                         <div className="px-3 mb-2 hidden lg:block">
-                            <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Painel</span>
+                            <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Painel de Sala</span>
                         </div>
-                        <Button variant="ghost" className="w-full justify-center lg:justify-start gap-4 text-blue-400 bg-blue-500/10 border border-blue-500/20">
-                            <LayoutDashboard className="w-5 h-5" />
-                            <span className="hidden lg:block">Eventos</span>
-                        </Button>
-                        <Button variant="ghost" className="w-full justify-center lg:justify-start gap-4 text-slate-400 hover:text-white hover:bg-white/5">
-                            <User className="w-5 h-5" />
-                            <span className="hidden lg:block">Perfil</span>
-                        </Button>
-                        <Button variant="ghost" className="w-full justify-center lg:justify-start gap-4 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5">
-                            <Settings className="w-5 h-5" />
-                            <span className="hidden lg:block">Configurações</span>
-                        </Button>
+                        <Link to="/events" className="block">
+                            <Button variant="ghost" className="w-full justify-center lg:justify-start gap-4 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5">
+                                <Calendar className="w-5 h-5" />
+                                <span className="hidden lg:block">Eventos</span>
+                            </Button>
+                        </Link>
                         <Button
                             variant="ghost"
                             className="w-full justify-center lg:justify-start gap-4 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5"
@@ -123,17 +117,8 @@ const InteractionsRoom = () => {
                     </nav>
 
                     <div className="px-3 w-full mt-auto">
-                        <div className="bg-blue-50 dark:bg-slate-900/50 p-3 rounded-xl border border-blue-100 dark:border-slate-800 mb-4 hidden lg:block">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Info className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                                <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Dica Pró</span>
-                            </div>
-                            <p className="text-[10px] text-slate-500 dark:text-slate-500 leading-relaxed">
-                                Use o botão "Aprovar" para enviar perguntas direto para o telão principal.
-                            </p>
-                        </div>
-                        <Link to="/interactions" className="w-full font-medium">
-                            <Button variant="outline" className="w-full justify-center lg:justify-start gap-3 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800">
+                        <Link to="/dashboard" className="w-full font-medium">
+                            <Button variant="outline" className="w-full justify-center lg:justify-start gap-3 border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20">
                                 <ArrowLeft className="w-4 h-4" />
                                 <span className="hidden lg:block">Sair da Sala</span>
                             </Button>
@@ -145,13 +130,20 @@ const InteractionsRoom = () => {
                 <main className="flex-1 flex flex-col min-w-0 bg-slate-50 dark:bg-[#0a0f14]">
                     {/* Header / Top Bar */}
                     <header className="h-20 bg-white/80 dark:bg-[#0f1720]/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 md:px-8 flex items-center justify-between sticky top-0 z-30">
-                        <div className="flex flex-col">
-                            <h1 className="font-bold text-lg md:text-xl text-slate-900 dark:text-white truncate max-w-[200px] md:max-w-md">
-                                {event?.title || "Interação em Tempo Real"}
-                            </h1>
-                            <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                                <span className="text-[11px] text-slate-500 font-medium uppercase tracking-wider">Sala Ativa • {user?.name}</span>
+                        <div className="flex items-center gap-4">
+                            <Link to="/dashboard" className="md:hidden">
+                                <Button variant="ghost" size="icon" className="text-slate-500">
+                                    <ArrowLeft className="w-6 h-6" />
+                                </Button>
+                            </Link>
+                            <div className="flex flex-col">
+                                <h1 className="font-bold text-lg md:text-xl text-slate-900 dark:text-white truncate max-w-[180px] md:max-w-md">
+                                    {event?.title || "Interação em Tempo Real"}
+                                </h1>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                    <span className="text-[11px] text-slate-500 font-medium uppercase tracking-wider">Sala Ativa • {user?.name}</span>
+                                </div>
                             </div>
                         </div>
 
