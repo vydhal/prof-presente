@@ -64,6 +64,7 @@ import {
   FileText, // Re-adicionado
   Sparkles, // Re-adicionado
   Pencil, // Re-adicionado
+  Image as ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import UserManagement from "../components/UserManagement";
@@ -74,6 +75,7 @@ import ProfessionManagement from "../components/ProfessionManagement";
 import ReportsDashboard from "../components/ReportsDashboard";
 import CertificatePreview from "../components/CertificatePreview";
 import EventStaffManager from "../components/EventStaffManager";
+import BannerManagement from "../components/BannerManagement";
 import { Badge } from "../components/ui/badge";
 import { Combobox } from "../components/ui/combobox";
 import { getAssetUrl } from "../lib/utils";
@@ -725,7 +727,7 @@ const Admin = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6 lg:mb-0">
         <div className="w-full overflow-x-auto pb-2 block">
-          <TabsList className="inline-flex w-auto space-x-2 lg:grid lg:w-full lg:grid-cols-7">
+          <TabsList className="inline-flex w-auto space-x-2 lg:grid lg:w-full lg:grid-cols-8">
             <TabsTrigger value="dashboard">
               <BarChart className="h-4 w-4 mr-2" />
               Dashboard
@@ -736,6 +738,10 @@ const Admin = () => {
             </TabsTrigger>
             {isAdmin && (
               <>
+                <TabsTrigger value="banners">
+                  <ImageIcon className="h-4 w-4 mr-2" />
+                  Banners
+                </TabsTrigger>
                 <TabsTrigger value="users">
                   <Users className="h-4 w-4 mr-2" />
                   Usuários
@@ -1552,6 +1558,10 @@ const Admin = () => {
 
             <TabsContent value="professions">
               <ProfessionManagement />
+            </TabsContent>
+
+            <TabsContent value="banners">
+              <BannerManagement />
             </TabsContent>
           </>
         )}

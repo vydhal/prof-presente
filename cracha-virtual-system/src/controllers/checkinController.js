@@ -3,6 +3,7 @@ const { prisma } = require("../config/database");
 const { checkAndGrantAutomaticAwards } = require("./awardController");
 const axios = require("axios");
 const { Buffer } = require("buffer");
+const { calculateAndSaveProgress } = require("./trackController");
 
 /**
  * Corrige a data armazenada no banco (que foi salva como UTC por engano)
@@ -166,6 +167,27 @@ const processUserCheckin = async (req, res, userBadge, eventId) => {
     });
 
     checkAndGrantAutomaticAwards(userId);
+
+    // Atualizar progresso em Trilhas de Formação
+    try {
+      const tracksToUpdate = await prisma.trackEvent.findMany({
+        where: { eventId },
+        select: { trackId: true }
+      });
+
+      for (const { trackId } of tracksToUpdate) {
+        // Verifica se o usuário está inscrito na trilha antes de atualizar
+        const enrollment = await prisma.trackEnrollment.findUnique({
+          where: { trackId_userId: { trackId, userId } }
+        });
+
+        if (enrollment) {
+          await calculateAndSaveProgress(userId, trackId);
+        }
+      }
+    } catch (trackError) {
+      console.error("Erro ao atualizar progresso da trilha:", trackError);
+    }
 
     res.status(201).json({
       message: "Check-in realizado com sucesso",

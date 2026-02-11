@@ -115,6 +115,7 @@ model User {
   questions     Question[]
   wonGiveaways  Giveaway[]
   staffEvents   EventStaff[]
+  trackEnrollments TrackEnrollment[]
 
 
   @@index([email])
@@ -182,6 +183,8 @@ model Event {
   questions   Question[]
   giveaways   Giveaway[]
   staff       EventStaff[]
+  trackEvents TrackEvent[]
+  userCheckins UserCheckin[]
 
   @@index([startDate])
   @@index([endDate])
@@ -297,6 +300,7 @@ model UserCheckin {
 
   // Relacionamentos
   userBadge UserBadge @relation(fields: [userBadgeId], references: [id], onDelete: Cascade)
+  event     Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@index([userBadgeId])
   @@index([eventId])
@@ -330,13 +334,17 @@ model CertificateLog {
   status    String // "SUCCESS" ou "FAILED"
   details   String?  // Para mensagens de erro
 
-  eventId   String
-  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId   String?
+  event     Event?    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  trackId   String?
+  track     LearningTrack? @relation(fields: [trackId], references: [id], onDelete: Cascade)
 
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([eventId])
+  @@index([trackId])
   @@index([userId])
 }
 
@@ -355,4 +363,71 @@ model EventStaff {
   @@index([eventId])
   @@index([role])
   @@map("event_staff")
+}
+
+model LearningTrack {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  imageUrl    String?
+
+  // Campo para o template do certificado
+  certificateTemplateUrl String? @map("certificate_template_url")
+  certificateTemplateConfig Json? @map("certificate_template_config")
+  certificateLogs CertificateLog[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  events      TrackEvent[]
+  enrollments TrackEnrollment[]
+
+  @@map("learning_tracks")
+}
+
+model TrackEvent {
+  id        String   @id @default(uuid())
+  trackId   String
+  eventId   String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  track LearningTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  event Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([trackId, eventId])
+  @@map("track_events")
+}
+
+model TrackEnrollment {
+  id             String    @id @default(uuid())
+  trackId        String
+  userId         String
+  progress       Float     @default(0)
+  isCompleted    Boolean   @default(false)
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  track LearningTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([trackId, userId])
+  @@map("track_enrollments")
+}
+
+
+model Banner {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  imageUrl    String
+  linkUrl     String?  @map("link_url")
+  order       Int      @default(0)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("banners")
 }

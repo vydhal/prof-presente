@@ -34,6 +34,8 @@ const LandingPage = lazy(() => import("./pages/LandingPage"));
 const PresentationPage = lazy(() => import("./pages/PresentationPage"));
 const InteractionsSelection = lazy(() => import("./pages/InteractionsSelection"));
 const InteractionsRoom = lazy(() => import("./pages/InteractionsRoom"));
+const MyTracks = lazy(() => import("./pages/MyTracks"));
+const AdminTracks = lazy(() => import("./pages/AdminTracks"));
 
 import "./App.css";
 
@@ -166,6 +168,19 @@ function App() {
                   />
 
                   <Route
+                    path="/my-tracks"
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <LazyWrapper>
+                            <MyTracks />
+                          </LazyWrapper>
+                        </Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
                     path="/my-enrollments"
                     element={
                       <ProtectedRoute>
@@ -198,6 +213,19 @@ function App() {
                         <Layout>
                           <LazyWrapper>
                             <Admin />
+                          </LazyWrapper>
+                        </Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
+                    path="/admin/tracks"
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <LazyWrapper>
+                            <AdminTracks />
                           </LazyWrapper>
                         </Layout>
                       </ProtectedRoute>

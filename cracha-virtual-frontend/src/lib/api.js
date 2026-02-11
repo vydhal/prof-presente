@@ -184,4 +184,28 @@ export const reportsAPI = {
   getSystemReport: () => api.get("/reports/system"),
 };
 
+// Funções de trilhas de formação
+export const tracksAPI = {
+  getAll: () => api.get("/tracks"),
+  getById: (id) => api.get(`/tracks/${id}`),
+  create: (data) => api.post("/tracks", data),
+  update: (id, data) => api.put(`/tracks/${id}`, data),
+  delete: (id) => api.delete(`/tracks/${id}`),
+  enroll: (trackId) => api.post(`/tracks/${trackId}/enroll`),
+  getMy: () => api.get("/tracks/my"),
+};
+
+// Funções de banners
+export const bannersAPI = {
+  getAll: () => api.get("/banners"),
+  getActive: () => api.get("/banners/active"),
+  create: (formData) => api.post("/banners", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  }),
+  update: (id, formData) => api.put(`/banners/${id}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  }),
+  delete: (id) => api.delete(`/banners/${id}`),
+};
+
 export default api;

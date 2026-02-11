@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { eventsAPI } from "../lib/api";
+import { eventsAPI, tracksAPI } from "../lib/api";
 import { Button } from "../components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
@@ -27,6 +27,7 @@ import {
     X,
     Loader2
 } from "lucide-react";
+import HeroCarousel from "../components/HeroCarousel";
 
 import { useDebounce } from "../hooks/useDebounce";
 
@@ -90,6 +91,15 @@ const LandingPage = () => {
             // We use limit: 100 to ensure we catch 'In Progress' events 
             const response = await eventsAPI.getAll({ public: true, limit: 100 });
             return response.data?.events || response.data || [];
+        },
+    });
+
+    // Fetch Public Tracks
+    const { data: allTracks, isLoading: tracksLoading } = useQuery({
+        queryKey: ["landing-public-tracks"],
+        queryFn: async () => {
+            const response = await tracksAPI.getAll();
+            return response.data || [];
         },
     });
 
@@ -272,38 +282,7 @@ const LandingPage = () => {
             <main className="max-w-7xl mx-auto px-4 py-6 space-y-8 md:space-y-12">
 
                 {/* HERO SECTION */}
-                <section className="relative rounded-2xl overflow-hidden min-h-[500px] md:aspect-[21/9] md:min-h-[400px] group shadow-2xl">
-                    {/* Background Image */}
-                    <div
-                        className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-                        style={{ backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuBUfJizWSG-bx7lvDZa9zuim7fepa_1BFgU5UzE6Vo8ntSsWZ1bdH6720oEUOJgGBzROvgV_KoMPiVMx40gaf6_IykeAMQuOuIokhTVr4tld7yDmeUy1UW9sDxBl9JaROBDnus5op3vu4NWH735GEc4VhZOTYqe806u7--1s3AUjHWo5Qr4anYKbqNX-IoVC8B75PFhDnzKTRxziyPxXmf2WlRfe7eYGjEXM2jIANRSvZrk3kZmw9wlGLGL2mkRye0_oHREBbbxVjRp')` }}
-                    ></div>
-                    {/* Gradient Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-[#101922] md:to-[#101922]/90"></div>
-
-                    <div className="absolute inset-x-0 bottom-0 p-6 md:p-12 w-full md:w-2/3 flex flex-col justify-end h-full">
-                        <div className="flex gap-2 mb-4">
-                            <span className="bg-[#137fec]/90 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-widest">Eventos em Destaque</span>
-                        </div>
-                        <h2 className="text-3xl md:text-5xl font-black text-white leading-tight mb-4 drop-shadow-lg">
-                            Fórum Pedagógico Anual: <br className="hidden md:block" /><span className="text-[#137fec]">Inovação nas Escolas</span>
-                        </h2>
-                        <p className="text-slate-200 text-sm md:text-lg mb-6 line-clamp-3 md:line-clamp-2 max-w-xl">
-                            Junte-se a mais de 2.000 educadores em Campina Grande para três dias de workshops transformadores e sessões colaborativas.
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                            <Link to="/register" className="w-full sm:w-auto">
-                                <Button className="w-full sm:w-auto bg-[#137fec] hover:bg-[#137fec]/90 text-white px-8 py-6 rounded-lg font-bold flex items-center justify-center gap-2 group/btn text-base">
-                                    Garantir minha vaga
-                                    <ArrowRight className="h-5 w-5 transition-transform group-hover/btn:translate-x-1" />
-                                </Button>
-                            </Link>
-                            <Button variant="outline" className="w-full sm:w-auto bg-white/10 hover:bg-white/20 border-white/20 backdrop-blur-md text-white px-8 py-6 rounded-lg font-bold transition-all text-base">
-                                Ver Detalhes
-                            </Button>
-                        </div>
-                    </div>
-                </section>
+                <HeroCarousel />
 
                 {/* CATEGORY TABS (Static for prototype) */}
                 <section className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide">
@@ -322,6 +301,98 @@ const LandingPage = () => {
                     <Button variant="outline" className="rounded-full border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 gap-2 px-6 text-slate-700 dark:text-slate-200 border-none">
                         <Users className="h-5 w-5" /> Gestão
                     </Button>
+                </section>
+
+                {/* LEARNING TRACKS SECTION (BENTO GRID) */}
+                <section id="tracks" className="space-y-8">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                        <div className="space-y-2">
+                            <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-[0.2em]">Formação Continuada</span>
+                            <h3 className="text-3xl font-black tracking-tight drop-shadow-sm">Trilhas de Aprendizado</h3>
+                            <p className="text-slate-500 max-w-xl">Sequências completas de eventos desenhadas para sua especialização profissional.</p>
+                        </div>
+                        <a href="#events" className="text-[#137fec] text-sm font-bold flex items-center gap-1 hover:gap-2 transition-all">
+                            Explorar Eventos Avulsos <ArrowRight className="h-4 w-4" />
+                        </a>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        {tracksLoading ? (
+                            <div className="col-span-1 md:col-span-4 flex justify-center py-20">
+                                <Loader2 className="h-10 w-10 animate-spin text-[#137fec]" />
+                            </div>
+                        ) : allTracks?.length === 0 ? (
+                            <div className="col-span-1 md:col-span-4 text-center py-20 bg-slate-50 dark:bg-white/5 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800">
+                                <GraduationCap className="h-12 w-12 mx-auto text-slate-300 mb-4" />
+                                <p className="text-slate-500 italic">Nenhuma trilha disponível no momento.</p>
+                            </div>
+                        ) : (
+                            allTracks?.map((track, trackIdx) => (
+                                <div
+                                    key={track.id}
+                                    className={`relative overflow-hidden group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] shadow-sm hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 flex flex-col ${trackIdx === 0 ? 'md:col-span-2 md:row-span-2' : 'md:col-span-2 lg:col-span-1'
+                                        }`}
+                                >
+                                    {/* Track Header/Badge */}
+                                    <div className="absolute top-6 left-6 z-10">
+                                        <div className="bg-black/50 backdrop-blur-md px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10">
+                                            <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                                            <span className="text-[10px] font-bold text-white uppercase tracking-widest">{track._count?.events || 0} Etapas</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Image Container */}
+                                    <div className={`relative overflow-hidden ${trackIdx === 0 ? 'h-64 md:h-80' : 'h-48'}`}>
+                                        <img
+                                            src={track.imageUrl || "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2070&auto=format&fit=crop"}
+                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                            alt={track.title}
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-slate-900 via-transparent to-transparent"></div>
+                                    </div>
+
+                                    {/* Content */}
+                                    <div className="p-8 flex-1 flex flex-col">
+                                        <h4 className="text-2xl font-black mb-3 tracking-tight group-hover:text-blue-500 transition-colors">{track.title}</h4>
+                                        <p className="text-slate-500 text-sm line-clamp-2 mb-6 leading-relaxed">
+                                            {track.description}
+                                        </p>
+
+                                        {/* Journey Preview */}
+                                        <div className="space-y-4 mb-8">
+                                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Sua Jornada:</p>
+                                            <div className="space-y-2">
+                                                {track.events?.slice(0, 3).map((te, idx) => (
+                                                    <div key={te.id} className="flex items-center gap-3 group/item">
+                                                        <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-black text-slate-500 group-hover/item:bg-blue-500 group-hover/item:text-white transition-colors shrink-0">
+                                                            {idx + 1}
+                                                        </div>
+                                                        <span className="text-xs font-bold text-slate-600 dark:text-slate-400 truncate group-hover/item:text-slate-900 dark:group-hover/item:text-white transition-colors">
+                                                            {te.event?.title}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                                {(track._count?.events || 0) > 3 && (
+                                                    <p className="pl-9 text-[10px] font-bold text-blue-500">+ {(track._count?.events || 0) - 3} outros eventos</p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-auto">
+                                            <Link to="/login" className="block w-full">
+                                                <Button className="w-full h-14 bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-blue-600 dark:hover:bg-blue-500 hover:text-white rounded-2xl font-black text-base shadow-xl shadow-slate-200 dark:shadow-none transition-all flex items-center justify-center gap-2 group-hover:scale-[1.02]">
+                                                    Começar Trilha
+                                                    <ArrowRight className="w-5 h-5" />
+                                                </Button>
+                                            </Link>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+                    <div className="h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-800 to-transparent my-12"></div>
                 </section>
 
                 {/* EVENTS GRID */}
@@ -473,7 +544,7 @@ const LandingPage = () => {
                     </div>
                 </div>
                 <div className="max-w-7xl mx-auto px-4 mt-12 pt-8 border-t border-slate-200 dark:border-slate-800 text-center text-xs text-slate-400">
-                    © 2024 SEDUC Campina Grande. Desenvolvido para Excelência Educacional.
+                    © 2026SEDUC Campina Grande. Desenvolvido para Excelência Educacional.
                 </div>
             </footer>
         </div>

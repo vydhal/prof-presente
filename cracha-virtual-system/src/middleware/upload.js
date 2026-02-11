@@ -217,6 +217,61 @@ const uploadPresentation = multer({
   },
 }).single("presentation");
 
+// --- NOVO STORAGE PARA IMAGENS DE TRILHAS ---
+const trackThumbnailStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = "uploads/tracks/";
+    ensureDirectoryExists(dir);
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const extension = path.extname(file.originalname);
+    cb(null, `track-${uniqueSuffix}${extension}`);
+  },
+});
+
+const uploadTrackThumbnail = multer({
+  storage: trackThumbnailStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const filetypes = /jpeg|jpg|png|gif|webp/;
+    const mimetype = filetypes.test(file.mimetype);
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    if (mimetype && extname) {
+      return cb(null, true);
+    }
+    cb(new Error("Erro: Apenas arquivos de imagem são permitidos!"));
+  },
+}).single("trackThumbnail");
+
+const bannerThumbnailStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = "uploads/banners/";
+    ensureDirectoryExists(dir);
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const extension = path.extname(file.originalname);
+    cb(null, `banner-${uniqueSuffix}${extension}`);
+  },
+});
+
+const uploadBannerThumbnail = multer({
+  storage: bannerThumbnailStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const filetypes = /jpeg|jpg|png|gif|webp/;
+    const mimetype = filetypes.test(file.mimetype);
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    if (mimetype && extname) {
+      return cb(null, true);
+    }
+    cb(new Error("Erro: Apenas arquivos de imagem são permitidos!"));
+  },
+}).single("bannerThumbnail");
+
 module.exports = {
   uploadProfilePhoto,
   uploadBadgeTemplate,
@@ -226,4 +281,6 @@ module.exports = {
   uploadEventThumbnail,
   uploadSpeakerPhoto,
   uploadPresentation,
+  uploadTrackThumbnail,
+  uploadBannerThumbnail,
 };

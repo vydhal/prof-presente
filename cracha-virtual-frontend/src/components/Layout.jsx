@@ -35,6 +35,7 @@ import {
   Shield,
   Trophy,
   MessageSquare,
+  GraduationCap
 } from "lucide-react";
 import Logo from "../assets/logo-prof-presente.svg"; // Importe o seu logo
 import { getAssetUrl } from "../lib/utils"; // NOVO: Importa a função auxiliar
@@ -113,6 +114,12 @@ const Layout = ({ children }) => {
       id: "nav-link-minhas-inscrições",
     },
     {
+      name: "Minhas Trilhas",
+      href: "/my-tracks",
+      icon: GraduationCap,
+      id: "nav-link-minhas-trilhas",
+    },
+    {
       name: "Meu Perfil",
       href: "/profile",
       icon: CreditCard,
@@ -124,7 +131,10 @@ const Layout = ({ children }) => {
       : []),
     { name: "Ranking de Checkins", href: "/ranking", icon: Trophy },
     ...(isAdmin || user?.role === "GESTOR_ESCOLA" || isOrg
-      ? [{ name: "Administração", href: "/admin", icon: Shield }]
+      ? [
+        { name: "Administração", href: "/admin", icon: Shield },
+        { name: "Gerenciar Trilhas", href: "/admin/tracks", icon: GraduationCap }
+      ]
       : []),
   ];
 
