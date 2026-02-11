@@ -33,7 +33,7 @@ const AdminTracks = () => {
         queryKey: ['admin-tracks'],
         queryFn: async () => {
             const resp = await tracksAPI.getAll();
-            return resp.data;
+            return Array.isArray(resp.data) ? resp.data : [];
         }
     });
 

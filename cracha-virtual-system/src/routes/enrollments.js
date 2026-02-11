@@ -9,6 +9,8 @@ const {
   cancelEnrollment,
   updateEnrollmentStatus,
   resendConfirmationEmail,
+  deleteEnrollment,
+  moveEnrollment,
 } = require("../controllers/enrollmentController");
 
 const {
@@ -88,11 +90,17 @@ router.get("/event/:eventId/status", authenticateToken, async (req, res) => {
 // Listar todas as inscrições (com filtros e paginação)
 router.get("/", authenticateToken, getMyEnrollments);
 
-// Cancelar inscrição (DELETE)
+// Cancelar inscrição (DELETE) - Mantido para compatibilidade, faz o mesmo que o patch cancel
 router.delete("/:enrollmentId", authenticateToken, cancelEnrollment);
+
+// DELETAR INSCRIÇÃO PERMANENTEMENTE (Libera vaga)
+router.delete("/:enrollmentId/permanent", authenticateToken, requireAdmin, deleteEnrollment);
 
 // Cancelar inscrição (PATCH - compatibilidade)
 router.patch("/:enrollmentId/cancel", authenticateToken, cancelEnrollment);
+
+// MOVER PARTICIPANTE PARA OUTRO EVENTO
+router.patch("/:enrollmentId/move", authenticateToken, requireAdmin, moveEnrollment);
 
 // Atualizar status da inscrição (apenas admin)
 router.patch(

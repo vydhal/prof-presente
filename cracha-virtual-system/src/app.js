@@ -9,6 +9,9 @@ const { setupSecurity, apiLimiter } = require('./middleware/security');
 
 const app = express();
 
+// Confiar no proxy (Traefik) para o rate-limit e logs de IP
+app.set('trust proxy', 1);
+
 // Segurança (Headers + Rate Limit)
 setupSecurity(app);
 app.use(apiLimiter);
@@ -21,7 +24,7 @@ app.use(
   cors({
     origin:
       process.env.NODE_ENV === "production"
-        ? "https://checkin.simplisoft.com.br" // Sua URL de produção
+        ? "https://eduagenda.simplisoft.com.br" // Sua URL de produção
         : ["http://localhost:5173", "http://localhost:3001"], // Permite ambas as portas
     credentials: true,
   })

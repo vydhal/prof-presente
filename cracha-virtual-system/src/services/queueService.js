@@ -3,21 +3,21 @@ const amqp = require('amqplib');
 let connection = null;
 let channel = null;
 
-const connectRabbitMQ = async () => {
+const connectRabbitMQ = async (retries = 5) => {
   if (connection && channel) return channel;
 
   try {
     const amqpUrl = process.env.AMQP_URL || 'amqp://guest:guest@localhost:5672';
-    console.log(`Connecting to RabbitMQ at ${amqpUrl}...`);
-    
+    console.log(`Connecting to RabbitMQ at ${amqpUrl} (Attempts left: ${retries})...`);
+
     connection = await amqp.connect(amqpUrl);
     channel = await connection.createChannel();
-    
+
     console.log('RabbitMQ Connected Successfully');
-    
+
     // Setup queues
     await channel.assertQueue('email_queue', { durable: true });
-    
+
     connection.on('error', (err) => {
       console.error('RabbitMQ connection error', err);
       connection = null;
@@ -26,8 +26,14 @@ const connectRabbitMQ = async () => {
 
     return channel;
   } catch (error) {
-    console.error('Failed to connect to RabbitMQ:', error);
-    // Retry logic could be added here, but for now we let it fail so pm2/docker restarts
+    console.error('Failed to connect to RabbitMQ:', error.message);
+
+    if (retries > 0) {
+      console.log('Retrying in 5 seconds...');
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      return connectRabbitMQ(retries - 1);
+    }
+
     return null;
   }
 };
@@ -64,7 +70,7 @@ const consumeQueue = async (queue, callback) => {
           // Optionally nack to requeue: channel.nack(msg);
           // For now, we ack to avoid poison messages blocking the queue 
           // or we could channel.nack(msg, false, false) to discard
-          channel.ack(msg); 
+          channel.ack(msg);
         }
       }
     });

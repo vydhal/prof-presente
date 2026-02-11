@@ -37,7 +37,7 @@ services:
       labels:
         - "traefik.enable=true"
         - "traefik.docker.network=SimpliSoft"
-        - "traefik.http.routers.eduagenda-backend.rule=Host(`eduagenda.simplisoft.com.br`) && (PathPrefix(`/api`) || PathPrefix(`/uploads`))"
+        - "traefik.http.routers.eduagenda-backend.rule=Host(`eduagenda.simplisoft.com.br`) && (PathPrefix(`/api`) || PathPrefix(`/uploads`) || PathPrefix(`/socket.io`))"
         - "traefik.http.routers.eduagenda-backend.entrypoints=websecure"
         - "traefik.http.routers.eduagenda-backend.tls.certresolver=letsencryptresolver"
         - "traefik.http.services.eduagenda-backend.loadbalancer.server.port=3000"

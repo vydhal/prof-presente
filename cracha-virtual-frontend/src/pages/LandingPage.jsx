@@ -93,7 +93,8 @@ const LandingPage = () => {
             // We use public: true to ensure access for unauthenticated users
             // We use limit: 100 to ensure we catch 'In Progress' events 
             const response = await eventsAPI.getAll({ public: true, limit: 100 });
-            return response.data?.events || response.data || [];
+            const data = response.data?.events || response.data;
+            return Array.isArray(data) ? data : [];
         },
     });
 
@@ -102,7 +103,7 @@ const LandingPage = () => {
         queryKey: ["landing-public-tracks"],
         queryFn: async () => {
             const response = await tracksAPI.getAll();
-            return response.data || [];
+            return Array.isArray(response.data) ? response.data : [];
         },
     });
 

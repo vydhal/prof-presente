@@ -59,7 +59,7 @@ const BannerManagement = () => {
         queryKey: ["admin-banners"],
         queryFn: async () => {
             const response = await bannersAPI.getAll();
-            return response.data;
+            return Array.isArray(response.data) ? response.data : [];
         },
     });
 

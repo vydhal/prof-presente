@@ -459,6 +459,137 @@ const resendConfirmationEmail = async (req, res) => {
   }
 };
 
+// Deletar inscrição (Admin) - Libera vaga imediatamente
+const deleteEnrollment = async (req, res) => {
+  try {
+    const { enrollmentId } = req.params;
+
+    const enrollment = await prisma.enrollment.findUnique({
+      where: { id: enrollmentId },
+      include: { event: true, user: true },
+    });
+
+    if (!enrollment) {
+      return res.status(404).json({ error: "Inscrição não encontrada" });
+    }
+
+    // Apenas Admin pode deletar fisicamente
+    if (req.user.role !== "ADMIN") {
+      return res.status(403).json({ error: "Apenas administradores podem excluir inscrições permanentemente." });
+    }
+
+    await prisma.enrollment.delete({
+      where: { id: enrollmentId },
+    });
+
+    // Opcional: Notificar o usuário? Por enquanto apenas deletar como solicitado.
+
+    res.json({ message: "Inscrição excluída permanentemente. Vaga liberada." });
+  } catch (error) {
+    console.error("Erro ao excluir inscrição:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+};
+
+// Mover participante para outro evento (Admin)
+const moveEnrollment = async (req, res) => {
+  try {
+    const { enrollmentId } = req.params;
+    const { targetEventId } = req.body;
+
+    if (!targetEventId) {
+      return res.status(400).json({ error: "ID do evento de destino é obrigatório" });
+    }
+
+    // 1. Busca inscrição atual
+    const enrollment = await prisma.enrollment.findUnique({
+      where: { id: enrollmentId },
+      include: { event: true, user: true },
+    });
+
+    if (!enrollment) {
+      return res.status(404).json({ error: "Inscrição não encontrada" });
+    }
+
+    if (enrollment.eventId === targetEventId) {
+      return res.status(400).json({ error: "O participante já está neste evento." });
+    }
+
+    // 2. Busca evento de destino e verifica capacidade
+    const targetEvent = await prisma.event.findUnique({
+      where: { id: targetEventId },
+      include: {
+        _count: {
+          select: { enrollments: { where: { status: "APPROVED" } } },
+        },
+      },
+    });
+
+    if (!targetEvent) {
+      return res.status(404).json({ error: "Evento de destino não encontrado" });
+    }
+
+    if (targetEvent.maxAttendees && targetEvent._count.enrollments >= targetEvent.maxAttendees) {
+      return res.status(400).json({ error: "O evento de destino está lotado." });
+    }
+
+    // 3. Verifica se o usuário já tem inscrição (mesmo que cancelada) no evento de destino
+    const existingTargetEnrollment = await prisma.enrollment.findUnique({
+      where: {
+        userId_eventId: {
+          userId: enrollment.userId,
+          eventId: targetEventId,
+        },
+      },
+    });
+
+    if (existingTargetEnrollment) {
+      return res.status(409).json({ error: "O usuário já possui uma inscrição no evento de destino. Tente excluir a outra primeiro." });
+    }
+
+    // 4. Salva dados para os e-mails antes de atualizar
+    const oldEvent = enrollment.event;
+    const user = enrollment.user;
+
+    // 5. Atualiza a inscrição para o novo evento
+    const updatedEnrollment = await prisma.enrollment.update({
+      where: { id: enrollmentId },
+      data: {
+        eventId: targetEventId,
+        enrollmentDate: new Date(), // Renovamos a data da inscrição
+        status: "APPROVED",
+      },
+    });
+
+    // 6. Enviar e-mails (Assíncrono)
+    try {
+      // Notifica cancelamento no antigo
+      sendEnrollmentCancellationEmail(user, oldEvent);
+
+      // Notifica confirmação no novo
+      const userBadge = await findOrCreateUserBadge(user.id);
+      const userAwards = await prisma.userAward.findMany({
+        where: { userId: user.id },
+        include: { award: true },
+        orderBy: { awardedAt: "desc" },
+        take: 5,
+      });
+      sendEnrollmentConfirmationEmail(user, targetEvent, userBadge, userAwards);
+    } catch (emailError) {
+      console.error("Erro ao enviar e-mails de movimentação:", emailError);
+      // Não trava a resposta, pois o banco já foi atualizado
+    }
+
+    res.json({
+      message: "Participante movido com sucesso!",
+      enrollment: updatedEnrollment,
+    });
+  } catch (error) {
+    console.error("Erro ao mover participante:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+};
+
 module.exports = {
   enrollInEvent,
   getUserEnrollments,
@@ -467,4 +598,6 @@ module.exports = {
   cancelEnrollment,
   updateEnrollmentStatus,
   resendConfirmationEmail,
+  deleteEnrollment,
+  moveEnrollment,
 };

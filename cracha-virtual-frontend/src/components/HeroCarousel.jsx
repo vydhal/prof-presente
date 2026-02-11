@@ -15,7 +15,7 @@ const HeroCarousel = () => {
         queryKey: ["active-banners"],
         queryFn: async () => {
             const response = await bannersAPI.getActive();
-            return response.data || [];
+            return Array.isArray(response.data) ? response.data : [];
         },
         staleTime: 1000 * 60 * 5, // 5 minutes
     });
