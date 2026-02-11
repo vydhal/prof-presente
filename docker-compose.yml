@@ -19,10 +19,12 @@ services:
       - SMTP_PASS=${SMTP_PASS}
       - EMAIL_FROM=${EMAIL_FROM}
       - PUBLIC_API_URL=https://eduagenda.simplisoft.com.br/api
+      - FACIAL_SERVICE_URL=http://eduagenda_facialrec:3002/api
     depends_on:
       - eduagenda_db
       - eduagenda_rabbitmq
       - eduagenda_redis
+      - eduagenda_facialrec
     volumes:
       - eduagenda_uploads:/app/uploads
     networks:
@@ -110,6 +112,22 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # 6. Reconhecimento Facial (Python)
+  eduagenda_facialrec:
+    image: vydhal/eduagenda-facialrec:latest
+    environment:
+      - PORT=3002
+      - PUBLIC_API_URL=https://eduagenda.simplisoft.com.br/api
+    networks:
+      - interna_network_docs
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 2G
 
 volumes:
   postgres_data_v5:
