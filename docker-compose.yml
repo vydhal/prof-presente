@@ -1,0 +1,124 @@
+version: '3.8'
+
+services:
+  # 1. Backend API
+  backend:
+    image: vydhal/eduagenda-backend:latest
+    environment:
+      # Conecta ao Postgres usando o nome do serviço na rede interna
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@eduagenda_db:5432/${POSTGRES_DB}?schema=public
+      - JWT_SECRET=${JWT_SECRET}
+      - PORT=${PORT}
+      - NODE_ENV=production
+      - AMQP_URL=amqp://guest:guest@eduagenda_rabbitmq:5672
+      - REDIS_URL=redis://eduagenda_redis:6379
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_SECURE=${SMTP_SECURE}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - EMAIL_FROM=${EMAIL_FROM}
+      - PUBLIC_API_URL=https://eduagenda.simplisoft.com.br/api
+    depends_on:
+      - eduagenda_db
+      - eduagenda_rabbitmq
+      - eduagenda_redis
+    volumes:
+      - eduagenda_uploads:/app/uploads
+    networks:
+      - SimpliSoft # Para falar com o Traefik
+      - interna_network_docs # Para falar com o Postgres e serviços internos
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=SimpliSoft"
+        - "traefik.http.routers.eduagenda-backend.rule=Host(`eduagenda.simplisoft.com.br`) && (PathPrefix(`/api`) || PathPrefix(`/uploads`))"
+        - "traefik.http.routers.eduagenda-backend.entrypoints=websecure"
+        - "traefik.http.routers.eduagenda-backend.tls.certresolver=letsencryptresolver"
+        - "traefik.http.services.eduagenda-backend.loadbalancer.server.port=3000"
+        - "traefik.http.routers.eduagenda-backend.middlewares=eduagenda-upload-limit@docker"
+        - "traefik.http.middlewares.eduagenda-upload-limit.buffering.maxRequestBodyBytes=52428800"
+        - "traefik.http.middlewares.eduagenda-upload-limit.buffering.memRequestBodyBytes=10485760"
+
+  # 2. Frontend
+  frontend:
+    image: vydhal/eduagenda-frontend:latest
+    environment:
+      - VITE_API_URL=https://eduagenda.simplisoft.com.br/api
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=SimpliSoft"
+        - "traefik.http.routers.eduagenda-frontend.rule=Host(`eduagenda.simplisoft.com.br`)"
+        - "traefik.http.routers.eduagenda-frontend.entrypoints=websecure"
+        - "traefik.http.routers.eduagenda-frontend.tls.certresolver=letsencryptresolver"
+        - "traefik.http.services.eduagenda-frontend.loadbalancer.server.port=80"
+    networks:
+      - SimpliSoft
+
+  # 3. Banco de Dados
+  eduagenda_db:
+    image: postgres:15-alpine
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [ node.role == manager ]
+      restart_policy:
+        condition: on-failure
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data_v5:/var/lib/postgresql/data
+    networks:
+      - interna_network_docs
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 4. Mensageria (RabbitMQ)
+  eduagenda_rabbitmq:
+    image: rabbitmq:3-management-alpine
+    networks:
+      - interna_network_docs
+    deploy:
+      replicas: 1
+    healthcheck:
+      test: [ "CMD", "rabbitmqctl", "status" ]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+
+  # 5. Cache (Redis)
+  eduagenda_redis:
+    image: redis:alpine
+    networks:
+      - interna_network_docs
+    deploy:
+      replicas: 1
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data_v5:
+  eduagenda_uploads:
+
+
+networks:
+  SimpliSoft:
+    external: true
+  interna_network_docs:
+    driver: overlay
+    attachable: true

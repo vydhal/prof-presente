@@ -2,20 +2,47 @@ const request = require('supertest');
 const app = require('../src/app');
 const { prisma } = require('../src/config/database');
 
-// Mock authmiddleware logic if needed, or bypass.
-// For now, let's test a public endpoint or just ensure app starts.
+describe('System Health and Public Endpoints', () => {
+    it('should return 200 for the root URL', async () => {
+        const res = await request(app).get('/');
+        expect(res.statusCode).toBe(200);
+        expect(res.body.status).toBe('online');
+    });
 
-describe('Event Endpoints', () => {
-    
-    // We can't easily test auth routes without a valid token generator or mocking middleware.
-    // Let's test a simple health check or 404.
-    
+    it('should return 200 for the API status URL', async () => {
+        const res = await request(app).get('/api/status');
+        expect(res.statusCode).toBe(200);
+        expect(res.body.message).toContain('funcionando');
+    });
+
     it('should return 404 for unknown route', async () => {
         const res = await request(app).get('/api/unknown');
         expect(res.statusCode).toBe(404);
     });
+});
 
-    // If we have a public event route?
-    // GET /events is usually public or restricted?
-    // Based on code, getAllEvents checks user role but might allow public?
+describe('Auth Endpoints', () => {
+    it('should fail login with invalid credentials', async () => {
+        const res = await request(app)
+            .post('/api/auth/login')
+            .send({
+                email: 'nonexistent@example.com',
+                password: 'wrongpassword'
+            });
+
+        // Either 401 or 400 depending on implementation
+        expect([400, 401]).toContain(res.statusCode);
+    });
+
+    it('should fail registration with invalid data', async () => {
+        const res = await request(app)
+            .post('/api/auth/register')
+            .send({
+                name: '',
+                email: 'invalid-email',
+                password: '123'
+            });
+
+        expect(res.statusCode).toBe(400);
+    });
 });

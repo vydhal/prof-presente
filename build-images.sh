@@ -6,9 +6,9 @@
 set -e
 
 # Configurações
-DOCKER_USERNAME="seu-usuario"
-BACKEND_IMAGE="cracha-backend"
-FRONTEND_IMAGE="cracha-frontend"
+DOCKER_USERNAME="vydhal"
+BACKEND_IMAGE="eduagenda-backend"
+FRONTEND_IMAGE="eduagenda-frontend"
 VERSION="latest"
 
 echo "🐳 Iniciando build das imagens Docker..."
