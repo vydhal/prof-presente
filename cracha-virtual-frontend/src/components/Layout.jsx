@@ -41,9 +41,11 @@ import Logo from "../assets/logo-prof-presente.svg"; // Importe o seu logo
 import { getAssetUrl } from "../lib/utils"; // NOVO: Importa a função auxiliar
 import AppTour from "./AppTour";
 import BottomNavbar from "./BottomNavbar";
+import { useBranding } from "../contexts/BrandingContext";
 
 const Layout = ({ children }) => {
   const { user, logout, isAdmin, isOrg } = useAuth();
+  const { platformName, logoUrl } = useBranding();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -148,7 +150,8 @@ const Layout = ({ children }) => {
     <div className="flex flex-col h-full">
       <div className="flex items-center px-6 py-4 border-b">
         <div className="flex items-center space-x-2">
-          <img src={Logo} alt="Logo" className="h-10" />
+          <img src={logoUrl || Logo} alt={platformName} className="h-10 w-auto object-contain" />
+          <span className="font-bold text-xl text-foreground">{platformName}</span>
         </div>
       </div>
 

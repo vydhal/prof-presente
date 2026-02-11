@@ -208,4 +208,12 @@ export const bannersAPI = {
   delete: (id) => api.delete(`/banners/${id}`),
 };
 
+// Funções de configurações (Whitelabel)
+export const settingsAPI = {
+  get: () => api.get("/settings"),
+  update: (formData) => api.put("/settings", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  }),
+};
+
 export default api;

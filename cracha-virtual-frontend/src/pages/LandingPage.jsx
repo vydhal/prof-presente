@@ -28,6 +28,8 @@ import {
     Loader2
 } from "lucide-react";
 import HeroCarousel from "../components/HeroCarousel";
+import { useBranding } from "../contexts/BrandingContext";
+import LogoDefault from "../assets/logo-prof-presente.svg";
 
 import { useDebounce } from "../hooks/useDebounce";
 
@@ -50,6 +52,7 @@ const formatDate = (dateString) => {
 };
 
 const LandingPage = () => {
+    const { platformName, logoUrl } = useBranding();
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [searchModalOpen, setSearchModalOpen] = useState(false);
@@ -187,13 +190,17 @@ const LandingPage = () => {
 
                     {/* LOGO */}
                     <div className="flex items-center gap-2 shrink-0">
-                        <div className="bg-[#137fec] p-1.5 rounded-lg text-white">
-                            <svg className="w-6 h-6" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                                <path clipRule="evenodd" d="M47.2426 24L24 47.2426L0.757355 24L24 0.757355L47.2426 24ZM12.2426 21H35.7574L24 9.24264L12.2426 21Z" fill="currentColor" fillRule="evenodd"></path>
-                            </svg>
-                        </div>
-                        <h1 className="text-xl font-bold tracking-tight">
-                            SEDUC <span className="text-[#137fec]">Eventos</span>
+                        {logoUrl ? (
+                            <img src={logoUrl} alt={platformName} className="h-10 w-auto object-contain" />
+                        ) : (
+                            <div className="bg-[#137fec] p-1.5 rounded-lg text-white">
+                                <svg className="w-6 h-6" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                                    <path clipRule="evenodd" d="M47.2426 24L24 47.2426L0.757355 24L24 0.757355L47.2426 24ZM12.2426 21H35.7574L24 9.24264L12.2426 21Z" fill="currentColor" fillRule="evenodd"></path>
+                                </svg>
+                            </div>
+                        )}
+                        <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                            {platformName}
                         </h1>
                     </div>
 
@@ -504,15 +511,19 @@ const LandingPage = () => {
                 <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
                     <div className="col-span-1 md:col-span-1 space-y-4">
                         <div className="flex items-center gap-2">
-                            <div className="bg-[#137fec] p-1.5 rounded-lg text-white">
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                                    <path clipRule="evenodd" d="M47.2426 24L24 47.2426L0.757355 24L24 0.757355L47.2426 24ZM12.2426 21H35.7574L24 9.24264L12.2426 21Z" fill="currentColor" fillRule="evenodd"></path>
-                                </svg>
-                            </div>
-                            <h1 className="text-lg font-bold tracking-tight">SEDUC <span className="text-[#137fec]">Eventos</span></h1>
+                            {logoUrl ? (
+                                <img src={logoUrl} alt={platformName} className="h-8 w-auto object-contain" />
+                            ) : (
+                                <div className="bg-[#137fec] p-1.5 rounded-lg text-white">
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                                        <path clipRule="evenodd" d="M47.2426 24L24 47.2426L0.757355 24L24 0.757355L47.2426 24ZM12.2426 21H35.7574L24 9.24264L12.2426 21Z" fill="currentColor" fillRule="evenodd"></path>
+                                    </svg>
+                                </div>
+                            )}
+                            <h1 className="text-lg font-bold tracking-tight">{platformName}</h1>
                         </div>
                         <p className="text-sm text-slate-500 dark:text-slate-400">
-                            Portal oficial de eventos da Secretaria de Educação de Campina Grande, Paraíba.
+                            Portal oficial de eventos e formação continuada.
                         </p>
                     </div>
 
@@ -544,7 +555,7 @@ const LandingPage = () => {
                     </div>
                 </div>
                 <div className="max-w-7xl mx-auto px-4 mt-12 pt-8 border-t border-slate-200 dark:border-slate-800 text-center text-xs text-slate-400">
-                    © 2026SEDUC Campina Grande. Desenvolvido para Excelência Educacional.
+                    © 2026 {platformName}. Desenvolvido para Excelência Educacional.
                 </div>
             </footer>
         </div>

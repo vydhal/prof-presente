@@ -431,3 +431,15 @@ model Banner {
 
   @@map("banners")
 }
+
+model SystemSettings {
+  id             String   @id @default(uuid())
+  platformName   String   @default("SEDUC Eventos")
+  logoUrl        String?  @map("logo_url")
+  faviconUrl     String?  @map("favicon_url")
+  primaryColor   String   @default("#137fec") @map("primary_color")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}

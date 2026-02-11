@@ -13,11 +13,13 @@ import {
     Maximize2,
     Minimize2
 } from "lucide-react";
+import { useBranding } from "../contexts/BrandingContext";
 
 // Configuração do worker do PDF.js
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const PresentationPage = () => {
+    const { platformName } = useBranding();
     const { id: eventId } = useParams();
     const socket = useSocket();
     const { user } = useAuth();
@@ -333,7 +335,7 @@ const PresentationPage = () => {
                         exit={{ opacity: 0 }}
                         className="absolute inset-0 flex flex-col items-center justify-center text-center opacity-50 space-y-4 z-0"
                     >
-                        <h1 className="text-7xl font-black tracking-tighter uppercase text-slate-100">Prof Presente</h1>
+                        <h1 className="text-7xl font-black tracking-tighter uppercase text-slate-100">{platformName}</h1>
                         <p className="text-xl font-medium tracking-widest text-blue-500 uppercase">Aguardando Sequência</p>
                     </motion.div>
                 )}

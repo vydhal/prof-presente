@@ -65,6 +65,7 @@ import {
   Sparkles, // Re-adicionado
   Pencil, // Re-adicionado
   Image as ImageIcon,
+  Palette,
 } from "lucide-react";
 import { toast } from "sonner";
 import UserManagement from "../components/UserManagement";
@@ -76,6 +77,7 @@ import ReportsDashboard from "../components/ReportsDashboard";
 import CertificatePreview from "../components/CertificatePreview";
 import EventStaffManager from "../components/EventStaffManager";
 import BannerManagement from "../components/BannerManagement";
+import BrandingManagement from "../components/BrandingManagement";
 import { Badge } from "../components/ui/badge";
 import { Combobox } from "../components/ui/combobox";
 import { getAssetUrl } from "../lib/utils";
@@ -727,7 +729,7 @@ const Admin = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6 lg:mb-0">
         <div className="w-full overflow-x-auto pb-2 block">
-          <TabsList className="inline-flex w-auto space-x-2 lg:grid lg:w-full lg:grid-cols-8">
+          <TabsList className="inline-flex w-auto space-x-2 lg:grid lg:w-full lg:grid-cols-9">
             <TabsTrigger value="dashboard">
               <BarChart className="h-4 w-4 mr-2" />
               Dashboard
@@ -757,6 +759,10 @@ const Admin = () => {
                 <TabsTrigger value="professions">
                   <Briefcase className="h-4 w-4 mr-2" />
                   Profissões
+                </TabsTrigger>
+                <TabsTrigger value="branding">
+                  <Palette className="h-4 w-4 mr-2" />
+                  Personalização
                 </TabsTrigger>
               </>
             )}
@@ -1562,6 +1568,10 @@ const Admin = () => {
 
             <TabsContent value="banners">
               <BannerManagement />
+            </TabsContent>
+
+            <TabsContent value="branding">
+              <BrandingManagement />
             </TabsContent>
           </>
         )}

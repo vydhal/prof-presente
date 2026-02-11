@@ -272,6 +272,37 @@ const uploadBannerThumbnail = multer({
   },
 }).single("bannerThumbnail");
 
+// --- NOVO STORAGE PARA LOGO E FAVICON ---
+const brandingStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = "uploads/branding/";
+    ensureDirectoryExists(dir);
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const type = file.fieldname === "logo" ? "logo" : "favicon";
+    const extension = path.extname(file.originalname);
+    cb(null, `${type}-${Date.now()}${extension}`);
+  },
+});
+
+const uploadBranding = multer({
+  storage: brandingStorage,
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+  fileFilter: (req, file, cb) => {
+    const filetypes = /jpeg|jpg|png|gif|webp|ico|svg/;
+    const mimetype = filetypes.test(file.mimetype) || file.mimetype === "image/x-icon" || file.mimetype === "image/vnd.microsoft.icon";
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    if (mimetype && extname) {
+      return cb(null, true);
+    }
+    cb(new Error("Erro: Apenas arquivos de imagem (incluindo .ico e .svg) são permitidos!"));
+  },
+}).fields([
+  { name: "logo", maxCount: 1 },
+  { name: "favicon", maxCount: 1 },
+]);
+
 module.exports = {
   uploadProfilePhoto,
   uploadBadgeTemplate,
@@ -283,4 +314,5 @@ module.exports = {
   uploadPresentation,
   uploadTrackThumbnail,
   uploadBannerThumbnail,
+  uploadBranding,
 };
