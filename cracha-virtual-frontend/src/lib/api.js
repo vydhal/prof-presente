@@ -1,9 +1,5 @@
 import axios from "axios";
-// import Cookies from "js-cookie"; // Removido
-
-// Configuração base da API
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+import { API_BASE_URL } from "./utils";
 
 // Criar instância do axios
 const api = axios.create({

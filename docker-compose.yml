@@ -20,6 +20,8 @@ services:
       - EMAIL_FROM=${EMAIL_FROM}
       - PUBLIC_API_URL=https://eduagenda.simplisoft.com.br/api
       - FACIAL_SERVICE_URL=http://eduagenda_facialrec:3002/api
+      - TZ=America/Sao_Paulo
+      - CORS_ORIGIN=https://eduagenda.simplisoft.com.br
     depends_on:
       - eduagenda_db
       - eduagenda_rabbitmq
@@ -50,6 +52,7 @@ services:
     image: vydhal/eduagenda-frontend:latest
     environment:
       - VITE_API_URL=https://eduagenda.simplisoft.com.br/api
+      - TZ=America/Sao_Paulo
     deploy:
       replicas: 1
       restart_policy:
@@ -77,6 +80,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - TZ=America/Sao_Paulo
     volumes:
       - postgres_data_v5:/var/lib/postgresql/data
     networks:

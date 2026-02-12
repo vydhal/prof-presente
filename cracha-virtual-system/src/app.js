@@ -24,8 +24,8 @@ app.use(
   cors({
     origin:
       process.env.NODE_ENV === "production"
-        ? "https://eduagenda.simplisoft.com.br" // Sua URL de produção
-        : ["http://localhost:5173", "http://localhost:3001"], // Permite ambas as portas
+        ? (process.env.CORS_ORIGIN || "https://eduagenda.simplisoft.com.br")
+        : ["http://localhost:5173", "http://localhost:3001"],
     credentials: true,
   })
 );

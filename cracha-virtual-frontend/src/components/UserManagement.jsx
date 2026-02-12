@@ -43,7 +43,7 @@ import {
   PaginationPrevious,
 } from "./ui/pagination";
 import { Badge } from "./ui/badge";
-import { Shield, Key, Search, Plus, UserPlus, Calendar, MapPin, Clock } from "lucide-react";
+import { Shield, Key, Search, Plus, UserPlus, Calendar, MapPin, Clock, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import AdminUserRegister from "./AdminUserRegister";
 
@@ -153,6 +153,20 @@ const UserManagement = () => {
     },
   });
 
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId) => {
+      const response = await api.delete(`/users/${userId}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["admin-users"]);
+      toast.success("Usuário excluído com sucesso!");
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.error || "Erro ao excluir usuário");
+    },
+  });
+
   const handleRoleChange = () => {
     if (!newRole) {
       toast.error("Selecione um tipo de usuário");
@@ -177,6 +191,12 @@ const UserManagement = () => {
       userId: userToEdit.id,
       data: { name: editName, email: editEmail }
     });
+  };
+
+  const handleDeleteUser = (user) => {
+    if (window.confirm(`Tem certeza que deseja excluir o usuário "${user.name}"? Esta ação não pode ser desfeita.`)) {
+      deleteUserMutation.mutate(user.id);
+    }
   };
 
 
@@ -297,6 +317,15 @@ const UserManagement = () => {
                           <Key className="h-4 w-4 mr-1" />
                           Senha
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDeleteUser(user)}
+                          className="h-8"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Excluir
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -374,6 +403,15 @@ const UserManagement = () => {
                           >
                             <Calendar className="h-4 w-4 mr-1" />
                             Histórico
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteUser(user)}
+                            title="Excluir Usuário"
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Excluir
                           </Button>
                         </TableCell>
                       </TableRow>

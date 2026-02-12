@@ -9,7 +9,7 @@ const setupSockets = (server) => {
   const io = new Server(server, {
     cors: {
       origin: process.env.NODE_ENV === "production"
-        ? "https://checkin.simplisoft.com.br"
+        ? (process.env.CORS_ORIGIN || "https://checkin.simplisoft.com.br")
         : ["http://localhost:5173", "http://localhost:3001"],
       methods: ["GET", "POST"],
     },
