@@ -109,6 +109,7 @@ const Admin = () => {
   // NOVO: Estado para a URL de preview do certificado
   const [certificateTemplatePreviewUrl, setCertificateTemplatePreviewUrl] =
     useState(null);
+  const [certificateTemplateFile, setCertificateTemplateFile] = useState(null);
 
   const [certificateConfig, setCertificateConfig] = useState({
     nameX: "",
@@ -133,6 +134,7 @@ const Admin = () => {
     schedule: "",
     speakerName: "",
     speakerRole: "",
+    isPrivate: false,
   });
 
   const [badgeTemplateFile, setBadgeTemplateFile] = useState(null);
@@ -437,6 +439,7 @@ const Admin = () => {
       maxAttendees: eventForm.maxAttendees
         ? parseInt(eventForm.maxAttendees)
         : null,
+      isPrivate: eventForm.isPrivate,
     };
 
     if (editingEvent) {
@@ -466,6 +469,7 @@ const Admin = () => {
       schedule: event.schedule || "",
       speakerName: event.speakerName || "",
       speakerRole: event.speakerRole || "",
+      isPrivate: event.isPrivate ?? false,
     });
 
     setBadgeTemplatePreviewUrl(null);
@@ -1042,6 +1046,19 @@ const Admin = () => {
                         />
                       </div>
 
+                      <div className="flex items-center space-x-2 py-2">
+                        <input
+                          type="checkbox"
+                          id="isPrivate"
+                          checked={eventForm.isPrivate}
+                          onChange={(e) => setEventForm({ ...eventForm, isPrivate: e.target.checked })}
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <Label htmlFor="isPrivate" className="cursor-pointer">
+                          Evento Privado (Ocultar da listagem pública)
+                        </Label>
+                      </div>
+
                       <div className="flex justify-end gap-2">
                         <Button
                           type="button"
@@ -1578,7 +1595,7 @@ const Admin = () => {
           <ReportsDashboard />
         </TabsContent>
       </Tabs>
-    </div>
+    </div >
   );
 };
 

@@ -21,7 +21,7 @@ const invalidateEventCache = async () => {
     console.error("[Cache] Erro ao invalidar cache:", error);
   }
 };
-exports.invalidateEventCache = invalidateEventCache; // Export explicitly
+// exports.invalidateEventCache = invalidateEventCache; // Redundant, exported at bottom
 const getCorrectedDate = (storedDate) => {
   if (!storedDate) return null;
   const isoString = storedDate.toISOString();
@@ -47,10 +47,23 @@ const eventValidation = [
     .isLength({ min: 3, max: 255 })
     .withMessage("Local deve ter entre 3 e 255 caracteres"),
   body("maxAttendees")
-    .optional()
+    .optional({ checkFalsy: true })
     .isInt({ min: 1 })
     .withMessage("Número máximo de participantes deve ser um número positivo"),
 ];
+
+// Helper to check validation results
+const checkValidation = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.error("[Validation Error]", JSON.stringify(errors.array(), null, 2));
+    return res.status(400).json({
+      error: "Dados inválidos",
+      details: errors.array()
+    });
+  }
+  return null;
+};
 
 // Listar todos os eventos
 const getAllEvents = async (req, res) => {
@@ -253,12 +266,8 @@ const getEventById = async (req, res) => {
 // Criar evento
 const createEvent = async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res
-        .status(400)
-        .json({ error: "Dados inválidos", details: errors.array() });
-    }
+    const validationError = checkValidation(req, res);
+    if (validationError) return validationError;
 
     const {
       title,
@@ -303,9 +312,9 @@ const createEvent = async (req, res) => {
     };
 
     // 3. Se o criador for um GESTOR_ESCOLA ou ORGANIZER, associamos o criador
-    // e permitimos que ele escolha a visibilidade (padrão privado se não informado)
+    // e permitimos que ele escolha a visibilidade (padrão público se não informado)
     if (["GESTOR_ESCOLA", "ORGANIZER"].includes(user.role)) {
-      data.isPrivate = req.body.isPrivate !== undefined ? req.body.isPrivate : true;
+      data.isPrivate = req.body.isPrivate !== undefined ? req.body.isPrivate : false;
       data.creatorId = user.id;
     }
 
@@ -1045,6 +1054,7 @@ module.exports = {
   updateEvent,
   deleteEvent,
   eventValidation,
+  invalidateEventCache,
   uploadEventBadgeTemplate,
   generatePrintableBadges,
   uploadCertificateTemplate,

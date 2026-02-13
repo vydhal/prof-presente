@@ -8,7 +8,7 @@ services:
       # Conecta ao Postgres usando o nome do serviço na rede interna
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@eduagenda_db:5432/${POSTGRES_DB}?schema=public
       - JWT_SECRET=${JWT_SECRET}
-      - PORT=${PORT}
+      - PORT=3000
       - NODE_ENV=production
       - AMQP_URL=amqp://guest:guest@eduagenda_rabbitmq:5672
       - REDIS_URL=redis://eduagenda_redis:6379
@@ -32,6 +32,17 @@ services:
     networks:
       - SimpliSoft # Para falar com o Traefik
       - interna_network_docs # Para falar com o Postgres e serviços internos
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=SimpliSoft"
+      - "traefik.http.routers.eduagenda-backend.rule=Host(`eduagenda.simplisoft.com.br`) && (PathPrefix(`/api`) || PathPrefix(`/uploads`) || PathPrefix(`/socket.io`))"
+      - "traefik.http.routers.eduagenda-backend.entrypoints=web,websecure"
+      - "traefik.http.routers.eduagenda-backend.tls.certresolver=letsencryptresolver"
+      - "traefik.http.routers.eduagenda-backend.priority=100"
+      - "traefik.http.services.eduagenda-backend.loadbalancer.server.port=3000"
+      - "traefik.http.routers.eduagenda-backend.middlewares=eduagenda-upload-limit@docker"
+      - "traefik.http.middlewares.eduagenda-upload-limit.buffering.maxRequestBodyBytes=52428800"
+      - "traefik.http.middlewares.eduagenda-upload-limit.buffering.memRequestBodyBytes=10485760"
     deploy:
       replicas: 1
       restart_policy:
@@ -40,8 +51,9 @@ services:
         - "traefik.enable=true"
         - "traefik.docker.network=SimpliSoft"
         - "traefik.http.routers.eduagenda-backend.rule=Host(`eduagenda.simplisoft.com.br`) && (PathPrefix(`/api`) || PathPrefix(`/uploads`) || PathPrefix(`/socket.io`))"
-        - "traefik.http.routers.eduagenda-backend.entrypoints=websecure"
+        - "traefik.http.routers.eduagenda-backend.entrypoints=web,websecure"
         - "traefik.http.routers.eduagenda-backend.tls.certresolver=letsencryptresolver"
+        - "traefik.http.routers.eduagenda-backend.priority=100"
         - "traefik.http.services.eduagenda-backend.loadbalancer.server.port=3000"
         - "traefik.http.routers.eduagenda-backend.middlewares=eduagenda-upload-limit@docker"
         - "traefik.http.middlewares.eduagenda-upload-limit.buffering.maxRequestBodyBytes=52428800"
@@ -53,6 +65,16 @@ services:
     environment:
       - VITE_API_URL=https://eduagenda.simplisoft.com.br/api
       - TZ=America/Sao_Paulo
+    networks:
+      - SimpliSoft
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=SimpliSoft"
+      - "traefik.http.routers.eduagenda-frontend.rule=Host(`eduagenda.simplisoft.com.br`)"
+      - "traefik.http.routers.eduagenda-frontend.entrypoints=web,websecure"
+      - "traefik.http.routers.eduagenda-frontend.tls.certresolver=letsencryptresolver"
+      - "traefik.http.routers.eduagenda-frontend.priority=10"
+      - "traefik.http.services.eduagenda-frontend.loadbalancer.server.port=80"
     deploy:
       replicas: 1
       restart_policy:
@@ -61,11 +83,10 @@ services:
         - "traefik.enable=true"
         - "traefik.docker.network=SimpliSoft"
         - "traefik.http.routers.eduagenda-frontend.rule=Host(`eduagenda.simplisoft.com.br`)"
-        - "traefik.http.routers.eduagenda-frontend.entrypoints=websecure"
+        - "traefik.http.routers.eduagenda-frontend.entrypoints=web,websecure"
         - "traefik.http.routers.eduagenda-frontend.tls.certresolver=letsencryptresolver"
+        - "traefik.http.routers.eduagenda-frontend.priority=10"
         - "traefik.http.services.eduagenda-frontend.loadbalancer.server.port=80"
-    networks:
-      - SimpliSoft
 
   # 3. Banco de Dados
   eduagenda_db:

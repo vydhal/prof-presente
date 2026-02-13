@@ -35,7 +35,8 @@ import {
   Shield,
   Trophy,
   MessageSquare,
-  GraduationCap
+  GraduationCap,
+  Globe
 } from "lucide-react";
 import Logo from "../assets/logo-prof-presente.svg"; // Importe o seu logo
 import { getAssetUrl } from "../lib/utils"; // NOVO: Importa a função auxiliar
@@ -96,6 +97,12 @@ const Layout = ({ children }) => {
       href: "/dashboard",
       icon: Home,
       id: "nav-link-dashboard",
+    },
+    {
+      name: "Ver Site",
+      href: "/",
+      icon: Globe,
+      id: "nav-link-site",
     },
     {
       name: "Eventos",

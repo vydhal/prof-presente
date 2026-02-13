@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { eventsAPI, tracksAPI } from "../lib/api";
+import { useAuth } from "../hooks/useAuth.jsx";
 import { Button } from "../components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
@@ -52,6 +53,7 @@ const formatDate = (dateString) => {
 };
 
 const LandingPage = () => {
+    const { user } = useAuth();
     const { platformName, logoUrl } = useBranding();
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -236,9 +238,9 @@ const LandingPage = () => {
 
                         <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1"></div>
 
-                        <Link to="/login">
+                        <Link to={user ? "/dashboard" : "/login"}>
                             <Button className="bg-[#137fec] hover:bg-[#137fec]/90 text-white rounded-lg font-bold shadow-lg shadow-[#137fec]/20 transition-all whitespace-nowrap">
-                                Entrar / Cadastrar-se
+                                {user ? "Acessar Painel" : "Entrar / Cadastrar-se"}
                             </Button>
                         </Link>
                     </div>
@@ -277,9 +279,9 @@ const LandingPage = () => {
                             <a href="#" className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">Sobre</a>
                         </nav>
                         <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                            <Link to="/login" className="w-full block">
+                            <Link to={user ? "/dashboard" : "/login"} className="w-full block">
                                 <Button className="w-full bg-[#137fec] hover:bg-[#137fec]/90 text-white font-bold">
-                                    Entrar / Cadastrar-se
+                                    {user ? "Acessar Painel" : "Entrar / Cadastrar-se"}
                                 </Button>
                             </Link>
                         </div>
@@ -387,7 +389,7 @@ const LandingPage = () => {
                                         </div>
 
                                         <div className="mt-auto">
-                                            <Link to="/login" className="block w-full">
+                                            <Link to={user ? "/dashboard" : "/login"} className="block w-full">
                                                 <Button className="w-full h-14 bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-blue-600 dark:hover:bg-blue-500 hover:text-white rounded-2xl font-black text-base shadow-xl shadow-slate-200 dark:shadow-none transition-all flex items-center justify-center gap-2 group-hover:scale-[1.02]">
                                                     Começar Trilha
                                                     <ArrowRight className="w-5 h-5" />

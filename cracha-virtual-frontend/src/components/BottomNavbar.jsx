@@ -9,7 +9,9 @@ import {
     CreditCard,
     MessageSquare,
     Trophy,
-    Settings
+    Trophy,
+    Settings,
+    Globe
 } from "lucide-react";
 
 const BottomNavbar = () => {
@@ -21,6 +23,11 @@ const BottomNavbar = () => {
     const isActive = (path) => location.pathname === path;
 
     const navItems = [
+        {
+            name: "Site",
+            href: "/",
+            icon: Globe,
+        },
         {
             name: "Home",
             href: "/dashboard",

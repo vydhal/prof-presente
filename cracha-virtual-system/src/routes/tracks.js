@@ -9,7 +9,7 @@ const {
     enrollInTrack,
     getMyTracks
 } = require("../controllers/trackController");
-const { authenticateToken, requireAdmin } = require("../middleware/auth");
+const { authenticateToken, requireAdmin, requireAdminOrOrganizer } = require("../middleware/auth");
 const { uploadTrackThumbnail, handleUploadError } = require("../middleware/upload");
 
 // Rotas Públicas

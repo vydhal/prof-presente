@@ -30,7 +30,8 @@ const {
 const {
   authenticateToken,
   authenticateOptional,
-  requireAdmin
+  requireAdmin,
+  requireAdminOrOrganizer
 } = require("../middleware/auth");
 
 const {
