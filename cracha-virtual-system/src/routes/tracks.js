@@ -20,9 +20,9 @@ router.get("/:id", getTrackById);
 router.get("/my", authenticateToken, getMyTracks);
 router.post("/:trackId/enroll", authenticateToken, enrollInTrack);
 
-// Rotas Admin
-router.post("/", authenticateToken, requireAdmin, uploadTrackThumbnail, handleUploadError, createTrack);
-router.put("/:id", authenticateToken, requireAdmin, uploadTrackThumbnail, handleUploadError, updateTrack);
-router.delete("/:id", authenticateToken, requireAdmin, deleteTrack);
+// Rotas Admin/Organizer
+router.post("/", authenticateToken, requireAdminOrOrganizer, uploadTrackThumbnail, handleUploadError, createTrack);
+router.put("/:id", authenticateToken, requireAdminOrOrganizer, uploadTrackThumbnail, handleUploadError, updateTrack);
+router.delete("/:id", authenticateToken, requireAdminOrOrganizer, deleteTrack);
 
 module.exports = router;

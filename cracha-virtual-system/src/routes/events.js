@@ -61,21 +61,21 @@ router.delete(
 router.post(
   "/:eventId/staff",
   authenticateToken,
-  requireAdmin,
+  requireAdminOrOrganizer,
   addStaffToEvent
 );
 
 router.delete(
   "/:eventId/staff/:userId",
   authenticateToken,
-  requireAdmin,
+  requireAdminOrOrganizer,
   removeStaffFromEvent
 );
 
 router.get(
   "/:eventId/staff",
   authenticateToken,
-  requireAdmin,
+  requireAdminOrOrganizer,
   getEventStaff
 );
 
@@ -89,7 +89,7 @@ router.get("/:id", cacheMiddleware(60), getEventById);
 router.get(
   "/:id/print-badges",
   authenticateToken,
-  requireAdmin,
+  requireAdminOrOrganizer,
   generatePrintableBadges
 );
 
@@ -100,7 +100,7 @@ router.post("/", authenticateToken, eventValidation, createEvent);
 router.post(
   "/:id/badge-template",
   authenticateToken,
-  requireAdmin,
+  requireAdminOrOrganizer,
   uploadBadgeTemplate, // Middleware para o upload da imagem
   uploadEventBadgeTemplate
 );
@@ -109,18 +109,18 @@ router.post(
 router.put(
   "/:id",
   authenticateToken,
-  requireAdmin,
+  requireAdminOrOrganizer,
   eventValidation,
   updateEvent
 );
 
 // Deletar evento (apenas admin)
-router.delete("/:id", authenticateToken, requireAdmin, deleteEvent);
+router.delete("/:id", authenticateToken, requireAdminOrOrganizer, deleteEvent);
 
 router.post(
   "/:id/thumbnail",
   authenticateToken,
-  requireAdmin,
+  requireAdminOrOrganizer,
   uploadEventThumbnail, // Middleware de upload
   uploadEventThumbnailController // Controller
 );
@@ -128,7 +128,7 @@ router.post(
 router.post(
   "/:id/speaker-photo",
   authenticateToken,
-  requireAdmin,
+  requireAdminOrOrganizer,
   uploadSpeakerPhoto,
   uploadSpeakerPhotoController
 );
@@ -137,7 +137,7 @@ router.post(
 router.post(
   "/:id/certificate-template",
   authenticateToken,
-  requireAdmin,
+  requireAdminOrOrganizer,
   uploadCertificate,
   uploadCertificateTemplate
 );
@@ -145,21 +145,21 @@ router.post(
 router.post(
   "/:id/send-certificates",
   authenticateToken, // Middleware de autenticação
-  requireAdmin, // Middleware que verifica se é admin
+  requireAdminOrOrganizer, // Middleware que verifica se é admin
   sendEventCertificates // Nova função no controller
 );
 
 router.get(
   "/:id/certificate-logs",
   authenticateToken,
-  requireAdmin,
+  requireAdminOrOrganizer,
   getCertificateLogsForEvent // Nova função no controller
 );
 
 router.get(
   "/:id/enrollments",
   authenticateToken,
-  requireAdmin,
+  requireAdminOrOrganizer,
   getEventEnrollments
 );
 

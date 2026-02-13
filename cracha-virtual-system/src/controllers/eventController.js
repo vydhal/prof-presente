@@ -302,9 +302,10 @@ const createEvent = async (req, res) => {
       speakerPhotoUrl,
     };
 
-    // 3. Se o criador for um GESTOR_ESCOLA ou ORGANIZER, marcamos o evento como privado e associamos o criador
+    // 3. Se o criador for um GESTOR_ESCOLA ou ORGANIZER, associamos o criador
+    // e permitimos que ele escolha a visibilidade (padrão privado se não informado)
     if (["GESTOR_ESCOLA", "ORGANIZER"].includes(user.role)) {
-      data.isPrivate = true;
+      data.isPrivate = req.body.isPrivate !== undefined ? req.body.isPrivate : true;
       data.creatorId = user.id;
     }
 
