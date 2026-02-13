@@ -17,6 +17,13 @@ const getCheckinReport = async (req, res) => {
       });
     }
 
+    // CHECK DE PROPRIEDADE PARA ORGANIZADOR
+    if (req.user.role === "ORGANIZER" && event.creatorId !== req.user.id) {
+      return res.status(403).json({
+        error: "Acesso negado. Você só pode acessar relatórios de eventos que você criou.",
+      });
+    }
+
     // Construir filtros de data
     let dateFilter = {};
     if (startDate || endDate) {
@@ -130,6 +137,13 @@ const getFrequencyReport = async (req, res) => {
     });
     if (!event) {
       return res.status(404).json({ error: "Evento não encontrado" });
+    }
+
+    // CHECK DE PROPRIEDADE PARA ORGANIZADOR
+    if (req.user.role === "ORGANIZER" && event.creatorId !== req.user.id) {
+      return res.status(403).json({
+        error: "Acesso negado. Você só pode acessar relatórios de eventos que você criou.",
+      });
     }
 
     // MUDANÇA 1: Incluímos a busca pelas 'workplaces' (unidades de trabalho) do usuário.
@@ -259,10 +273,10 @@ const getFrequencyReport = async (req, res) => {
 // Ranking geral de frequência
 const getFrequencyRanking = async (req, res) => {
   try {
-    const { page = 1, limit = 10, period } = req.query;
-    const skip = (page - 1) * limit;
+    const userRole = req.user.role;
+    const userId = req.user.id;
 
-    // Filtro de período
+    // Filtro de período e propriedade
     let dateFilter = {};
     if (period) {
       const now = new Date();
@@ -287,7 +301,10 @@ const getFrequencyRanking = async (req, res) => {
     // MUDANÇA: Agrupa por usuário e evento para obter participações únicas.
     const uniqueParticipations = await prisma.userCheckin.groupBy({
       by: ["userBadgeId", "eventId"],
-      where: { ...dateFilter },
+      where: {
+        ...dateFilter,
+        ...(userRole === "ORGANIZER" ? { event: { creatorId: userId } } : {}),
+      },
     });
 
     // MUDANÇA: Agrega os resultados para contar eventos únicos por usuário.
@@ -317,10 +334,10 @@ const getFrequencyRanking = async (req, res) => {
         const user = userBadgesMap.get(item.userBadgeId);
         return user
           ? {
-              position: skip + index + 1,
-              user,
-              checkinCount: item.checkinCount, // Contagem de eventos únicos
-            }
+            position: skip + index + 1,
+            user,
+            checkinCount: item.checkinCount, // Contagem de eventos únicos
+          }
           : null;
       })
       .filter(Boolean);
@@ -356,15 +373,34 @@ const getFrequencyRanking = async (req, res) => {
 // Relatório geral do sistema
 const getSystemReport = async (req, res) => {
   try {
-    const totalUsers = await prisma.user.count();
-    const totalEvents = await prisma.event.count();
-    const totalEnrollments = await prisma.enrollment.count();
+    const userRole = req.user.role;
+    const userId = req.user.id;
+
+    const baseWhere = userRole === "ORGANIZER" ? { creatorId: userId } : {};
+
+    const totalUsers = userRole === "ORGANIZER"
+      ? await prisma.user.count({
+        where: {
+          enrollments: {
+            some: {
+              event: { creatorId: userId }
+            }
+          }
+        }
+      })
+      : await prisma.user.count();
+
+    const totalEvents = await prisma.event.count({ where: baseWhere });
+    const totalEnrollments = await prisma.enrollment.count({
+      where: userRole === "ORGANIZER" ? { event: { creatorId: userId } } : {},
+    });
     const totalAwards = await prisma.award.count();
     const totalUserAwards = await prisma.userAward.count();
 
     // MUDANÇA: Conta o total de participações únicas (usuário + evento) em vez de todos os check-ins.
     const uniqueParticipations = await prisma.userCheckin.groupBy({
       by: ["userBadgeId", "eventId"],
+      where: userRole === "ORGANIZER" ? { event: { creatorId: userId } } : {},
     });
     const totalUniqueCheckins = uniqueParticipations.length;
 
@@ -378,6 +414,7 @@ const getSystemReport = async (req, res) => {
         COUNT(*) as count
       FROM events
       WHERE start_date >= ${twelveMonthsAgo}
+      ${userRole === "ORGANIZER" ? Prisma.sql`AND creator_id = ${userId}` : Prisma.empty}
       GROUP BY DATE_TRUNC('month', start_date)
       ORDER BY month
     `;
@@ -385,16 +422,19 @@ const getSystemReport = async (req, res) => {
     // Check-ins por mês (últimos 12 meses)
     const checkinsByMonth = await prisma.$queryRaw`
       SELECT 
-        DATE_TRUNC('month', checkin_time) as month,
+        DATE_TRUNC('month', ci.checkin_time) as month,
         COUNT(*) as count
-      FROM user_checkins
-      WHERE checkin_time >= ${twelveMonthsAgo}
-      GROUP BY DATE_TRUNC('month', checkin_time)
+      FROM user_checkins ci
+      JOIN events e ON ci.event_id = e.id
+      WHERE ci.checkin_time >= ${twelveMonthsAgo}
+      ${userRole === "ORGANIZER" ? Prisma.sql`AND e.creator_id = ${userId}` : Prisma.empty}
+      GROUP BY DATE_TRUNC('month', ci.checkin_time)
       ORDER BY month
     `;
 
     // Top 5 eventos com mais inscrições
     const topEvents = await prisma.event.findMany({
+      where: baseWhere,
       select: {
         id: true,
         title: true,
@@ -616,6 +656,9 @@ const getFilteredFrequencyReport = async (req, res) => {
     } = req.query;
 
     // 1. Construir o filtro para encontrar os usuários
+    const userRole = req.user.role;
+    const userId = req.user.id;
+
     const userWhereClause = {};
     if (segment) userWhereClause.teachingSegments = { has: segment };
     if (contractType) userWhereClause.contractType = contractType;
@@ -671,6 +714,8 @@ const getFilteredFrequencyReport = async (req, res) => {
           Object.keys(checkinDateFilter).length > 0
             ? checkinDateFilter
             : undefined,
+        // Filtra por eventos do criador se for ORGANIZER
+        ...(userRole === "ORGANIZER" ? { event: { creatorId: userId } } : {}),
       },
       distinct: ["eventId", "userBadgeId"], // A chave da mudança está aqui!
       select: {
@@ -740,8 +785,21 @@ const getFilteredFrequencyReport = async (req, res) => {
 // NOVO: Relatório de Premiações
 const getAwardsReport = async (req, res) => {
   try {
-    // 1. Buscar todos os registros de prêmios concedidos, incluindo os dados do prêmio e do usuário
+    const userRole = req.user.role;
+    const userId = req.user.id;
+
+    // 1. Buscar todos os registros de prêmios concedidos
     const userAwards = await prisma.userAward.findMany({
+      where: userRole === "ORGANIZER" ? {
+        user: {
+          enrollments: {
+            some: {
+              event: { creatorId: userId },
+              status: "APPROVED"
+            }
+          }
+        }
+      } : {},
       include: {
         award: {
           select: {
@@ -855,9 +913,9 @@ const getEventSummaryReport = async (req, res) => {
     const averageRating =
       totalEvaluations > 0
         ? (
-            evaluations.reduce((sum, ev) => sum + ev.rating, 0) /
-            totalEvaluations
-          ).toFixed(2)
+          evaluations.reduce((sum, ev) => sum + ev.rating, 0) /
+          totalEvaluations
+        ).toFixed(2)
         : "0.00";
 
     const comments = evaluations.map((ev) => ev.comment).filter(Boolean);

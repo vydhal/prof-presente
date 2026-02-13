@@ -74,16 +74,16 @@ router.get(
 // --- ROTAS GERAIS ---
 
 // Relatório de premiações
-router.get("/awards", authenticateToken, requireAdmin, getAwardsReport);
+router.get("/awards", authenticateToken, requireAdminOrOrganizer, getAwardsReport);
 
 // Ranking geral de frequência
-router.get("/ranking", authenticateToken, requireAdmin, getFrequencyRanking);
+router.get("/ranking", authenticateToken, requireAdminOrOrganizer, getFrequencyRanking);
 
 // Relatório geral do sistema
-router.get("/system", authenticateToken, requireAdmin, getSystemReport);
+router.get("/system", authenticateToken, requireAdminOrOrganizer, getSystemReport);
 
 // Estatísticas gerais do sistema
-router.get("/statistics", authenticateToken, requireAdmin, async (req, res) => {
+router.get("/statistics", authenticateToken, requireAdminOrOrganizer, async (req, res) => {
   try {
     const { prisma } = require("../config/database");
     const [totalEvents, totalUsers, activeEnrollments, totalCheckins] =

@@ -18,6 +18,8 @@ const certificateRoutes = require("./certificates");
 const trackRoutes = require("./tracks");
 const bannerRoutes = require("./banners");
 const settingsRoutes = require("./settings");
+const spaceRoutes = require("./spaces");
+const equipmentRoutes = require("./equipments");
 
 // Configurar rotas
 router.use("/auth", authRoutes);
@@ -36,6 +38,8 @@ router.use("/certificates", certificateRoutes);
 router.use("/tracks", trackRoutes);
 router.use("/banners", bannerRoutes);
 router.use("/settings", settingsRoutes);
+router.use("/spaces", spaceRoutes);
+router.use("/equipments", equipmentRoutes);
 
 // Rota de status da API
 router.get("/status", (req, res) => {

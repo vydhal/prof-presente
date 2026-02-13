@@ -387,11 +387,27 @@ async function main() {
       console.log(`✅ Staff vinculado ao evento: ${targetEvent.title}`);
     }
 
+    // --- CERIMONIAL ---
+    await prisma.user.create({
+      data: {
+        name: "Equipe Cerimonial",
+        email: "cerimonial@cracha.com",
+        password: hashedPassword,
+        role: "CERIMONIAL",
+        birthDate: new Date("1995-05-20"),
+        cpf: "777.777.777-77",
+        phone: "(11) 96666-6666",
+        address: "Secretaria de Educação",
+      },
+    });
+    console.log("✅ Usuário Cerimonial criado");
+
     console.log("\n🎉 Seed concluído com sucesso!");
-    console.log("\n📋 Credenciais de acesso:");
+    console.log("📋 Credenciais de acesso:");
     console.log("👨‍💼 Admin: admin@cracha.com / 123456");
     console.log("👔 Coordenador: coord@cracha.com / 123456");
     console.log("🎤 Palestrante: speaker@cracha.com / 123456");
+    console.log("📅 Cerimonial: cerimonial@cracha.com / 123456");
     console.log("👤 Usuário: user1@cracha.com / 123456");
 
   } catch (error) {

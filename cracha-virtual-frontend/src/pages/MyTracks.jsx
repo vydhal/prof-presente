@@ -30,7 +30,7 @@ const MyTracks = () => {
             return;
         }
 
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+        const apiUrl = import.meta.env.VITE_API_URL || 'https://eduagenda.simplisoft.com.br/api';
         window.open(`${apiUrl}/certificates/track/${trackId}/user/${userId}`, '_blank');
     };
 

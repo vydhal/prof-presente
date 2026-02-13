@@ -344,7 +344,7 @@ const forgotPassword = async (req, res) => {
       { expiresIn: "1h" }
     );
 
-    const resetLink = `${process.env.FRONTEND_URL || "http://localhost:5173"}/reset-password?token=${token}`;
+    const resetLink = `${process.env.FRONTEND_URL || "https://eduagenda.simplisoft.com.br"}/reset-password?token=${token}`;
 
     const subject = "Redefinição de Senha - Prof Presente";
     const html = `

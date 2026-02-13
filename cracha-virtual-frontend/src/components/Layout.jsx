@@ -138,6 +138,9 @@ const Layout = ({ children }) => {
         { name: "Gerenciar Trilhas", href: "/admin/tracks", icon: GraduationCap }
       ]
       : []),
+    ...(isAdmin || isOrg || user?.role === "CERIMONIAL"
+      ? [{ name: "Gestão de Espaços", href: "/spaces", icon: Calendar, id: "nav-link-spaces" }]
+      : []),
   ];
 
   const handleLogout = () => {

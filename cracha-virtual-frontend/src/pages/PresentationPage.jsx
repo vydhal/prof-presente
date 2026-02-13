@@ -35,7 +35,7 @@ const PresentationPage = () => {
     const [pageNumber, setPageNumber] = useState(1);
     const [pdfScale, setPdfScale] = useState(1.0);
 
-    const API_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || "http://localhost:3000";
+    const API_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || "https://eduagenda.simplisoft.com.br";
 
     const onDocumentLoadSuccess = ({ numPages }) => {
         setNumPages(numPages);

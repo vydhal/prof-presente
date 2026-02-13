@@ -17,6 +17,7 @@ enum UserRole {
   TEACHER
   GESTOR_ESCOLA
   SPEAKER // Novo perfil
+  CERIMONIAL // Gestão de espaços e eventos
 }
 
 
@@ -116,6 +117,7 @@ model User {
   wonGiveaways  Giveaway[]
   staffEvents   EventStaff[]
   trackEnrollments TrackEnrollment[]
+  spaceReservations SpaceReservation[]
 
 
   @@index([email])
@@ -438,8 +440,68 @@ model SystemSettings {
   logoUrl        String?  @map("logo_url")
   faviconUrl     String?  @map("favicon_url")
   primaryColor   String   @default("#137fec") @map("primary_color")
+  reservationConfig Json?   @map("reservation_config") // Configurações dinâmicas de equipamentos e setores
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   @@map("system_settings")
+}
+
+model Space {
+  id          String   @id @default(uuid())
+  name        String
+  capacity    Int?
+  description String?
+  location    String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  reservations SpaceReservation[]
+
+  @@map("spaces")
+}
+
+model Equipment {
+  id            String   @id @default(uuid())
+  name          String   @unique
+  totalQuantity Int      @default(0) @map("total_quantity")
+  icon          String?  @default("Layout")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("equipments")
+}
+
+enum ReservationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REALLOCATED
+}
+
+model SpaceReservation {
+  id             String            @id @default(uuid())
+  spaceId        String            @map("space_id")
+  requesterId    String            @map("requester_id")
+  eventTitle     String            @map("event_title")
+  requesterName  String            @map("requester_name")
+  oneDocNumber   String?           @map("one_doc_number") // Número do chamado 1Doc
+  needsCerimonial Boolean          @default(false) @map("needs_cerimonial") // Necessita de suporte do cerimonial
+  eventScriptUrl String?           @map("event_script_url") // Link Google Docs da minuta/roteiro
+  sector         String
+  date           DateTime
+  startTime      DateTime?         @map("start_time")
+  endTime        DateTime?         @map("end_time")
+  description    String?
+  status         ReservationStatus @default(PENDING)
+  observations   String?
+  equipment      Json?             // { som: boolean, mic: boolean, datashow: boolean, notebook: boolean, mesa: boolean, cadeiras: boolean }
+  reallocatedTo  String?           @map("reallocated_to")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+
+  space     Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  requester User  @relation(fields: [requesterId], references: [id], onDelete: Cascade)
+
+  @@map("space_reservations")
 }

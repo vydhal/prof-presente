@@ -212,4 +212,26 @@ export const settingsAPI = {
   }),
 };
 
+// Gestão de Espaços (Cerimonial)
+export const spacesAPI = {
+  getAll: () => api.get("/spaces"),
+  create: (data) => api.post("/spaces", data),
+  update: (id, data) => api.put(`/spaces/${id}`, data),
+  delete: (id) => api.delete(`/spaces/${id}`),
+  getReservations: (params) => api.get("/spaces/reservations", { params }),
+  exportReservations: (params) => api.get("/spaces/reservations/export", { params, responseType: 'blob' }),
+  createReservation: (data) => api.post("/spaces/reservations", data),
+  updateReservationStatus: (id, data) => api.put(`/spaces/reservations/${id}/status`, data),
+  getConfig: () => api.get("/spaces/config"),
+  updateConfig: (data) => api.put("/spaces/config", data),
+};
+
+export const equipmentsAPI = {
+  getAll: () => api.get("/equipments"),
+  getAvailability: (date) => api.get("/equipments/availability", { params: { date } }),
+  create: (data) => api.post("/equipments", data),
+  update: (id, data) => api.put(`/equipments/${id}`, data),
+  delete: (id) => api.delete(`/equipments/${id}`),
+};
+
 export default api;

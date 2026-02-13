@@ -15,6 +15,16 @@ O **Prof Presente** é uma plataforma completa para gerenciamento de eventos edu
   - **Galeria de Palestrantes:** Perfis com fotos de alta qualidade, nome e cargo.
 - **Visibilidade:** Controle de eventos Públicos ou Privados (apenas para escolas/gestores específicos).
 
+### 🏛️ Gestão de Espaços e Inventário
+- **Controle de Ambientes:** Cadastro e gestão de auditórios, salas e espaços multiuso com capacidade e localização.
+- **Agenda Inteligente:** Visualização em formato de lista cronológica com cards detalhados e timeline visual.
+- **Fluxo de Aprovação:** Sistema de solicitações integrado com aprovação por gestores ou cerimonial.
+- **Protocolo 1Doc:** Campo obrigatório para número de processo/chamado externo, garantindo rastreabilidade.
+- **Inventário de Equipamentos:** 
+  - Controle de estoque para itens como projetores, microfones, laptops e som.
+  - **Cálculo de Disponibilidade:** Sistema inteligente que impede o empréstimo de itens que já estarão em uso em outras reservas na mesma data.
+- **Notas de Gestão:** Feedback direto no card da agenda (ex: motivo de rejeição ou observações técnicas).
+
 ### 🎫 Credenciamento e Check-in
 - **Crachás Digitais:** Geração automática de crachás com QR Code.
 - **Templates Personalizáveis:** Editor visual para posicionar nome, QR code e logo no crachá.

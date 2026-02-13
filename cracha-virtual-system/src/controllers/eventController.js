@@ -82,8 +82,8 @@ const getAllEvents = async (req, res) => {
     if (user) {
       if (user.role === "ADMIN") {
         // ADMIN vê tudo
-      } else if (user.role === "GESTOR_ESCOLA") {
-        // CORREÇÃO: Gestor vê APENAS os eventos que ele mesmo criou
+      } else if (["GESTOR_ESCOLA", "ORGANIZER"].includes(user.role)) {
+        // CORREÇÃO: Gestor e Organizador veem APENAS os eventos que eles mesmos criaram
         finalWhere.creatorId = user.id;
       } else if (["CHECKIN_COORDINATOR", "SPEAKER"].includes(user.role)) {
         // --- ALTERAÇÃO PRINCIPAL ---
@@ -302,8 +302,8 @@ const createEvent = async (req, res) => {
       speakerPhotoUrl,
     };
 
-    // 3. Se o criador for um GESTOR_ESCOLA, marcamos o evento como privado e associamos o criador
-    if (user.role === "GESTOR_ESCOLA") {
+    // 3. Se o criador for um GESTOR_ESCOLA ou ORGANIZER, marcamos o evento como privado e associamos o criador
+    if (["GESTOR_ESCOLA", "ORGANIZER"].includes(user.role)) {
       data.isPrivate = true;
       data.creatorId = user.id;
     }
@@ -357,6 +357,13 @@ const updateEvent = async (req, res) => {
     if (!existingEvent) {
       return res.status(404).json({
         error: "Evento não encontrado",
+      });
+    }
+
+    // CHECK DE PROPRIEDADE: Organizador só edita o que criou
+    if (req.user.role === "ORGANIZER" && existingEvent.creatorId !== req.user.id) {
+      return res.status(403).json({
+        error: "Acesso negado. Você só pode editar eventos que você criou.",
       });
     }
 
@@ -425,6 +432,13 @@ const deleteEvent = async (req, res) => {
       });
     }
 
+    // CHECK DE PROPRIEDADE: Organizador só deleta o que criou
+    if (req.user.role === "ORGANIZER" && event.creatorId !== req.user.id) {
+      return res.status(403).json({
+        error: "Acesso negado. Você só pode deletar eventos que você criou.",
+      });
+    }
+
     // Verificar se há inscrições no evento
     if (event._count.enrollments > 0) {
       return res.status(400).json({
@@ -461,6 +475,13 @@ const uploadEventBadgeTemplate = async (req, res) => {
     const event = await prisma.event.findUnique({ where: { id } });
     if (!event) {
       return res.status(404).json({ error: "Evento não encontrado" });
+    }
+
+    // CHECK DE PROPRIEDADE
+    if (req.user.role === "ORGANIZER" && event.creatorId !== req.user.id) {
+      return res.status(403).json({
+        error: "Acesso negado. Você só pode gerenciar crachás de eventos que você criou.",
+      });
     }
 
     if (!req.file) {
@@ -505,6 +526,19 @@ const generatePrintableBadges = async (req, res) => {
     const { id } = req.params;
 
     const event = await prisma.event.findUnique({ where: { id } });
+
+    if (!event) {
+      return res.status(404).json({
+        error: "Evento não encontrado",
+      });
+    }
+
+    // CHECK DE PROPRIEDADE
+    if (req.user.role === "ORGANIZER" && event.creatorId !== req.user.id) {
+      return res.status(403).json({
+        error: "Acesso negado. Você só pode gerar crachás de eventos que você criou.",
+      });
+    }
 
     if (!event || !event.badgeTemplateUrl || !event.badgeTemplateConfig) {
       return res.status(404).json({
@@ -610,6 +644,13 @@ const uploadCertificateTemplate = async (req, res) => {
       return res.status(404).json({ error: "Evento não encontrado" });
     }
 
+    // CHECK DE PROPRIEDADE PARA ORGANIZADOR
+    if (req.user.role === "ORGANIZER" && event.creatorId !== req.user.id) {
+      return res.status(403).json({
+        error: "Acesso negado. Você só pode gerenciar certificados de eventos que você criou.",
+      });
+    }
+
     // CORREÇÃO: Adicionada a validação que exige o envio do arquivo, igual à função do crachá.
     if (!req.file) {
       return res
@@ -660,6 +701,17 @@ const sendEventCertificates = async (req, res) => {
       where: { id: parentEventId },
     });
 
+    if (!parentEvent) {
+      return res.status(404).json({ error: "Evento não encontrado" });
+    }
+
+    // CHECK DE PROPRIEDADE
+    if (req.user.role === "ORGANIZER" && parentEvent.creatorId !== req.user.id) {
+      return res.status(403).json({
+        error: "Acesso negado. Você só pode enviar certificados de eventos que você criou.",
+      });
+    }
+
     if (
       !parentEvent ||
       !parentEvent.certificateTemplateUrl ||
@@ -699,6 +751,18 @@ const sendEventCertificates = async (req, res) => {
 const getCertificateLogsForEvent = async (req, res) => {
   try {
     const { id: eventId } = req.params;
+
+    // Verificar existência e propriedade
+    const event = await prisma.event.findUnique({ where: { id: eventId } });
+    if (!event) {
+      return res.status(404).json({ error: "Evento não encontrado" });
+    }
+
+    if (req.user.role === "ORGANIZER" && event.creatorId !== req.user.id) {
+      return res.status(403).json({
+        error: "Acesso negado. Você só pode ver logs de eventos que você criou.",
+      });
+    }
 
     // 1. Pega todos os participantes com inscrição aprovada no evento.
     const enrollments = await prisma.enrollment.findMany({
@@ -768,6 +832,18 @@ const uploadEventThumbnailController = async (req, res) => {
     // Normaliza o caminho para salvar no banco (ex: /uploads/events/...)
     const imageUrl = `/${req.file.path.replace(/\\/g, "/")}`;
 
+    const event = await prisma.event.findUnique({ where: { id } });
+    if (!event) {
+      return res.status(404).json({ error: "Evento não encontrado" });
+    }
+
+    // CHECK DE PROPRIEDADE
+    if (req.user.role === "ORGANIZER" && event.creatorId !== req.user.id) {
+      return res.status(403).json({
+        error: "Acesso negado. Você só pode alterar a capa de eventos que você criou.",
+      });
+    }
+
     // Atualiza o evento no banco com a nova URL
     const updatedEvent = await prisma.event.update({
       where: { id },
@@ -800,6 +876,13 @@ const uploadSpeakerPhotoController = async (req, res) => {
       return res.status(404).json({ error: "Evento não encontrado" });
     }
 
+    // CHECK DE PROPRIEDADE PARA ORGANIZADOR
+    if (req.user.role === "ORGANIZER" && event.creatorId !== req.user.id) {
+      return res.status(403).json({
+        error: "Acesso negado. Você só pode alterar o palestrante de eventos que você criou.",
+      });
+    }
+
     // Normaliza o caminho do arquivo (com slash inicial)
     const imageUrl = `/${file.path.replace(/\\/g, "/")}`;
 
@@ -822,6 +905,18 @@ const uploadSpeakerPhotoController = async (req, res) => {
 const getEventEnrollments = async (req, res) => {
   try {
     const { id } = req.params;
+
+    const event = await prisma.event.findUnique({ where: { id } });
+    if (!event) {
+      return res.status(404).json({ error: "Evento não encontrado" });
+    }
+
+    // CHECK DE PROPRIEDADE
+    if (req.user.role === "ORGANIZER" && event.creatorId !== req.user.id) {
+      return res.status(403).json({
+        error: "Acesso negado. Você só pode ver inscritos de eventos que você criou.",
+      });
+    }
 
     // Busca inscrições com dados do usuário
     const enrollments = await prisma.enrollment.findMany({
@@ -863,6 +958,18 @@ const getEventEnrollments = async (req, res) => {
 const getEventQuestions = async (req, res) => {
   try {
     const { id } = req.params;
+
+    const event = await prisma.event.findUnique({ where: { id } });
+    if (!event) {
+      return res.status(404).json({ error: "Evento não encontrado" });
+    }
+
+    // CHECK DE PROPRIEDADE
+    if (req.user.role === "ORGANIZER" && event.creatorId !== req.user.id) {
+      return res.status(403).json({
+        error: "Acesso negado. Você só pode ver perguntas de eventos que você criou.",
+      });
+    }
 
     // Busca todas as perguntas do evento
     const questions = await prisma.question.findMany({

@@ -10,7 +10,7 @@ import { eventsAPI, enrollmentsAPI, checkinsAPI, awardsAPI } from '../lib/api';
 import '../App.css';
 
 const Dashboard = () => {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isOrg, isGestor } = useAuth();
   const [stats, setStats] = useState({
     upcomingEvents: [],
     myEnrollments: [],
@@ -23,11 +23,11 @@ const Dashboard = () => {
     const loadDashboardData = async () => {
       try {
         // Carregar eventos próximos
-        const eventsResponse = await eventsAPI.getAll({ 
-          limit: 4, 
-          upcoming: true 
+        const eventsResponse = await eventsAPI.getAll({
+          limit: 4,
+          upcoming: true
         });
-        
+
         // Carregar minhas inscrições
         const enrollmentsResponse = await enrollmentsAPI.getUserEnrollments(user.id, {
           limit: 5
@@ -304,7 +304,7 @@ const Dashboard = () => {
       )}
 
       {/* Links rápidos para admins */}
-      {isAdmin && (
+      {(isAdmin || isOrg || isGestor) && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">

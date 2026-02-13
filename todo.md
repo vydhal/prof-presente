@@ -172,3 +172,11 @@
 - [x] 17.4. Desenvolver componente `EventStaffManager` com busca de usuários (Combobox).
 - [x] 17.5. Implementar sistema de invalidação de cache (Redis) para atualizações em tempo real.
 - [x] 17.6. Relaxar filtros de visualização no frontend para permitir preparação da equipe.
+
+### Fase 18: Gestão de Espaços e Ambientes ✅
+- [x] 18.1. Implementar Módulo de Gestão de Espaços (Auditórios/Salas) com CRUD completo.
+- [x] 18.2. Desenvolver sistema de Reservas com aprovação do Cerimonial/Admin.
+- [x] 18.3. Criar Inventário de Equipamentos com controle de disponibilidade por data.
+- [x] 18.4. Implementar Agenda redesignada com visualização em cartões e timeline visual.
+- [x] 18.5. Adicionar integração com número de protocolo 1Doc nas solicitações.
+- [x] 18.6. Desenvolver Dashboard de ocupação e estatísticas de uso de espaços.

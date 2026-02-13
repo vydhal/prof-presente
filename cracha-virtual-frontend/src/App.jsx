@@ -24,6 +24,7 @@ const MyEnrollments = lazy(() => import("./pages/MyEnrollments"));
 const CheckIn = lazy(() => import("./pages/CheckIn"));
 const Admin = lazy(() => import("./pages/Admin"));
 const EventEnrollments = lazy(() => import("./pages/EventEnrollments")); // NOVA ROTA
+const SpaceManagement = lazy(() => import("./pages/SpaceManagement")); // NOVA ROTA
 
 const Evaluations = lazy(() => import("./pages/Evaluations"));
 const EvaluateEnrollment = lazy(() => import("./pages/EvaluateEnrollment"));
@@ -241,6 +242,19 @@ function App() {
                           <Layout>
                             <LazyWrapper>
                               <EventEnrollments />
+                            </LazyWrapper>
+                          </Layout>
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    <Route
+                      path="/spaces"
+                      element={
+                        <ProtectedRoute>
+                          <Layout>
+                            <LazyWrapper>
+                              <SpaceManagement />
                             </LazyWrapper>
                           </Layout>
                         </ProtectedRoute>
