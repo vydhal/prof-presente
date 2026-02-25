@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { eventsAPI, tracksAPI } from "../lib/api";
+import { eventsAPI, tracksAPI, proposalsAPI } from "../lib/api";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { useTheme } from "../contexts/ThemeContext";
 import { Button } from "../components/ui/button";
@@ -32,6 +32,10 @@ import {
 import HeroCarousel from "../components/HeroCarousel";
 import { useBranding } from "../contexts/BrandingContext";
 import LogoDefault from "../assets/logo-prof-presente.svg";
+import { Calendar as CalendarUI } from "../components/ui/calendar";
+import { toast } from "sonner";
+import { isSameDay, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 import { useDebounce } from "../hooks/useDebounce";
 
@@ -62,6 +66,48 @@ const LandingPage = () => {
     const [searchModalOpen, setSearchModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+    const [proposalModalOpen, setProposalModalOpen] = useState(false);
+    const [proposalForm, setProposalForm] = useState({ name: "", email: "", phone: "", topic: "", description: "" });
+    const [proposalLoading, setProposalLoading] = useState(false);
+
+    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [dateEventsModalOpen, setDateEventsModalOpen] = useState(false);
+    const [selectedDateEvents, setSelectedDateEvents] = useState([]);
+
+    const handleProposalSubmit = async (e) => {
+        e.preventDefault();
+        setProposalLoading(true);
+        try {
+            await proposalsAPI.submit(proposalForm);
+            toast.success("Proposta enviada com sucesso!");
+            setProposalModalOpen(false);
+            setProposalForm({ name: "", email: "", phone: "", topic: "", description: "" });
+        } catch (err) {
+            toast.error("Erro ao enviar proposta. Tente novamente.");
+        } finally {
+            setProposalLoading(false);
+        }
+    };
+
+    const handleDateSelect = (date) => {
+        if (!date) return;
+        setSelectedDate(date);
+
+        // Find events for this date
+        if (allEvents) {
+            const eventsOnDate = allEvents.filter(event => {
+                if (!event.startDate) return false;
+                const eventDate = parseISO(event.startDate);
+                return isSameDay(eventDate, date);
+            });
+
+            if (eventsOnDate.length > 0) {
+                setSelectedDateEvents(eventsOnDate);
+                setDateEventsModalOpen(true);
+            }
+        }
+    };
 
     const handleShareTrack = async (track) => {
         const url = `${window.location.origin}/dashboard`;
@@ -481,25 +527,34 @@ const LandingPage = () => {
                     <aside className="lg:col-span-4 space-y-8">
                         {/* Calendar Widget */}
                         <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 rounded-xl p-6">
-                            <div className="flex items-center justify-between mb-6">
-                                <h3 className="font-bold">Calendário</h3>
-                                <div className="flex gap-2">
-                                    <button className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"><ChevronLeft className="h-5 w-5 text-slate-400" /></button>
-                                    <button className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"><ChevronRight className="h-5 w-5 text-slate-400" /></button>
-                                </div>
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-bold flex items-center gap-2"><Calendar className="w-5 h-5 text-[#137fec]" /> Calendário de Eventos</h3>
                             </div>
-                            <div className="text-center text-sm font-semibold text-slate-500 mb-4">Outubro 2024</div>
-                            {/* Simplified Grid Mockup */}
-                            <div className="grid grid-cols-7 gap-y-4 text-center text-sm">
-                                {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map(day => (
-                                    <div key={day} className="text-slate-400 font-medium text-xs uppercase">{day}</div>
-                                ))}
-                                {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
-                                    <div key={day} className={`py-1 text-xs ${day === 24 ? 'bg-[#137fec]/20 text-[#137fec] rounded-lg font-bold relative' : ''}`}>
-                                        {day}
-                                        {day === 24 && <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#137fec] rounded-full"></div>}
-                                    </div>
-                                ))}
+                            <div className="calendar-container -mx-3">
+                                <CalendarUI
+                                    mode="single"
+                                    selected={selectedDate}
+                                    onSelect={handleDateSelect}
+                                    locale={ptBR}
+                                    className="rounded-md border-0 w-full"
+                                    modifiers={{
+                                        hasEvent: (date) => {
+                                            if (!allEvents) return false;
+                                            return allEvents.some(event => {
+                                                if (!event.startDate) return false;
+                                                return isSameDay(parseISO(event.startDate), date);
+                                            });
+                                        }
+                                    }}
+                                    modifiersStyles={{
+                                        hasEvent: {
+                                            fontWeight: 'bold',
+                                            backgroundColor: 'rgba(19, 127, 236, 0.15)',
+                                            color: '#137fec',
+                                            textDecoration: 'none'
+                                        }
+                                    }}
+                                />
                             </div>
                         </div>
 
@@ -509,7 +564,7 @@ const LandingPage = () => {
                             <p className="text-sm text-slate-600 dark:text-slate-400">
                                 Tem um workshop ou palestra incrível? Envie sua proposta para fazer parte do nosso próximo grande evento.
                             </p>
-                            <Button className="w-full bg-[#137fec] hover:bg-[#137fec]/90 text-white text-sm font-bold">
+                            <Button onClick={() => setProposalModalOpen(true)} className="w-full bg-[#137fec] hover:bg-[#137fec]/90 text-white text-sm font-bold">
                                 Enviar Proposta
                             </Button>
                         </div>
@@ -517,6 +572,83 @@ const LandingPage = () => {
 
                 </div>
             </main>
+
+            {/* EVENTOS DA DATA SELECIONADA MODAL */}
+            <Dialog open={dateEventsModalOpen} onOpenChange={setDateEventsModalOpen}>
+                <DialogContent className="sm:max-w-[500px] bg-white dark:bg-[#101922] border-slate-200 dark:border-slate-800">
+                    <div className="p-6">
+                        <h3 className="text-xl font-bold mb-4 text-[#137fec] border-b border-slate-100 dark:border-slate-800 pb-3">
+                            Eventos em {selectedDate && formatDate(selectedDate)}
+                        </h3>
+                        <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                            {selectedDateEvents.length > 0 ? (
+                                selectedDateEvents.map((event) => (
+                                    <div key={event.id} className="p-4 border rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-[#137fec]/50 transition-colors">
+                                        <h4 className="font-bold text-lg">{event.title}</h4>
+                                        <div className="flex items-center gap-2 text-sm text-slate-500 mt-2">
+                                            <Calendar className="w-4 h-4" /> {formatDate(event.startDate)}
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm text-slate-500 mt-1">
+                                            <MapPin className="w-4 h-4" /> {event.location || "Online"}
+                                        </div>
+                                        <div className="mt-4">
+                                            <Link to={`/events/${event.id}`}>
+                                                <Button size="sm" className="w-full bg-[#137fec]/10 text-[#137fec] hover:bg-[#137fec] hover:text-white">
+                                                    Ver Detalhes do Evento
+                                                </Button>
+                                            </Link>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-slate-500 text-center py-8">Nenhum evento para esta data.</p>
+                            )}
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* COMPARTILHE SEU SABER MODAL */}
+            <Dialog open={proposalModalOpen} onOpenChange={setProposalModalOpen}>
+                <DialogContent className="sm:max-w-[550px] bg-white dark:bg-[#101922] border-slate-200 dark:border-slate-800">
+                    <div className="p-6">
+                        <h3 className="text-xl font-bold mb-2 text-[#137fec]">Compartilhe seu saber</h3>
+                        <p className="text-sm text-slate-500 mb-6">Preencha os dados abaixo e a Secretaria de Educação entrará em contato.</p>
+
+                        <form onSubmit={handleProposalSubmit} className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Seu Nome *</label>
+                                <Input required value={proposalForm.name} onChange={e => setProposalForm({ ...proposalForm, name: e.target.value })} placeholder="Ex: Prof. Silva" className="bg-white/5" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium">E-mail *</label>
+                                    <Input required type="email" value={proposalForm.email} onChange={e => setProposalForm({ ...proposalForm, email: e.target.value })} placeholder="seu@email.com" className="bg-white/5" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium">Telefone</label>
+                                    <Input value={proposalForm.phone} onChange={e => setProposalForm({ ...proposalForm, phone: e.target.value })} placeholder="(00) 00000-0000" className="bg-white/5" />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Tema da Palestra/Workshop *</label>
+                                <Input required value={proposalForm.topic} onChange={e => setProposalForm({ ...proposalForm, topic: e.target.value })} placeholder="Ex: Metodologias Ativas" className="bg-white/5" />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Resumo Curto *</label>
+                                <textarea required value={proposalForm.description} onChange={e => setProposalForm({ ...proposalForm, description: e.target.value })} className="w-full flex min-h-[80px] rounded-md border border-input dark:border-white/10 bg-transparent dark:bg-white/5 px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" placeholder="Sobre o que você gostaria de falar?"></textarea>
+                            </div>
+                            <div className="pt-4 flex justify-end gap-3">
+                                <Button type="button" variant="outline" onClick={() => setProposalModalOpen(false)}>Cancelar</Button>
+                                <Button type="submit" disabled={proposalLoading} className="bg-[#137fec] text-white hover:bg-[#137fec]/90">
+                                    {proposalLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                                    Enviar Proposta
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {/* FOOTER */}
             <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-12 mt-12 transition-colors duration-300">

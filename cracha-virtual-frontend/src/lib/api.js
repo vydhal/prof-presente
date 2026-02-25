@@ -234,4 +234,8 @@ export const equipmentsAPI = {
   delete: (id) => api.delete(`/equipments/${id}`),
 };
 
+export const proposalsAPI = {
+  submit: (data) => api.post("/proposals", data),
+};
+
 export default api;

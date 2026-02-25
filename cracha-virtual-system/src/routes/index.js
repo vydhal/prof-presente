@@ -20,9 +20,11 @@ const bannerRoutes = require("./banners");
 const settingsRoutes = require("./settings");
 const spaceRoutes = require("./spaces");
 const equipmentRoutes = require("./equipments");
+const proposalRoutes = require("./proposals");
 
 // Configurar rotas
 router.use("/auth", authRoutes);
+router.use("/proposals", proposalRoutes);
 router.use("/users", userRoutes);
 router.use("/events", eventRoutes);
 router.use("/enrollments", enrollmentRoutes);

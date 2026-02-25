@@ -4,17 +4,22 @@ const fs = require("fs");
 
 const { generateBadgeHtml } = require("../utils/badgeService");
 
+const isSecure = process.env.SMTP_SECURE === "true" || process.env.SMTP_SECURE === "1" || process.env.SMTP_SECURE === true || String(process.env.SMTP_SECURE).toLowerCase() === "true";
+
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: parseInt(process.env.SMTP_PORT) || 587,
-  secure: process.env.SMTP_SECURE === "true",
+  secure: isSecure,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
   tls: {
     rejectUnauthorized: false
-  }
+  },
+  connectionTimeout: 10000,
+  greetingTimeout: 5000,
+  socketTimeout: 20000,
 });
 
 /**
@@ -38,11 +43,13 @@ const sendEmail = async ({ to, subject, html, attachments }) => {
       attachments,
     });
     console.log(`[EMAIL] Sucesso! ID: ${info.messageId}`);
+    return info;
   } catch (error) {
     console.error(`[EMAIL-ERROR] Falha ao enviar para ${to}:`, error.message);
     if (error.code === 'ESOCKET') {
       console.error(`[EMAIL-ERROR] Dica: Verifique a conexão com ${process.env.SMTP_HOST}`);
     }
+    throw error; // Re-throw the error so the caller can handle it
   }
 };
 

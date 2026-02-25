@@ -325,18 +325,22 @@ const getProfile = async (req, res) => {
 const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
+    console.log(`[AUTH] Iniciando forgotPassword para: ${email}`);
 
     if (!email) {
+      console.error("[AUTH] Erro: Email não fornecido na requisição.");
       return res.status(400).json({ error: "Email é obrigatório" });
     }
 
     const user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
+      console.log(`[AUTH] Usuário não encontrado para o email: ${email}. Retornando sucesso silencioso.`);
       // Por segurança, não informamos que o usuário não existe, apenas retornamos sucesso
       return res.json({ message: "Se este email estiver cadastrado, você receberá um link de redefinição." });
     }
 
+    console.log(`[AUTH] Usuário encontrado: ${user.id}. Gerando token de redefinição.`);
     // Gerar token de redefinição (válido por 1 hora)
     const token = jwt.sign(
       { userId: user.id, purpose: "reset_password" },
@@ -371,11 +375,13 @@ const forgotPassword = async (req, res) => {
       </div>
     `;
 
+    console.log(`[AUTH] Chamando sendEmail para ${user.email}`);
     await sendEmail({ to: user.email, subject, html });
+    console.log(`[AUTH] sendEmail concluído com sucesso para ${user.email}`);
 
     res.json({ message: "Se este email estiver cadastrado, você receberá um link de redefinição." });
   } catch (error) {
-    console.error("Erro no forgotPassword:", error);
+    console.error(`[AUTH] Erro Crítico no forgotPassword para o email ${req.body?.email}:`, error);
     res.status(500).json({ error: "Erro interno do servidor" });
   }
 };

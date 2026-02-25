@@ -51,10 +51,10 @@ const ForgotPassword = () => {
           <p className="text-gray-400">Enviaremos um link seguro para o seu e-mail</p>
         </div>
 
-        <Card className="bg-slate-900/50 backdrop-blur-xl border-white/10 shadow-2xl">
+        <Card className="bg-white/90 dark:bg-slate-900/80 backdrop-blur-xl border-slate-200 dark:border-white/10 shadow-2xl">
           <CardHeader>
-            <CardTitle className="text-xl text-white">Esqueceu sua senha?</CardTitle>
-            <CardDescription className="text-gray-400">
+            <CardTitle className="text-xl text-slate-900 dark:text-white">Esqueceu sua senha?</CardTitle>
+            <CardDescription className="text-slate-600 dark:text-gray-400">
               Não se preocupe, acontece com os melhores. Digite seu e-mail abaixo.
             </CardDescription>
           </CardHeader>
@@ -88,15 +88,15 @@ const ForgotPassword = () => {
                   </Alert>
                 )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-gray-300">Endereço de E-mail</Label>
+                <div className="space-y-2 text-left">
+                  <Label htmlFor="email" className="text-slate-700 dark:text-gray-300">Endereço de E-mail</Label>
                   <Input
                     id="email"
                     type="email"
                     placeholder="seu@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:ring-blue-500/50"
+                    className="bg-slate-50 dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-600 focus:ring-blue-500/50"
                     required
                   />
                 </div>

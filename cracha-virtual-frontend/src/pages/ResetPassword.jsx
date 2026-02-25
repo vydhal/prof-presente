@@ -67,7 +67,7 @@ const ResetPassword = () => {
   if (!token) {
     return (
       <div className="auth-container min-h-screen flex items-center justify-center p-4">
-        <Card className="max-w-md w-full text-center bg-slate-900/50 backdrop-blur-xl border-white/10 shadow-2xl">
+        <Card className="max-w-md w-full text-center bg-white/90 dark:bg-slate-900/80 backdrop-blur-xl border-slate-200 dark:border-white/10 shadow-2xl">
           <CardContent className="pt-10 pb-10 space-y-6">
             <div className="flex justify-center">
               <div className="p-3 bg-red-500/10 rounded-full">
@@ -75,8 +75,8 @@ const ResetPassword = () => {
               </div>
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-white">link Inválido</h2>
-              <p className="text-gray-400">O token de redefinição não foi encontrado ou é inválido.</p>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Link Inválido</h2>
+              <p className="text-slate-600 dark:text-gray-400">O token de redefinição não foi encontrado ou é inválido.</p>
             </div>
             <Link to="/login" className="block">
               <Button variant="outline" className="w-full">Voltar para o Login</Button>
@@ -94,16 +94,16 @@ const ResetPassword = () => {
         <div className="absolute -bottom-[10%] -left-[10%] w-[40%] h-[40%] bg-purple-500/10 blur-[120px] rounded-full" />
       </div>
 
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md z-1">
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-white mb-2">Nova Senha</h2>
-          <p className="text-gray-400">Escolha uma senha forte para sua segurança</p>
+          <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Nova Senha</h2>
+          <p className="text-slate-600 dark:text-gray-400">Escolha uma senha forte para sua segurança</p>
         </div>
 
-        <Card className="bg-slate-900/50 backdrop-blur-xl border-white/10 shadow-2xl">
+        <Card className="bg-white/90 dark:bg-slate-900/80 backdrop-blur-xl border-slate-200 dark:border-white/10 shadow-2xl">
           <CardHeader>
-            <CardTitle className="text-xl text-white">Redefinir Senha</CardTitle>
-            <CardDescription className="text-gray-400">Insira sua nova senha abaixo.</CardDescription>
+            <CardTitle className="text-xl text-slate-900 dark:text-white">Redefinir Senha</CardTitle>
+            <CardDescription className="text-slate-600 dark:text-gray-400">Insira sua nova senha abaixo.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -113,8 +113,8 @@ const ResetPassword = () => {
                 </Alert>
               )}
 
-              <div className="space-y-2">
-                <Label htmlFor="newPassword" title="text-gray-300">Nova Senha</Label>
+              <div className="space-y-2 text-left">
+                <Label htmlFor="newPassword" title="text-slate-700 dark:text-gray-300">Nova Senha</Label>
                 <div className="relative">
                   <Input
                     id="newPassword"
@@ -122,7 +122,7 @@ const ResetPassword = () => {
                     type={showPassword ? "text" : "password"}
                     value={formData.newPassword}
                     onChange={handleChange}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:ring-blue-500/50"
+                    className="bg-slate-50 dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-600 focus:ring-blue-500/50"
                     required
                   />
                   <Button
@@ -141,15 +141,15 @@ const ResetPassword = () => {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword" title="text-gray-300">Confirmar Nova Senha</Label>
+              <div className="space-y-2 text-left">
+                <Label htmlFor="confirmPassword" title="text-slate-700 dark:text-gray-300">Confirmar Nova Senha</Label>
                 <Input
                   id="confirmPassword"
                   name="confirmPassword"
                   type="password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:ring-blue-500/50"
+                  className="bg-slate-50 dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-600 focus:ring-blue-500/50"
                   required
                 />
               </div>
