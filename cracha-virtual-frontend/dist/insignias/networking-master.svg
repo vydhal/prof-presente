@@ -1,0 +1,15 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+<circle cx="64" cy="64" r="60" fill="url(#platinum_gradient)" stroke="#D4D4D8" stroke-width="4"/>
+<path d="M42 42L64 64L42 86M86 42L64 64L86 86M64 28V64V100" stroke="white" stroke-width="6" stroke-linecap="round"/>
+<circle cx="42" cy="42" r="10" fill="white"/>
+<circle cx="86" cy="42" r="10" fill="white"/>
+<circle cx="42" cy="86" r="10" fill="white"/>
+<circle cx="86" cy="86" r="10" fill="white"/>
+<circle cx="64" cy="64" r="12" fill="white"/>
+<defs>
+<linearGradient id="platinum_gradient" x1="64" y1="0" x2="64" y2="128" gradientUnits="userSpaceOnUse">
+<stop stop-color="#F1F5F9"/>
+<stop offset="1" stop-color="#E2E8F0"/>
+</linearGradient>
+</defs>
+</svg>

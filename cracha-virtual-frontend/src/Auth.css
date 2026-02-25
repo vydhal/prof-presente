@@ -9,8 +9,8 @@
   padding: 1rem;
   overflow: hidden;
 
-  /* Cor de fundo principal (dark) */
-  background-color: #0D1117; 
+  /* Cor de fundo principal */
+  background-color: var(--background); 
 }
 
 /* Efeito de fundo com formas abstratas */

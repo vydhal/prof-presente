@@ -9,7 +9,6 @@ import {
     CreditCard,
     MessageSquare,
     Trophy,
-    Trophy,
     Settings,
     Globe
 } from "lucide-react";

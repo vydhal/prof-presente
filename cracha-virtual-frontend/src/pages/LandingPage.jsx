@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { eventsAPI, tracksAPI } from "../lib/api";
 import { useAuth } from "../hooks/useAuth.jsx";
+import { useTheme } from "../contexts/ThemeContext";
 import { Button } from "../components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
@@ -55,38 +56,36 @@ const formatDate = (dateString) => {
 const LandingPage = () => {
     const { user } = useAuth();
     const { platformName, logoUrl } = useBranding();
-    const [isDarkMode, setIsDarkMode] = useState(false);
+    const { theme, toggleTheme } = useTheme();
+    const isDarkMode = theme === 'dark';
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [searchModalOpen, setSearchModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-    // Theme Toggler
-    useEffect(() => {
-        // Check system preference or localStorage
-        const savedTheme = localStorage.getItem("theme");
-        const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const handleShareTrack = async (track) => {
+        const url = `${window.location.origin}/dashboard`;
+        const title = track.title || "Trilha EduAgenda";
+        const text = `Confira esta trilha de aprendizado: ${title}`;
 
-        if (savedTheme === "dark" || (!savedTheme && systemPrefersDark)) {
-            setIsDarkMode(true);
-            document.documentElement.classList.add("dark");
+        if (navigator.share) {
+            try {
+                await navigator.share({ title, text, url });
+            } catch (err) {
+                console.log("Erro ao compartilhar", err);
+            }
         } else {
-            setIsDarkMode(false);
-            document.documentElement.classList.remove("dark");
-        }
-    }, []);
-
-    const toggleTheme = () => {
-        if (isDarkMode) {
-            document.documentElement.classList.remove("dark");
-            localStorage.setItem("theme", "light");
-            setIsDarkMode(false);
-        } else {
-            document.documentElement.classList.add("dark");
-            localStorage.setItem("theme", "dark");
-            setIsDarkMode(true);
+            try {
+                await navigator.clipboard.writeText(url);
+                alert("Link copiado para a área de transferência!");
+            } catch (err) {
+                alert("Não foi possível copiar o link.");
+            }
         }
     };
+
+
+
 
     // Fetch Public Events
     const { data: allEvents, isLoading, isError, error } = useQuery({
@@ -349,6 +348,16 @@ const LandingPage = () => {
                                             <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
                                             <span className="text-[10px] font-bold text-white uppercase tracking-widest">{track._count?.events || 0} Etapas</span>
                                         </div>
+                                    </div>
+
+                                    <div className="absolute top-6 right-6 z-10">
+                                        <button
+                                            onClick={(e) => { e.preventDefault(); handleShareTrack(track); }}
+                                            className="bg-black/50 hover:bg-black/70 backdrop-blur-md p-2 rounded-full flex items-center justify-center border border-white/10 text-white transition-colors"
+                                            title="Compartilhar Trilha"
+                                        >
+                                            <Share2 className="w-4 h-4" />
+                                        </button>
                                     </div>
 
                                     {/* Image Container */}

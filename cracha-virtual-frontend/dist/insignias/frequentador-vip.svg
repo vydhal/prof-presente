@@ -1,0 +1,11 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M64 12L24 44L64 116L104 44L64 12Z" fill="url(#gem_gradient)" stroke="#2C5282" stroke-width="4"/>
+<path d="M64 12L24 44L64 54L104 44L64 12Z" fill-opacity="0.5" fill="white"/>
+<path d="M24 44L64 54V116L24 44Z" fill="#73A2D7"/>
+<defs>
+<linearGradient id="gem_gradient" x1="64" y1="12" x2="64" y2="116" gradientUnits="userSpaceOnUse">
+<stop stop-color="#63B3ED"/>
+<stop offset="1" stop-color="#4299E1"/>
+</linearGradient>
+</defs>
+</svg>

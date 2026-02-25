@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/x-icon" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Sistema completo de gerenciamento de eventos e crachás virtuais"
+    />
+    <meta name="theme-color" content="#2563eb" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+
+    <title>Prof Presente</title>
+    <script type="module" crossorigin src="/assets/index-BklJB83-.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-B6BwtPMx.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // Forçar limpeza do Service Worker para desenvolvimento
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            console.log('Unregistering Service Worker:', registration);
+            registration.unregister();
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

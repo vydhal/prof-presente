@@ -52,13 +52,13 @@ const Login = () => {
             alt={platformName}
             className="w-48 mx-auto mb-4"
           />
-          <h2 className="text-2xl font-bold text-white mb-2">{platformName}</h2>
-          <p className="text-gray-400">
+          <h2 className="text-2xl font-bold text-foreground mb-2">{platformName}</h2>
+          <p className="text-muted-foreground">
             Plataforma de eventos da Seduc - Campina Grande
           </p>
         </div>
 
-        <Card className="bg-card/80 backdrop-blur-sm border-white/10">
+        <Card className="bg-card/80 backdrop-blur-sm border-border">
           <CardHeader>
             <CardTitle>Acesse sua conta</CardTitle>
             <CardDescription>

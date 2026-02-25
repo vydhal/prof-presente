@@ -20,6 +20,21 @@ class ErrorBoundary extends React.Component {
     componentDidCatch(error, errorInfo) {
         // Você também pode registrar o erro em um serviço de relatório de erros
         console.error("Uncaught error:", error, errorInfo);
+
+        const isChunkLoadError = error?.message?.includes("Failed to fetch dynamically imported module") || error?.message?.includes("Importing a module script failed");
+
+        if (isChunkLoadError) {
+            const chunkFailedKey = 'chunkFailedReload';
+            if (!sessionStorage.getItem(chunkFailedKey)) {
+                sessionStorage.setItem(chunkFailedKey, 'true');
+                window.location.reload();
+                return;
+            } else {
+                // Se já tentou recarregar e falhou novamente, mostramos o erro mas limpamos a flag para a próxima sessão
+                sessionStorage.removeItem(chunkFailedKey);
+            }
+        }
+
         this.setState({ errorInfo });
     }
 

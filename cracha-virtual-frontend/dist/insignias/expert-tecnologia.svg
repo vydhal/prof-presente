@@ -1,0 +1,11 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+<circle cx="64" cy="64" r="60" fill="url(#gold_gradient)" stroke="#FBC02D" stroke-width="4"/>
+<rect x="40" y="40" width="48" height="48" rx="4" stroke="white" stroke-width="4"/>
+<path d="M40 52H24M40 64H24M40 76H24M88 52H104M88 64H104M88 76H104M52 40V24M64 40V24M76 40V24M52 88V104M64 88V104M76 88V104" stroke="white" stroke-width="4" stroke-linecap="round"/>
+<defs>
+<linearGradient id="gold_gradient" x1="64" y1="0" x2="64" y2="128" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FFD700"/>
+<stop offset="1" stop-color="#F5B800"/>
+</linearGradient>
+</defs>
+</svg>
