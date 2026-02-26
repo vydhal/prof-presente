@@ -19,8 +19,8 @@ const {
 // Realizar check-in (apenas ADMIN ou CHECKIN_COORDINATOR)
 router.post('/', authenticateToken, requireCheckinPermission, performCheckin);
 
-// Listar check-ins de um evento (apenas admin)
-router.get('/events/:eventId', authenticateToken, requireAdmin, getEventCheckins);
+// Listar check-ins de um evento (apenas admin ou staff de checkin)
+router.get('/events/:eventId', authenticateToken, requireCheckinPermission, getEventCheckins);
 
 // Listar check-ins de um usuário
 router.get('/users/:userId', authenticateToken, requireOwnershipOrAdmin, getUserCheckins);
@@ -31,8 +31,8 @@ router.get('/my', authenticateToken, (req, res, next) => {
   return getUserCheckins(req, res, next);
 });
 
-// Obter estatísticas de check-in de um evento (apenas admin)
-router.get('/events/:eventId/stats', authenticateToken, requireAdmin, getEventCheckinStats);
+// Obter estatísticas de check-in de um evento (apenas admin ou staff de checkin)
+router.get('/events/:eventId/stats', authenticateToken, requireCheckinPermission, getEventCheckinStats);
 
 //a rota para o check-in facial
 router.post('/facial', authenticateToken, requireCheckinPermission, performFacialCheckin);

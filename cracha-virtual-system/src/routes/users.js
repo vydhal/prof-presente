@@ -18,7 +18,9 @@ const {
 const {
   authenticateToken,
   requireAdmin,
+  requireAdminOrOrganizer,
   requireOwnershipOrAdmin,
+  requireOwnershipOrAdminOrOrganizer,
 } = require("../middleware/auth");
 
 const {
@@ -26,11 +28,11 @@ const {
   handleUploadError,
 } = require("../middleware/upload");
 
-// Listar todos os usuários (apenas admin)
-router.get("/", authenticateToken, requireAdmin, getAllUsers);
+// Listar todos os usuários (admin ou organizador)
+router.get("/", authenticateToken, requireAdminOrOrganizer, getAllUsers);
 
 // Obter usuário por ID
-router.get("/:id", authenticateToken, requireOwnershipOrAdmin, getUserById);
+router.get("/:id", authenticateToken, requireOwnershipOrAdminOrOrganizer, getUserById);
 
 // Atualizar usuário
 router.put(
@@ -60,11 +62,11 @@ router.post(
 // Atualizar role do usuário (apenas admin)
 router.patch("/:id/role", authenticateToken, requireAdmin, updateUserRole);
 
-// Redefinir senha do usuário (apenas admin)
+// Redefinir senha do usuário (admin ou organizador)
 router.post(
   "/:id/reset-password",
   authenticateToken,
-  requireAdmin,
+  requireAdminOrOrganizer,
   resetUserPassword
 );
 
@@ -73,7 +75,7 @@ router.put("/me/consent-facial", authenticateToken, updateFacialConsent);
 router.get(
   "/:id/enrollments",
   authenticateToken,
-  requireOwnershipOrAdmin,
+  requireOwnershipOrAdminOrOrganizer,
   getUserEnrollments
 );
 

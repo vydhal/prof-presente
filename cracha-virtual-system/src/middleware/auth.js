@@ -80,16 +80,30 @@ const requireOwnershipOrAdmin = (req, res, next) => {
   }
 };
 
-// Middleware para verificar se o usuário pode fazer check-in (ADMIN ou CHECKIN_COORDINATOR)
+// Middleware para verificar se o usuário pode acessar o recurso (próprio usuário, admin, ou organizador)
+const requireOwnershipOrAdminOrOrganizer = (req, res, next) => {
+  const userId = req.params.userId || req.params.id;
+  const role = req.user.role;
+
+  if (role === "ADMIN" || role === "ORGANIZER" || req.user.id === userId) {
+    next();
+  } else {
+    return res.status(403).json({
+      error: "Acesso negado. Você só pode acessar seus próprios dados.",
+    });
+  }
+};
+
+// Middleware para verificar se o usuário pode fazer check-in (ADMIN ou CHECKIN_COORDINATOR ou ORGANIZER)
 const requireCheckinPermission = (req, res, next) => {
-  const allowedRoles = ["ADMIN", "CHECKIN_COORDINATOR"];
+  const allowedRoles = ["ADMIN", "CHECKIN_COORDINATOR", "ORGANIZER"];
 
   if (allowedRoles.includes(req.user.role)) {
     next();
   } else {
     return res.status(403).json({
       error:
-        "Acesso negado. Apenas administradores e coordenadores de check-in podem realizar esta ação.",
+        "Acesso negado. Apenas administradores, coordenadores de check-in e organizadores podem realizar esta ação.",
     });
   }
 };
@@ -135,6 +149,7 @@ module.exports = {
   authenticateOptional,
   requireAdmin,
   requireOwnershipOrAdmin,
+  requireOwnershipOrAdminOrOrganizer,
   requireCheckinPermission,
   requireAdminOrOrganizer,
 };

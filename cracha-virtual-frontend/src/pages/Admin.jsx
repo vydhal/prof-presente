@@ -83,7 +83,7 @@ import { Combobox } from "../components/ui/combobox";
 import { getAssetUrl } from "../lib/utils";
 
 const Admin = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isOrg } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
@@ -196,9 +196,9 @@ const Admin = () => {
   const { data: missingBadgesData, isLoading: isLoadingMissingBadges } =
     useQuery({
       queryKey: ["missing-badges-count"],
-      // A query só será executada quando a aba de "usuários" estiver ativa
+      // A query só será executada quando a aba de "usuários" estiver ativa e o usuário for ADMIN
       queryFn: () => api.get("/badges/missing-count").then((res) => res.data),
-      enabled: activeTab === "users",
+      enabled: activeTab === "users" && isAdmin,
       // Opcional: Recarrega a contagem a cada 30 segundos se a aba estiver ativa
       refetchInterval: 180000,
     });
@@ -747,10 +747,16 @@ const Admin = () => {
                   <ImageIcon className="h-4 w-4 mr-2" />
                   Banners
                 </TabsTrigger>
-                <TabsTrigger value="users">
-                  <Users className="h-4 w-4 mr-2" />
-                  Usuários
-                </TabsTrigger>
+              </>
+            )}
+            {(isAdmin || isOrg) && (
+              <TabsTrigger value="users">
+                <Users className="h-4 w-4 mr-2" />
+                Usuários
+              </TabsTrigger>
+            )}
+            {isAdmin && (
+              <>
                 <TabsTrigger value="awards">
                   <Award className="h-4 w-4 mr-2" />
                   Premiações
@@ -1525,51 +1531,52 @@ const Admin = () => {
 
 
         </TabsContent>
+        {(isAdmin || isOrg) && (
+          <TabsContent value="users" className="space-y-4">
+            {!isLoadingMissingBadges && missingBadgesData && isAdmin && (
+              <>
+                {missingBadgesData.count > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Ferramentas de Usuário</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border border-amber-500/50 rounded-lg bg-amber-500/5">
+                        <div>
+                          <h4 className="font-semibold text-amber-800">
+                            Ação Necessária
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            Encontramos{" "}
+                            <strong>
+                              {missingBadgesData.count} usuário(s)
+                            </strong>{" "}
+                            sem crachá universal. Clique para gerá-los agora.
+                          </p>
+                        </div>
+                        <Button
+                          className="mt-3 sm:mt-0"
+                          onClick={() =>
+                            generateMissingBadgesMutation.mutate()
+                          }
+                          disabled={generateMissingBadgesMutation.isPending}
+                        >
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          {generateMissingBadgesMutation.isPending
+                            ? "Iniciando..."
+                            : "Gerar Crachás"}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            )}
+            <UserManagement />
+          </TabsContent>
+        )}
         {isAdmin && (
           <>
-            <TabsContent value="users" className="space-y-4">
-              {!isLoadingMissingBadges && missingBadgesData && (
-                <>
-                  {missingBadgesData.count > 0 && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Ferramentas de Usuário</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border border-amber-500/50 rounded-lg bg-amber-500/5">
-                          <div>
-                            <h4 className="font-semibold text-amber-800">
-                              Ação Necessária
-                            </h4>
-                            <p className="text-sm text-gray-600">
-                              Encontramos{" "}
-                              <strong>
-                                {missingBadgesData.count} usuário(s)
-                              </strong>{" "}
-                              sem crachá universal. Clique para gerá-los agora.
-                            </p>
-                          </div>
-                          <Button
-                            className="mt-3 sm:mt-0"
-                            onClick={() =>
-                              generateMissingBadgesMutation.mutate()
-                            }
-                            disabled={generateMissingBadgesMutation.isPending}
-                          >
-                            <Sparkles className="h-4 w-4 mr-2" />
-                            {generateMissingBadgesMutation.isPending
-                              ? "Iniciando..."
-                              : "Gerar Crachás"}
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </>
-              )}
-              <UserManagement />
-            </TabsContent>
-
             <TabsContent value="awards" className="space-y-4">
               <AwardManagement />
             </TabsContent>

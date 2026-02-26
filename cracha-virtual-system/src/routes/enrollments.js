@@ -16,7 +16,9 @@ const {
 const {
   authenticateToken,
   requireAdmin,
+  requireAdminOrOrganizer,
   requireOwnershipOrAdmin,
+  requireOwnershipOrAdminOrOrganizer,
 } = require("../middleware/auth");
 
 // Inscrever usuário em evento
@@ -26,15 +28,15 @@ router.post("/events/:eventId/enroll", authenticateToken, enrollInEvent);
 router.get(
   "/users/:userId",
   authenticateToken,
-  requireOwnershipOrAdmin,
+  requireOwnershipOrAdminOrOrganizer,
   getUserEnrollments
 );
 
-// Listar inscrições de um evento (apenas admin)
+// Listar inscrições de um evento (admin ou organizador)
 router.get(
   "/events/:eventId",
   authenticateToken,
-  requireAdmin,
+  requireAdminOrOrganizer,
   getEventEnrollments
 );
 
@@ -94,27 +96,27 @@ router.get("/", authenticateToken, getMyEnrollments);
 router.delete("/:enrollmentId", authenticateToken, cancelEnrollment);
 
 // DELETAR INSCRIÇÃO PERMANENTEMENTE (Libera vaga)
-router.delete("/:enrollmentId/permanent", authenticateToken, requireAdmin, deleteEnrollment);
+router.delete("/:enrollmentId/permanent", authenticateToken, requireAdminOrOrganizer, deleteEnrollment);
 
 // Cancelar inscrição (PATCH - compatibilidade)
 router.patch("/:enrollmentId/cancel", authenticateToken, cancelEnrollment);
 
 // MOVER PARTICIPANTE PARA OUTRO EVENTO
-router.patch("/:enrollmentId/move", authenticateToken, requireAdmin, moveEnrollment);
+router.patch("/:enrollmentId/move", authenticateToken, requireAdminOrOrganizer, moveEnrollment);
 
-// Atualizar status da inscrição (apenas admin)
+// Atualizar status da inscrição (admin ou organizador)
 router.patch(
   "/:enrollmentId/status",
   authenticateToken,
-  requireAdmin,
+  requireAdminOrOrganizer,
   updateEnrollmentStatus
 );
 
-// Reenviar e-mail de confirmação (apenas admin)
+// Reenviar e-mail de confirmação (admin ou organizador)
 router.post(
   "/:enrollmentId/resend-confirmation",
   authenticateToken,
-  requireAdmin,
+  requireAdminOrOrganizer,
   resendConfirmationEmail
 );
 

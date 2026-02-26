@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../lib/api";
+import { useAuth } from "../hooks/useAuth";
 import { useDebounce } from "../hooks/useDebounce"; // Hook para debounce
 import {
   Card,
@@ -49,6 +50,7 @@ import AdminUserRegister from "./AdminUserRegister";
 
 const UserManagement = () => {
   const queryClient = useQueryClient();
+  const { isAdmin } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const debouncedSearchTerm = useDebounce(searchTerm, 300); // 300ms de delay
@@ -299,15 +301,17 @@ const UserManagement = () => {
                       </div>
 
                       <div className="flex justify-end gap-2 pt-2 border-t">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => openRoleDialog(user)}
-                          className="h-8"
-                        >
-                          <Shield className="h-4 w-4 mr-1" />
-                          Tipo
-                        </Button>
+                        {isAdmin && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openRoleDialog(user)}
+                            className="h-8"
+                          >
+                            <Shield className="h-4 w-4 mr-1" />
+                            Tipo
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           variant="outline"
@@ -317,15 +321,17 @@ const UserManagement = () => {
                           <Key className="h-4 w-4 mr-1" />
                           Senha
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleDeleteUser(user)}
-                          className="h-8"
-                        >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          Excluir
-                        </Button>
+                        {isAdmin && (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteUser(user)}
+                            className="h-8"
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Excluir
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -376,14 +382,16 @@ const UserManagement = () => {
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil mr-1"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
                             Editar
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openRoleDialog(user)}
-                          >
-                            <Shield className="h-4 w-4 mr-1" />
-                            Tipo
-                          </Button>
+                          {isAdmin && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openRoleDialog(user)}
+                            >
+                              <Shield className="h-4 w-4 mr-1" />
+                              Tipo
+                            </Button>
+                          )}
                           <Button
                             size="sm"
                             variant="outline"
@@ -404,15 +412,17 @@ const UserManagement = () => {
                             <Calendar className="h-4 w-4 mr-1" />
                             Histórico
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDeleteUser(user)}
-                            title="Excluir Usuário"
-                          >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Excluir
-                          </Button>
+                          {isAdmin && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDeleteUser(user)}
+                              title="Excluir Usuário"
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Excluir
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))
