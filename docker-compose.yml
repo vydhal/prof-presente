@@ -17,10 +17,10 @@ services:
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASS=${SMTP_PASS}
       - EMAIL_FROM=${EMAIL_FROM}
-      - PUBLIC_API_URL=https://corre.simplisoft.com.br/api
+      - PUBLIC_API_URL=https://eduagenda.simplisoft.com.br/api
       - FACIAL_SERVICE_URL=http://eduagenda_facialrec:3002/api
       - TZ=America/Sao_Paulo
-      - CORS_ORIGIN=https://corre.simplisoft.com.br
+      - CORS_ORIGIN=https://eduagenda.simplisoft.com.br
     depends_on:
       - eduagenda_db
       - eduagenda_rabbitmq
@@ -43,7 +43,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=SimpliSoft"
-      - "traefik.http.routers.eduagenda-backend.rule=Host(`corre.simplisoft.com.br`) && (PathPrefix(`/api`) || PathPrefix(`/uploads`) || PathPrefix(`/socket.io`))"
+      - "traefik.http.routers.eduagenda-backend.rule=Host(`eduagenda.simplisoft.com.br`) && (PathPrefix(`/api`) || PathPrefix(`/uploads`) || PathPrefix(`/socket.io`))"
       - "traefik.http.routers.eduagenda-backend.entrypoints=web,websecure"
       - "traefik.http.routers.eduagenda-backend.tls.certresolver=letsencryptresolver"
       - "traefik.http.routers.eduagenda-backend.priority=100"
@@ -58,7 +58,7 @@ services:
       labels:
         - "traefik.enable=true"
         - "traefik.docker.network=SimpliSoft"
-        - "traefik.http.routers.eduagenda-backend.rule=Host(`corre.simplisoft.com.br`) && (PathPrefix(`/api`) || PathPrefix(`/uploads`) || PathPrefix(`/socket.io`))"
+        - "traefik.http.routers.eduagenda-backend.rule=Host(`eduagenda.simplisoft.com.br`) && (PathPrefix(`/api`) || PathPrefix(`/uploads`) || PathPrefix(`/socket.io`))"
         - "traefik.http.routers.eduagenda-backend.entrypoints=web,websecure"
         - "traefik.http.routers.eduagenda-backend.tls.certresolver=letsencryptresolver"
         - "traefik.http.routers.eduagenda-backend.priority=100"
@@ -71,14 +71,14 @@ services:
   frontend:
     image: vydhal/eduagenda-frontend:2.4.1
     environment:
-      - VITE_API_URL=https://corre.simplisoft.com.br/api
+      - VITE_API_URL=https://eduagenda.simplisoft.com.br/api
       - TZ=America/Sao_Paulo
     networks:
       - interna_network_docs
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=SimpliSoft"
-      - "traefik.http.routers.eduagenda-frontend.rule=Host(`corre.simplisoft.com.br`)"
+      - "traefik.http.routers.eduagenda-frontend.rule=Host(`eduagenda.simplisoft.com.br`)"
       - "traefik.http.routers.eduagenda-frontend.entrypoints=web,websecure"
       - "traefik.http.routers.eduagenda-frontend.tls.certresolver=letsencryptresolver"
       - "traefik.http.routers.eduagenda-frontend.priority=10"
@@ -90,7 +90,7 @@ services:
       labels:
         - "traefik.enable=true"
         - "traefik.docker.network=SimpliSoft"
-        - "traefik.http.routers.eduagenda-frontend.rule=Host(`corre.simplisoft.com.br`)"
+        - "traefik.http.routers.eduagenda-frontend.rule=Host(`eduagenda.simplisoft.com.br`)"
         - "traefik.http.routers.eduagenda-frontend.entrypoints=web,websecure"
         - "traefik.http.routers.eduagenda-frontend.tls.certresolver=letsencryptresolver"
         - "traefik.http.routers.eduagenda-frontend.priority=10"
@@ -153,7 +153,7 @@ services:
     image: vydhal/eduagenda-facialrec:2.4.1
     environment:
       - PORT=3002
-      - PUBLIC_API_URL=https://corre.simplisoft.com.br/api
+      - PUBLIC_API_URL=https://eduagenda.simplisoft.com.br/api
     networks:
       - interna_network_docs
     deploy:

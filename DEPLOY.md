@@ -50,7 +50,7 @@ Após enviar as imagens para o Docker Hub, siga estes passos no seu servidor:
 
 ## 📋 3. Notas Importantes
 - **Fuso Horário**: O sistema está configurado para `America/Sao_Paulo`.
-- **URLs**: As APIs agora apontam para `https://corre.simplisoft.com.br/api`.
+- **URLs**: As APIs agora apontam para `https://eduagenda.simplisoft.com.br/api`.
 - **Logs**: Verifique os logs dos containers no Portainer para garantir que o Socket.io e a conexão com o banco de dados estão operacionais.
 
 Desenvolvido por **Antigravity AI**.

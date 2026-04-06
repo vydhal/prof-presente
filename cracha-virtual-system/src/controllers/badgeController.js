@@ -66,7 +66,7 @@ const getUserBadge = async (req, res) => {
 
     // ALTERAÇÃO: Simplificada a verificação de permissão.
     // Antes, verificava se era o próprio usuário ou admin.
-    if (req.user.role !== "ADMIN" && req.user.id !== userId) {
+    if (req.user.role !== "ADMIN" && req.user.role !== "ORGANIZER" && req.user.id !== userId) {
       return res
         .status(403)
         .json({ error: "Você não tem permissão para acessar este crachá" });

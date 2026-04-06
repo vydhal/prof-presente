@@ -324,7 +324,7 @@ const cancelEnrollment = async (req, res) => {
       return res.status(404).json({ error: "Inscrição não encontrada" });
     }
 
-    if (req.user.role !== "ADMIN" && enrollment.userId !== userId) {
+    if (req.user.role !== "ADMIN" && req.user.role !== "ORGANIZER" && enrollment.userId !== userId) {
       return res
         .status(403)
         .json({ error: "Você não tem permissão para cancelar esta inscrição" });
@@ -506,9 +506,9 @@ const deleteEnrollment = async (req, res) => {
       return res.status(404).json({ error: "Inscrição não encontrada" });
     }
 
-    // Apenas Admin pode deletar fisicamente
-    if (req.user.role !== "ADMIN") {
-      return res.status(403).json({ error: "Apenas administradores podem excluir inscrições permanentemente." });
+    // Apenas Admin ou Organizador pode deletar fisicamente
+    if (req.user.role !== "ADMIN" && req.user.role !== "ORGANIZER") {
+      return res.status(403).json({ error: "Apenas administradores ou organizadores podem excluir inscrições permanentemente." });
     }
 
     await prisma.enrollment.delete({

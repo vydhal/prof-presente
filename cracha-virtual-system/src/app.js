@@ -30,7 +30,7 @@ app.use(
   cors({
     origin: (origin, callback) => {
       const allowedOrigins = [
-        "https://corre.simplisoft.com.br",
+        "https://eduagenda.simplisoft.com.br",
         "http://localhost:5173",
         "http://localhost:3001"
       ];
@@ -38,9 +38,14 @@ app.use(
       // Permitir requisições sem origin (como apps mobile ou curl)
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== "production") {
+      // Verificação mais flexível para evitar problemas com barras ou subdomínios
+      const isAllowed = allowedOrigins.some(authOrigin => origin.startsWith(authOrigin)) || 
+                        origin.includes("eduagenda.simplisoft.com.br");
+
+      if (isAllowed || process.env.NODE_ENV !== "production") {
         callback(null, true);
       } else {
+        console.error(`[CORS-BLOCK] Origem rejeitada: ${origin}`);
         callback(new Error('Not allowed by CORS'));
       }
     },

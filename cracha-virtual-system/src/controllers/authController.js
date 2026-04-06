@@ -369,11 +369,10 @@ const forgotPassword = async (req, res) => {
     // Utilizar a URL do frontend em produção, ou localhost se não for definido.
     // Em produção, a porta não é necessária se estiver usando o domínio principal (porta 443/80)
     const frontendUrl = process.env.NODE_ENV === 'production'
-      ? "https://eduagenda.com.br" // Atualize com o domínio correto de produção se necessário. "https://corre.simplisoft.com.br" estava dando localhost no email? A lógica anterior usava FRONTEND_URL. Se estava falhando, vou forçar a de prod.
+      ? "https://eduagenda.simplisoft.com.br"
       : "http://localhost:5173";
 
-    // Simplificando e forçando a rota correta:
-    const baseUrl = process.env.FRONTEND_URL || "https://corre.simplisoft.com.br";
+    const baseUrl = process.env.FRONTEND_URL || "https://eduagenda.simplisoft.com.br";
     const resetLink = `${baseUrl}/reset-password?token=${token}`;
 
     const subject = "Redefinição de Senha - Prof Presente";
