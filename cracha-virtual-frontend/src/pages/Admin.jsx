@@ -168,9 +168,10 @@ const Admin = () => {
     mapLink: "",
     schedule: "",
     speakerName: "",
-    speakerRole: "",
+    speakerPhotoUrl: "",
     categoryId: "",
     isPrivate: false,
+    creatorId: "",
   });
 
   const [badgeTemplateFile, setBadgeTemplateFile] = useState(null);
@@ -201,7 +202,7 @@ const Admin = () => {
   const { data: events, isLoading: eventsLoading } = useQuery({
     queryKey: ["admin-events"],
     queryFn: async () => {
-      const response = await api.get("/events?limit=100");
+      const response = await api.get("/events?limit=100&managedOnly=true");
       return response.data.events;
     },
   });
@@ -212,6 +213,15 @@ const Admin = () => {
       const response = await api.get("/categories");
       return response.data;
     },
+  });
+
+  const { data: organizers } = useQuery({
+    queryKey: ["organizers-list"],
+    queryFn: async () => {
+      const response = await api.get("/users?role=ORGANIZER,GESTOR_ESCOLA,ADMIN&limit=100");
+      return response.data.users;
+    },
+    enabled: isAdmin,
   });
 
   const { data: stats } = useQuery({
@@ -497,6 +507,7 @@ const Admin = () => {
     setEventThumbnailPreviewUrl(null);
     setSpeakerPhotoFile(null);
     setSpeakerPhotoPreviewUrl(null);
+    setEventForm(prev => ({ ...prev, creatorId: "" }));
   };
 
   const handleSubmit = (e) => {
@@ -510,6 +521,7 @@ const Admin = () => {
         : null,
       categoryId: eventForm.categoryId || null,
       isPrivate: eventForm.isPrivate,
+      creatorId: eventForm.creatorId || null,
     };
 
     if (editingEvent) {
@@ -541,6 +553,7 @@ const Admin = () => {
       speakerRole: event.speakerRole || "",
       categoryId: event.categoryId || "",
       isPrivate: event.isPrivate ?? false,
+      creatorId: event.creatorId || "",
     });
 
     setBadgeTemplatePreviewUrl(null);
@@ -829,12 +842,14 @@ const Admin = () => {
   }, []);
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Administração</h1>
-        <p className="text-gray-600">
-          Gerencie eventos, usuários e visualize estatísticas
-        </p>
+    <div className="p-3 md:p-6 space-y-4 md:space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b pb-4">
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold">Administração</h1>
+          <p className="text-xs text-gray-500 hidden md:block">
+            Gerencie o sistema e visualize estatísticas
+          </p>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6 lg:mb-0">
@@ -955,10 +970,9 @@ const Admin = () => {
           <AdminCategories />
         </TabsContent>
 
-        <TabsContent value="events" className="space-y-4">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <h2 className="text-2xl font-bold">Gerenciar Eventos</h2>
-            <div className="flex flex-col sm:flex-row w-full md:w-auto gap-2 grow max-w-2xl">
+        <TabsContent value="events" className="space-y-3">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+            <div className="flex flex-col sm:flex-row w-full md:w-auto gap-2 grow max-w-4xl">
               <div className="relative grow">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -1049,6 +1063,31 @@ const Admin = () => {
                               required
                             />
                           </div>
+
+                          {isAdmin && (
+                            <div className="space-y-2 p-3 bg-slate-50 border rounded-lg">
+                              <Label className="flex items-center gap-2">
+                                <Users className="h-4 w-4 text-primary" />
+                                <span className="font-semibold">Responsável pelo Evento (Admin Only)</span>
+                              </Label>
+                              <Combobox
+                                options={organizers?.map((u) => ({
+                                  value: u.id,
+                                  label: `${u.name} (${u.role})`,
+                                })) || []}
+                                value={eventForm.creatorId}
+                                onSelect={(value) =>
+                                  setEventForm({ ...eventForm, creatorId: value })
+                                }
+                                placeholder="Selecione o novo responsável..."
+                                searchPlaceholder="Buscar organizador..."
+                                className="bg-white"
+                              />
+                              <p className="text-[10px] text-muted-foreground">
+                                Ao alterar o responsável, o novo usuário terá permissões de gerenciamento sobre este evento.
+                              </p>
+                            </div>
+                          )}
 
                           <div className="space-y-2">
                             <Label>Evento Pai (Opcional)</Label>
@@ -1597,8 +1636,8 @@ const Admin = () => {
               </div>
 
               {/* DESKTOP VIEW: Table */}
-              <div className="hidden md:block">
-                <Table>
+              <div className="hidden md:block overflow-x-auto">
+                <Table className="min-w-[1000px] lg:min-w-full">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Título</TableHead>
@@ -1630,11 +1669,13 @@ const Admin = () => {
                           event.location.toLowerCase().includes(searchTerm.toLowerCase())
                         )
                         .map((event) => (
-                          <TableRow key={event.id}>
-                            <TableCell className="font-medium">
+                          <TableRow key={event.id} className="text-xs md:text-sm">
+                            <TableCell className="font-medium max-w-[200px] lg:max-w-[300px] truncate" title={event.title}>
                               {event.title}
                             </TableCell>
-                            <TableCell>{event.location}</TableCell>
+                            <TableCell className="max-w-[150px] lg:max-w-[250px] truncate" title={event.location}>
+                              {event.location}
+                            </TableCell>
                             <TableCell>
                               {event.isPrivate ? (
                                 <Badge variant="secondary">Privado</Badge>

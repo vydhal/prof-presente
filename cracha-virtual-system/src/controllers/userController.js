@@ -74,17 +74,22 @@ const callFacialServiceIndex = async (userId, photoUrl) => {
 // Listar todos os usuários (apenas admin)
 const getAllUsers = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search } = req.query;
+    const { page = 1, limit = 10, search, role } = req.query;
     const skip = (page - 1) * limit;
 
-    const where = search
-      ? {
-        OR: [
-          { name: { contains: search, mode: "insensitive" } },
-          { email: { contains: search, mode: "insensitive" } },
-        ],
-      }
-      : {};
+    const where = {};
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { email: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    if (role) {
+      const roles = role.split(",");
+      where.role = { in: roles };
+    }
 
     const users = await prisma.user.findMany({
       where,

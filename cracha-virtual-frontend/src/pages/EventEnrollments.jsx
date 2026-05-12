@@ -31,6 +31,7 @@ import {
     Clock,
     Trash2,
     ArrowRightLeft,
+    UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getAssetUrl } from "../lib/utils";
@@ -195,7 +196,7 @@ const EventEnrollments = () => {
         queryKey: ["admin-events-list", eventSearch],
         queryFn: async () => {
             const res = await api.get("/events", {
-                params: { search: eventSearch, limit: 5 }
+                params: { search: eventSearch, limit: 5, managedOnly: true }
             });
             return res.data.events;
         },
@@ -230,6 +231,49 @@ const EventEnrollments = () => {
     const handleMoveParticipant = (enrollment) => {
         setSelectedEnrollment(enrollment);
         setIsMoveModalOpen(true);
+    };
+
+    // Add Participant Logic
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [userSearch, setUserSearch] = useState("");
+    const [debouncedUserSearch, setDebouncedUserSearch] = useState("");
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedUserSearch(userSearch);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [userSearch]);
+
+    const { data: usersList, isLoading: isLoadingUsers } = useQuery({
+        queryKey: ["admin-users-search", debouncedUserSearch],
+        queryFn: async () => {
+            if (!debouncedUserSearch) return [];
+            const res = await api.get("/users", {
+                params: { search: debouncedUserSearch, limit: 10 }
+            });
+            return res.data.users;
+        },
+        enabled: isAddModalOpen && debouncedUserSearch.length > 2
+    });
+
+    const adminEnrollMutation = useMutation({
+        mutationFn: async (userId) => {
+            await api.post(`/enrollments/admin/enroll`, { eventId: id, userId });
+        },
+        onSuccess: () => {
+            toast.success("Usuário inscrito com sucesso!");
+            queryClient.invalidateQueries(["event-enrollments", id]);
+            queryClient.invalidateQueries(["event", id]);
+            // Não fechamos o modal para permitir adicionar mais pessoas seguidamente
+        },
+        onError: (error) => {
+            toast.error(error.response?.data?.error || "Erro ao inscrever usuário.");
+        },
+    });
+
+    const handleAdminEnroll = (userId) => {
+        adminEnrollMutation.mutate(userId);
     };
 
     if (isLoadingEvent) {
@@ -268,6 +312,10 @@ const EventEnrollments = () => {
                                     Mover ({selectedEnrollments.length})
                                 </Button>
                             )}
+                            <Button variant="default" size="sm" onClick={() => setIsAddModalOpen(true)} className="bg-emerald-600 hover:bg-emerald-700">
+                                <UserPlus className="h-4 w-4 mr-2" />
+                                Adicionar Participante
+                            </Button>
                             <select
                                 value={checkinFilter}
                                 onChange={(e) => setCheckinFilter(e.target.value)}
@@ -478,6 +526,82 @@ const EventEnrollments = () => {
                         >
                             {moveParticipantMutation.isPending ? "Movendo..." : "Confirmar Mudança"}
                         </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Add Participant Modal */}
+            <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+                <DialogContent className="sm:max-w-[600px]">
+                    <DialogHeader>
+                        <DialogTitle>Adicionar Participante ao Evento</DialogTitle>
+                        <CardDescription>
+                            Busque por pessoas já cadastradas na plataforma para inscrevê-las neste evento.
+                        </CardDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Buscar Usuário</label>
+                            <div className="relative">
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Nome ou e-mail (mínimo 3 caracteres)..."
+                                    className="pl-8"
+                                    value={userSearch}
+                                    onChange={(e) => setUserSearch(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Resultados da busca:</label>
+                            <div className="border rounded-md max-h-[300px] overflow-y-auto">
+                                {!debouncedUserSearch || debouncedUserSearch.length < 3 ? (
+                                    <p className="p-8 text-center text-sm text-muted-foreground">Digite pelo menos 3 caracteres para buscar.</p>
+                                ) : isLoadingUsers ? (
+                                    <p className="p-8 text-center text-sm text-muted-foreground">Buscando...</p>
+                                ) : usersList?.length === 0 ? (
+                                    <p className="p-8 text-center text-sm text-muted-foreground">Nenhum usuário encontrado.</p>
+                                ) : (
+                                    usersList?.map((u) => {
+                                        const isAlreadyEnrolled = enrollments.some(e => e.userId === u.id);
+                                        return (
+                                            <div
+                                                key={u.id}
+                                                className="p-3 border-b last:border-0 flex justify-between items-center hover:bg-muted/50 transition-colors"
+                                            >
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium text-sm">{u.name}</span>
+                                                    <span className="text-xs text-muted-foreground">{u.email}</span>
+                                                    {u.professionName && (
+                                                        <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded w-fit mt-1">
+                                                            {u.professionName}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <Button
+                                                    size="sm"
+                                                    variant={isAlreadyEnrolled ? "outline" : "default"}
+                                                    disabled={isAlreadyEnrolled || adminEnrollMutation.isPending}
+                                                    onClick={() => handleAdminEnroll(u.id)}
+                                                    className={!isAlreadyEnrolled ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                                                >
+                                                    {isAlreadyEnrolled ? "Já Inscrito" : adminEnrollMutation.isPending ? "Inscrevendo..." : "Inscrever"}
+                                                </Button>
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => {
+                            setIsAddModalOpen(false);
+                            setUserSearch("");
+                        }}>Fechar</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

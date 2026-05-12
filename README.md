@@ -7,7 +7,8 @@ O **Prof Presente** é uma plataforma completa para gerenciamento de eventos edu
 ### 📅 Gestão Avançada de Eventos
 - **Criação e Edição:** Configure título, descrição, datas, local e limite de vagas.
 - **Gestão de Equipe (Staff):** Vincule Coordenadores de Check-in e Palestrantes a eventos específicos.
-- **Visibilidade Inteligente:** Coordenadores e Palestrantes visualizam apenas os eventos aos quais estão vinculados, simplificando a operação.
+- **Visibilidade Híbrida:** Coordenadores e Palestrantes possuem visão focada nos eventos que gerenciam, mas mantêm acesso total à listagem pública para novas inscrições.
+- **Reatribuição Administrativa:** Admins podem transferir a propriedade de eventos entre organizadores, garantindo a continuidade da gestão.
 - **Página Pública do Evento:**
   - Visualização rica com **Imagem de Capa** personalizada.
   - **Mapa Interativo (Google Maps)** integrado para fácil localização.

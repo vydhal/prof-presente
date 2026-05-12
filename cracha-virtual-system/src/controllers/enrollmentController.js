@@ -731,6 +731,122 @@ const exportEventEnrollmentsToCSV = async (req, res) => {
   }
 };
 
+// Inscrição de usuário por administrador (permite eventos passados e ignora data fim)
+const adminEnrollUser = async (req, res) => {
+  try {
+    const { eventId, userId } = req.body;
+
+    if (!eventId || !userId) {
+      return res.status(400).json({ error: "eventId e userId são obrigatórios" });
+    }
+
+    const [event, user, userAwards] = await Promise.all([
+      prisma.event.findUnique({
+        where: { id: eventId },
+        include: {
+          _count: {
+            select: { enrollments: { where: { status: "APPROVED" } } },
+          },
+        },
+      }),
+      prisma.user.findUnique({ where: { id: userId } }),
+      prisma.userAward.findMany({
+        where: { userId },
+        include: { award: true },
+        orderBy: { awardedAt: "desc" },
+        take: 5,
+      }),
+    ]);
+
+    if (!event) {
+      return res.status(404).json({ error: "Evento não encontrado" });
+    }
+
+    if (!user) {
+      return res.status(404).json({ error: "Usuário não encontrado" });
+    }
+
+    // Busca ou cria o crachá para garantir que o QR Code exista
+    const userBadge = await findOrCreateUserBadge(userId);
+
+    const existingEnrollment = await prisma.enrollment.findUnique({
+      where: {
+        userId_eventId: { userId, eventId },
+      },
+    });
+
+    if (existingEnrollment) {
+      if (["CANCELLED", "REJECTED"].includes(existingEnrollment.status)) {
+        // Validação de capacidade (Admin pode aumentar se necessário nas configs do evento)
+        if (event.maxAttendees && event._count.enrollments >= event.maxAttendees) {
+          return res.status(400).json({ error: "Evento lotado. O administrador deve aumentar o limite de vagas nas configurações do evento." });
+        }
+
+        const enrollment = await prisma.enrollment.update({
+          where: { id: existingEnrollment.id },
+          data: { status: "APPROVED", enrollmentDate: new Date() },
+          include: {
+            user: { select: { id: true, name: true, email: true } },
+            event: {
+              select: {
+                id: true,
+                title: true,
+                startDate: true,
+                endDate: true,
+                location: true,
+              },
+            },
+          },
+        });
+
+        sendEnrollmentConfirmationEmail(user, event, userBadge, userAwards);
+
+        return res.status(200).json({ message: "Inscrição reativada com sucesso pelo administrador", enrollment });
+      } else {
+        return res.status(409).json({
+          error: "Usuário já está inscrito neste evento",
+          enrollment: existingEnrollment,
+        });
+      }
+    }
+
+    // Validação de capacidade para nova inscrição
+    if (event.maxAttendees && event._count.enrollments >= event.maxAttendees) {
+      return res.status(400).json({ error: "Evento lotado. O administrador deve aumentar o limite de vagas nas configurações do evento." });
+    }
+
+    const enrollment = await prisma.enrollment.create({
+      data: {
+        userId,
+        eventId,
+        status: "APPROVED",
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        event: {
+          select: {
+            id: true,
+            title: true,
+            startDate: true,
+            endDate: true,
+            location: true,
+          },
+        },
+      },
+    });
+
+    sendEnrollmentConfirmationEmail(user, event, userBadge, userAwards);
+
+    res.status(201).json({
+      message: "Usuário inscrito com sucesso pelo administrador",
+      enrollment,
+    });
+  } catch (error) {
+    console.error("Erro ao inscrever usuário pelo admin:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+};
+
 module.exports = {
   enrollInEvent,
   getUserEnrollments,
@@ -742,4 +858,5 @@ module.exports = {
   deleteEnrollment,
   moveEnrollment,
   exportEventEnrollmentsToCSV,
+  adminEnrollUser,
 };

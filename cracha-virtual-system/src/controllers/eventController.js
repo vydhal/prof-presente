@@ -68,7 +68,7 @@ const checkValidation = (req, res) => {
 // Listar todos os eventos
 const getAllEvents = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search, upcoming, categoryId, startDate, endDate } = req.query;
+    const { page = 1, limit = 10, search, upcoming, categoryId, startDate, endDate, managedOnly } = req.query;
     const skip = (page - 1) * limit;
     const user = req.user; // Usuário autenticado pelo middleware
 
@@ -106,65 +106,65 @@ const getAllEvents = async (req, res) => {
     }
 
     // Construção da cláusula final de visibilidade
-    let finalWhere = { ...baseWhere };
+    let finalWhere = {};
+    if (user && user.role !== "ADMIN") {
+      // 1. Obter locais do usuário (escolas/unidades) para visibilidade compartilhada
+      const userWithWorkplaces = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { workplaces: { select: { id: true } } },
+      });
+      const userWorkplaceIds = userWithWorkplaces?.workplaces.map((w) => w.id) || [];
 
-    if (user) {
-      if (user.role === "ADMIN") {
-        // ADMIN vê tudo
-      } else if (["GESTOR_ESCOLA", "ORGANIZER"].includes(user.role)) {
-        // CORREÇÃO: Gestor e Organizador veem APENAS os eventos que eles mesmos criaram
-        finalWhere.creatorId = user.id;
-      } else if (["CHECKIN_COORDINATOR", "SPEAKER"].includes(user.role)) {
-        // --- ALTERAÇÃO PRINCIPAL ---
-        // Coordenadores e Palestrantes veem APENAS eventos onde estão na equipe (staff)
-        // OU eventos públicos (dependendo da regra de negócio, mas geralmente staff vê o restrito)
-        // Vamos assumir que eles veem os eventos onde são staff.
-
-        finalWhere.staff = {
-          some: {
-            userId: user.id
-          }
-        };
-
-        // Opcional: Se quiser que eles TAMBÉM vejam eventos públicos como participantes normais,
-        // use um OR. Mas o pedido foi para "aparecerão os eventos em que ele foi vinculado".
-        // Então mantemos restrito.
-      } else {
-        // Usuário comum (TEACHER, etc) vê eventos públicos OU os privados da sua escola
-        const userWithWorkplaces = await prisma.user.findUnique({
-          where: { id: user.id },
-          select: { workplaces: { select: { id: true } } },
+      let unitManagerIds = [];
+      if (userWorkplaceIds.length > 0) {
+        const managers = await prisma.user.findMany({
+          where: {
+            role: "GESTOR_ESCOLA",
+            workplaces: { some: { id: { in: userWorkplaceIds } } },
+          },
+          select: { id: true },
         });
-        const userWorkplaceIds =
-          userWithWorkplaces?.workplaces.map((w) => w.id) || [];
-
-        if (userWorkplaceIds.length > 0) {
-          const managers = await prisma.user.findMany({
-            where: {
-              role: "GESTOR_ESCOLA",
-              workplaces: { some: { id: { in: userWorkplaceIds } } },
-            },
-            select: { id: true },
-          });
-          const managerIds = managers.map((m) => m.id);
-
-          finalWhere.OR = [
-            { isPrivate: false },
-            { creatorId: { in: managerIds } },
-          ];
-        } else {
-          // Se o usuário não tem escola, só vê eventos públicos
-          finalWhere.isPrivate = false;
-        }
+        unitManagerIds = managers.map((m) => m.id);
       }
-    } else {
+
+      // 2. Definir condições de "Gerenciamento" (onde o usuário é dono ou staff)
+      const managementConditions = [];
+      if (["GESTOR_ESCOLA", "ORGANIZER"].includes(user.role)) {
+        managementConditions.push({ creatorId: user.id });
+      }
+      if (["CHECKIN_COORDINATOR", "SPEAKER"].includes(user.role)) {
+        managementConditions.push({ staff: { some: { userId: user.id } } });
+      }
+
+      // 3. Definir condições de "Visibilidade Pública" (Eventos públicos ou da unidade)
+      const publicConditions = [
+        { isPrivate: false },
+        { creatorId: { in: unitManagerIds } },
+      ];
+
+      // 4. Aplicar a lógica final baseada no parâmetro 'managedOnly'
+      if (managedOnly === "true") {
+        // Modo administrativo: mostra apenas o que o usuário gerencia diretamente
+        if (managementConditions.length > 0) {
+          finalWhere.OR = managementConditions;
+        } else {
+          // Caso não tenha nada para gerenciar mas pediu 'managedOnly'
+          finalWhere.id = "none";
+        }
+      } else {
+        // Modo normal/público: mostra tudo o que ele tem direito de ver
+        finalWhere.OR = [...publicConditions, ...managementConditions];
+      }
+    } else if (!user) {
       // Usuário ANÔNIMO: Vê apenas eventos públicos
       finalWhere.isPrivate = false;
     }
 
-    // Combina a cláusula base com a de visibilidade, se necessário
-    if (finalWhere.OR || finalWhere.creatorId) {
+    // Combina a cláusula base com a de visibilidade
+    if (finalWhere.OR || finalWhere.id === "none" || finalWhere.isPrivate === false) {
       finalWhere = { AND: [baseWhere, finalWhere] };
+    } else {
+      finalWhere = baseWhere;
     }
 
     const events = await prisma.event.findMany({
@@ -384,6 +384,7 @@ const updateEvent = async (req, res) => {
       speakerRole,
       speakerPhotoUrl,
       categoryId,
+      creatorId,
     } = req.body;
 
     // Verificar se o evento existe
@@ -427,6 +428,21 @@ const updateEvent = async (req, res) => {
     if (speakerRole !== undefined) updateData.speakerRole = speakerRole;
     if (speakerPhotoUrl !== undefined) updateData.speakerPhotoUrl = speakerPhotoUrl;
     if (categoryId !== undefined) updateData.categoryId = categoryId || null;
+
+    // ADICIONAL: Admin pode mudar o organizador/responsável pelo evento
+    if (creatorId && req.user.role === "ADMIN") {
+      // Opcional: Validar se o novo creatorId existe e tem role adequado
+      const newCreator = await prisma.user.findUnique({
+        where: { id: creatorId },
+        select: { id: true, role: true }
+      });
+      
+      if (newCreator && (["ADMIN", "ORGANIZER", "GESTOR_ESCOLA"].includes(newCreator.role))) {
+        updateData.creatorId = creatorId;
+      } else {
+        return res.status(400).json({ error: "Novo organizador inválido ou não encontrado." });
+      }
+    }
 
     // Atualizar evento
     const updatedEvent = await prisma.event.update({

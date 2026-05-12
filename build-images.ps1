@@ -10,7 +10,7 @@ Clear-Host
 Write-Host "=== Automação de Build de Imagens Docker ===" -ForegroundColor Cyan
 
 # 1. Escolha da Versão
-$currentVersion = "2.4.0"
+$currentVersion = "2.4.3"
 $VERSION = Read-Host "Informe a versão desejada (Pressione Enter para usar $currentVersion)"
 if (-not $VERSION) { $VERSION = $currentVersion }
 

@@ -22,7 +22,7 @@ const BrandingManagement = () => {
     const [faviconPreview, setFaviconPreview] = useState(null);
     const [logoFile, setLogoFile] = useState(null);
     const [faviconFile, setFaviconFile] = useState(null);
-    const [primaryColor, setPrimaryColor] = useState("#137fec");
+    const [primaryColor, setPrimaryColor] = useState("#1ed760");
 
     const { data: settings, isLoading } = useQuery({
         queryKey: ["system-settings"],
@@ -143,7 +143,7 @@ const BrandingManagement = () => {
                                     type="button"
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => setPrimaryColor("#137fec")}
+                                    onClick={() => setPrimaryColor("#1ed760")}
                                     className="text-xs"
                                 >
                                     Restaurar Padrão

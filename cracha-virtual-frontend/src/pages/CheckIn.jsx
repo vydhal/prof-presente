@@ -59,7 +59,7 @@ const CheckIn = () => {
   const { data: eventsData } = useQuery({
     queryKey: ["events-for-checkin"],
     queryFn: async () => {
-      const response = await api.get("/events", { params: { limit: 100 } });
+      const response = await api.get("/events", { params: { limit: 100, managedOnly: true } });
       return response.data;
     },
   });

@@ -12,6 +12,7 @@ const {
   deleteEnrollment,
   moveEnrollment,
   exportEventEnrollmentsToCSV,
+  adminEnrollUser,
 } = require("../controllers/enrollmentController");
 
 const {
@@ -112,6 +113,9 @@ router.patch("/:enrollmentId/cancel", authenticateToken, cancelEnrollment);
 
 // MOVER PARTICIPANTE PARA OUTRO EVENTO
 router.patch("/:enrollmentId/move", authenticateToken, requireAdminOrOrganizer, moveEnrollment);
+
+// INSCREVER USUÁRIO (Ação direta do ADMIN)
+router.post("/admin/enroll", authenticateToken, requireAdminOrOrganizer, adminEnrollUser);
 
 // Atualizar status da inscrição (admin ou organizador)
 router.patch(

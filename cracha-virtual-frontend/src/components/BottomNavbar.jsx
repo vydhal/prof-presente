@@ -57,8 +57,8 @@ const BottomNavbar = () => {
     return (
         <div className="fixed bottom-0 left-0 right-0 z-[100] lg:hidden">
             {/* Safe Area Padding for iOS/Modern Android */}
-            <div className="px-3 pb-4 pt-2">
-                <nav className="relative flex items-center justify-around bg-white/80 dark:bg-[#0f1720]/80 backdrop-blur-xl border border-white/20 dark:border-white/5 rounded-3xl p-2 px-3 shadow-2xl shadow-blue-500/10">
+            <div className="px-3 pb-6 pt-2 bg-gradient-to-t from-background via-background/80 to-transparent">
+                <nav className="relative flex items-center justify-around bg-card/95 backdrop-blur-xl border border-white/10 rounded-full p-2 px-3 shadow-spotify">
                     {navItems.map((item) => {
                         const Icon = item.icon;
                         const active = isActive(item.href);
@@ -75,26 +75,26 @@ const BottomNavbar = () => {
                                         scale: active ? 1.1 : 1,
                                         y: active ? -2 : 0
                                     }}
-                                    className={`relative z-10 ${active ? "text-blue-500 scale-110" : "text-slate-400 dark:text-slate-500"}`}
+                                    className={`relative z-10 ${active ? "text-primary scale-110" : "text-muted-foreground"}`}
                                 >
                                     <Icon className="h-6 w-6 stroke-[2.5]" />
 
                                     {active && (
                                         <motion.div
                                             layoutId="activeIndicator"
-                                            className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue-500 rounded-full"
+                                            className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary rounded-full"
                                             transition={{ type: "spring", stiffness: 300, damping: 30 }}
                                         />
                                     )}
                                 </motion.div>
-                                <span className={`text-[10px] mt-1.5 font-bold uppercase tracking-wider transition-colors ${active ? "text-blue-500 opacity-100" : "text-slate-400 opacity-60"}`}>
+                                <span className={`text-[10px] mt-1.5 font-bold uppercase tracking-[1.4px] transition-colors ${active ? "text-primary opacity-100" : "text-muted-foreground opacity-60"}`}>
                                     {item.name}
                                 </span>
 
                                 {active && (
                                     <motion.div
                                         layoutId="activeBox"
-                                        className="absolute inset-0 bg-blue-500/5 dark:bg-blue-500/10 rounded-2xl"
+                                        className="absolute inset-0 bg-primary/10 rounded-full"
                                         initial={false}
                                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
                                     />
