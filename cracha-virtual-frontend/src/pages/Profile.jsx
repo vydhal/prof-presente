@@ -42,6 +42,8 @@ import {
   Calendar,
   Camera,
   LockKeyhole,
+  ChevronsUpDown,
+  X,
 } from "lucide-react";
 // Importa o novo componente de crachá
 import UniversalBadge from "../components/UniversalBadge";
@@ -49,6 +51,9 @@ import { useAuth } from "../hooks/useAuth"; // NOVO: Para deslogar o usuário ap
 import { getAssetUrl } from "../lib/utils"; // NOVO: Para resolver a URL da imagem
 import { Switch } from "../components/ui/switch";
 import { Alert, AlertDescription } from "../components/ui/alert";
+import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "../components/ui/command";
+import { Badge } from "../components/ui/badge.jsx";
 
 const professionOptions = [
   { value: "gestor", label: "Gestor" },
@@ -100,9 +105,26 @@ const Profile = () => {
     serie: "",
     subject: "",
     workload: "",
+    workplaceIds: [],
   });
   const [consentFacial, setConsentFacial] = useState(false); // 2. Estado para o consentimento
   const [isExporting, setIsExporting] = useState(false);
+
+  const [workplaces, setWorkplaces] = useState([]);
+  const [selectedWorkplaces, setSelectedWorkplaces] = useState([]);
+  const [openWorkplacePopover, setOpenWorkplacePopover] = useState(false);
+
+  useEffect(() => {
+    const fetchWorkplaces = async () => {
+      try {
+        const response = await api.get("/workplaces?limit=500");
+        setWorkplaces(response.data.workplaces || []);
+      } catch (err) {
+        console.error("Erro ao carregar localidades:", err);
+      }
+    };
+    fetchWorkplaces();
+  }, []);
   // NOVO: Estados para o upload da foto
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
@@ -131,9 +153,11 @@ const Profile = () => {
         serie: data.serie || "",
         subject: data.subject || "",
         workload: data.workload || "",
+        workplaceIds: data.workplaces?.map(w => w.id) || [],
       });
       setPhotoPreview(getAssetUrl(data.photoUrl));
       setConsentFacial(data.hasConsentFacialRecognition || false); // 3. Atualiza estado do consentimento
+      setSelectedWorkplaces(data.workplaces || []);
     },
   });
 
@@ -195,9 +219,11 @@ const Profile = () => {
         serie: userData.serie || "",
         subject: userData.subject || "",
         workload: userData.workload || "",
+        workplaceIds: userData.workplaces?.map(w => w.id) || [],
       });
       setPhotoPreview(getAssetUrl(userData.photoUrl));
       setConsentFacial(userData.hasConsentFacialRecognition || false);
+      setSelectedWorkplaces(userData.workplaces || []);
     }
   }, [userData]);
 
@@ -206,7 +232,18 @@ const Profile = () => {
     onSuccess: () => {
       toast.success("Perfil atualizado com sucesso!");
       queryClient.invalidateQueries(["profile"]);
+      queryClient.invalidateQueries(["user-profile", user?.id]);
       setIsEditing(false);
+
+      if (userData?.hasCompletedOnboarding === false) {
+        api.put("/users/me/complete-onboarding")
+          .then(() => {
+            queryClient.invalidateQueries(["user-profile", user?.id]);
+            updateAuthUser({ hasCompletedOnboarding: true });
+            toast.success("Onboarding finalizado! Seu perfil está totalmente ativo.");
+          })
+          .catch(err => console.error("Erro ao completar onboarding:", err));
+      }
     },
     onError: (error) => {
       toast.error(error.response?.data?.error || "Erro ao atualizar perfil");
@@ -475,6 +512,14 @@ const Profile = () => {
           <TabsTrigger value="settings">Configurações</TabsTrigger>
         </TabsList>
         <TabsContent value="profile" className="space-y-3">
+          {userData?.hasCompletedOnboarding === false && (
+            <Alert className="bg-amber-500/15 border-amber-500/30 text-amber-500 my-2">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="text-sm font-medium">
+                Seu cadastro via Google foi realizado com sucesso, mas seu perfil está incompleto! Por favor, edite seu perfil abaixo e complete suas informações (telefone, endereço, e suas informações profissionais e unidades escolares) para habilitar totalmente o seu crachá e a participação nos eventos.
+              </AlertDescription>
+            </Alert>
+          )}
           <Card>
             <CardHeader>
               <CardTitle>Informações do Perfil</CardTitle>
@@ -611,6 +656,87 @@ const Profile = () => {
                             ))}
                           </SelectContent>
                         </Select>
+                      </div>
+
+                      <div className="space-y-2 col-span-1 md:col-span-2">
+                        <Label>Unidades Escolares (Locais de Trabalho)</Label>
+                        {isEditing ? (
+                          <div className="space-y-3">
+                            <Popover open={openWorkplacePopover} onOpenChange={setOpenWorkplacePopover}>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  role="combobox"
+                                  aria-expanded={openWorkplacePopover}
+                                  className="w-full justify-between"
+                                  id="workplace-select"
+                                >
+                                  Selecionar unidade escolar...
+                                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-full p-0 max-w-[500px]" align="start">
+                                <Command>
+                                  <CommandInput placeholder="Pesquisar unidade..." />
+                                  <CommandList>
+                                    <CommandEmpty>Nenhuma unidade encontrada.</CommandEmpty>
+                                    <CommandGroup>
+                                      {workplaces.map((wp) => (
+                                        <CommandItem
+                                          key={wp.id}
+                                          value={wp.name}
+                                          onSelect={() => {
+                                            if (!selectedWorkplaces.some((w) => w.id === wp.id)) {
+                                              const newSelection = [...selectedWorkplaces, wp];
+                                              setSelectedWorkplaces(newSelection);
+                                              setFormData({ ...formData, workplaceIds: newSelection.map((w) => w.id) });
+                                            }
+                                            setOpenWorkplacePopover(false);
+                                          }}
+                                        >
+                                          {wp.name}
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
+
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                              {selectedWorkplaces.map((wp) => (
+                                <Badge key={wp.id} variant="secondary" className="flex items-center gap-1 bg-primary/10 border-primary/20 text-primary text-xs py-1 px-2.5 rounded-full">
+                                  {wp.name}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newSelection = selectedWorkplaces.filter((w) => w.id !== wp.id);
+                                      setSelectedWorkplaces(newSelection);
+                                      setFormData({ ...formData, workplaceIds: newSelection.map((w) => w.id) });
+                                    }}
+                                    className="ml-1 rounded-full outline-none"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </Badge>
+                              ))}
+                              {selectedWorkplaces.length === 0 && (
+                                <span className="text-xs text-muted-foreground italic">Nenhuma unidade selecionada.</span>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap gap-1.5 mt-1">
+                            {selectedWorkplaces.map((wp) => (
+                              <Badge key={wp.id} variant="outline" className="bg-muted/50 text-xs py-1 px-2.5 rounded-full border-border">
+                                {wp.name}
+                              </Badge>
+                            ))}
+                            {selectedWorkplaces.length === 0 && (
+                              <span className="text-xs text-muted-foreground italic">Nenhuma unidade vinculada.</span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

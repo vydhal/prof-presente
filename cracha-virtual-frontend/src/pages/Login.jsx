@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { Button } from "../components/ui/button";
@@ -23,8 +23,75 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      console.warn("VITE_GOOGLE_CLIENT_ID não configurado. O botão do Google não será exibido.");
+      return;
+    }
+
+    const handleGoogleResponse = async (response) => {
+      setLoading(true);
+      setError("");
+      try {
+        const result = await loginWithGoogle(response.credential);
+        if (result.success) {
+          if (result.isNewUser || result.user?.hasCompletedOnboarding === false) {
+            navigate("/profile", { state: { fromGoogleLogin: true } });
+          } else {
+            navigate("/dashboard");
+          }
+        } else {
+          setError(result.error);
+        }
+      } catch (err) {
+        setError("Ocorreu um erro ao fazer login com o Google.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const id = "google-jssdk";
+    let script = document.getElementById(id);
+
+    const initializeGoogle = () => {
+      try {
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: handleGoogleResponse,
+          auto_select: false,
+        });
+
+        window.google.accounts.id.renderButton(
+          document.getElementById("google-signin-btn"),
+          {
+            theme: "dark",
+            size: "large",
+            width: "350",
+            text: "signin_with",
+            shape: "pill",
+          }
+        );
+      } catch (err) {
+        console.error("Erro ao inicializar o Google Button:", err);
+      }
+    };
+
+    if (!script) {
+      script = document.createElement("script");
+      script.id = id;
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      script.onload = initializeGoogle;
+      document.body.appendChild(script);
+    } else if (window.google) {
+      initializeGoogle();
+    }
+  }, [loginWithGoogle, navigate]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -127,6 +194,23 @@ const Login = () => {
                 Entrar
               </Button>
             </form>
+
+            {import.meta.env.VITE_GOOGLE_CLIENT_ID && (
+              <>
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-border" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">Ou</span>
+                  </div>
+                </div>
+
+                <div className="w-full flex justify-center">
+                  <div id="google-signin-btn" className="w-full flex justify-center" style={{ minHeight: "40px" }} />
+                </div>
+              </>
+            )}
 
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">

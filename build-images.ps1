@@ -40,7 +40,15 @@ if ($buildBack) {
 if ($buildFront) {
     Write-Host "[FRONTEND] Fazendo build da imagem do Frontend..." -ForegroundColor Yellow
     Set-Location cracha-virtual-frontend
-    docker build -t "${DOCKER_USERNAME}/${FRONTEND_IMAGE}:${VERSION}" --build-arg VITE_API_URL=https://eduagenda.simplisoft.com.br/api .
+    $googleClientId = ""
+    if (Test-Path ".env") {
+        Get-Content ".env" | ForEach-Object {
+            if ($_ -match "VITE_GOOGLE_CLIENT_ID=(.*)") {
+                $googleClientId = $Matches[1].Trim().Trim('"').Trim("'")
+            }
+        }
+    }
+    docker build -t "${DOCKER_USERNAME}/${FRONTEND_IMAGE}:${VERSION}" --build-arg VITE_API_URL=https://eduagenda.simplisoft.com.br/api --build-arg VITE_GOOGLE_CLIENT_ID="${googleClientId}" .
     Set-Location ..
 }
 

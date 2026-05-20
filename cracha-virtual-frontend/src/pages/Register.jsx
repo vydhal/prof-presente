@@ -148,8 +148,75 @@ const Register = () => {
   const [selectedSegments, setSelectedSegments] = useState([]);
   const [openSegmentPopover, setOpenSegmentPopover] = useState(false);
 
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      console.warn("VITE_GOOGLE_CLIENT_ID não configurado. O botão do Google não será exibido.");
+      return;
+    }
+
+    const handleGoogleResponse = async (response) => {
+      setLoading(true);
+      setErrors({});
+      try {
+        const result = await loginWithGoogle(response.credential);
+        if (result.success) {
+          if (result.isNewUser || result.user?.hasCompletedOnboarding === false) {
+            navigate("/profile", { state: { fromGoogleLogin: true } });
+          } else {
+            navigate("/dashboard");
+          }
+        } else {
+          setErrors({ form: result.error });
+        }
+      } catch (err) {
+        setErrors({ form: "Ocorreu um erro ao registrar com o Google." });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const id = "google-jssdk";
+    let script = document.getElementById(id);
+
+    const initializeGoogle = () => {
+      try {
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: handleGoogleResponse,
+          auto_select: false,
+        });
+
+        window.google.accounts.id.renderButton(
+          document.getElementById("google-signup-btn"),
+          {
+            theme: "dark",
+            size: "large",
+            width: "350",
+            text: "signup_with",
+            shape: "pill",
+          }
+        );
+      } catch (err) {
+        console.error("Erro ao inicializar o Google Button no registro:", err);
+      }
+    };
+
+    if (!script) {
+      script = document.createElement("script");
+      script.id = id;
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      script.onload = initializeGoogle;
+      document.body.appendChild(script);
+    } else if (window.google) {
+      initializeGoogle();
+    }
+  }, [loginWithGoogle, navigate]);
 
   useEffect(() => {
     const fetchWorkplaces = async () => {
@@ -473,6 +540,23 @@ const Register = () => {
               </div>
 
             </form>
+
+            {import.meta.env.VITE_GOOGLE_CLIENT_ID && (
+              <>
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-border" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">Ou cadastre-se com</span>
+                  </div>
+                </div>
+
+                <div className="w-full flex justify-center">
+                  <div id="google-signup-btn" className="w-full flex justify-center" style={{ minHeight: "40px" }} />
+                </div>
+              </>
+            )}
 
             <div className="mt-8 text-center border-t border-border pt-6">
               <p className="text-sm text-muted-foreground">

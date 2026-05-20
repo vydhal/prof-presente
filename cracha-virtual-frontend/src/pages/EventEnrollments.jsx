@@ -32,6 +32,7 @@ import {
     Trash2,
     ArrowRightLeft,
     UserPlus,
+    Award,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getAssetUrl } from "../lib/utils";
@@ -162,6 +163,30 @@ const EventEnrollments = () => {
         if (window.confirm("ATENÇÃO: Isso excluirá permanentemente a inscrição e liberará a vaga. Esta ação não pode ser desfeita. Deseja continuar?")) {
             deleteParticipantMutation.mutate(enrollmentId);
         }
+    };
+
+    // Send Individual Certificate Logic
+    const [isCertificateModalOpen, setIsCertificateModalOpen] = useState(false);
+    const [certificateUser, setCertificateUser] = useState(null);
+
+    const sendCertificateMutation = useMutation({
+        mutationFn: async ({ eventId, userId }) => {
+            const res = await api.post(`/events/${eventId}/send-certificate-individual/${userId}`);
+            return res.data;
+        },
+        onSuccess: (data) => {
+            toast.success(data.message || "Certificado enviado com sucesso!");
+            setIsCertificateModalOpen(false);
+            setCertificateUser(null);
+        },
+        onError: (error) => {
+            toast.error(error.response?.data?.error || "Erro ao enviar certificado.");
+        },
+    });
+
+    const handleSendCertificate = (enrollment) => {
+        setCertificateUser(enrollment.user);
+        setIsCertificateModalOpen(true);
     };
 
     const handleSelectAll = (checked) => {
@@ -407,6 +432,18 @@ const EventEnrollments = () => {
                                                                 <Mail className="h-4 w-4" />
                                                             </Button>
                                                         )}
+                                                        {enrollment.status === 'APPROVED' && enrollment.checkInTime && (
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                className="text-emerald-600 hover:text-emerald-700 border-emerald-200 hover:bg-emerald-50"
+                                                                onClick={() => handleSendCertificate(enrollment)}
+                                                                disabled={sendCertificateMutation.isPending}
+                                                                title="Enviar Certificado Individual"
+                                                            >
+                                                                <Award className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
                                                         <Button
                                                             size="sm"
                                                             variant="outline"
@@ -602,6 +639,42 @@ const EventEnrollments = () => {
                             setIsAddModalOpen(false);
                             setUserSearch("");
                         }}>Fechar</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Send Certificate Modal */}
+            <Dialog open={isCertificateModalOpen} onOpenChange={setIsCertificateModalOpen}>
+                <DialogContent className="sm:max-w-[450px]">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-emerald-600 font-bold">
+                            <Award className="h-5 w-5" />
+                            Enviar Certificado Individual
+                        </DialogTitle>
+                        <CardDescription>
+                            Deseja gerar e enviar por e-mail o certificado de participação para <strong>{certificateUser?.name}</strong> ({certificateUser?.email})?
+                        </CardDescription>
+                    </DialogHeader>
+
+                    <div className="py-2 space-y-2">
+                        <p className="text-xs text-muted-foreground">
+                            O certificado será enviado se o participante cumprir todos os requisitos do evento e o organizador já tiver configurado o template do certificado.
+                        </p>
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="ghost" size="sm" onClick={() => setIsCertificateModalOpen(false)}>Cancelar</Button>
+                        <Button
+                            size="sm"
+                            className="bg-emerald-600 hover:bg-emerald-700"
+                            disabled={sendCertificateMutation.isPending}
+                            onClick={() => sendCertificateMutation.mutate({
+                                eventId: id,
+                                userId: certificateUser?.id
+                            })}
+                        >
+                            {sendCertificateMutation.isPending ? "Enviando..." : "Confirmar Envio"}
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

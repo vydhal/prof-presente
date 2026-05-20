@@ -19,6 +19,7 @@ const {
   uploadSpeakerPhotoController,
   getEventEnrollments,
   getEventQuestions,
+  sendIndividualCertificate
 } = require("../controllers/eventController");
 
 const {
@@ -148,6 +149,13 @@ router.post(
   authenticateToken, // Middleware de autenticação
   requireAdminOrOrganizer, // Middleware que verifica se é admin
   sendEventCertificates // Nova função no controller
+);
+
+router.post(
+  "/:id/send-certificate-individual/:userId",
+  authenticateToken,
+  requireAdminOrOrganizer,
+  sendIndividualCertificate
 );
 
 router.get(

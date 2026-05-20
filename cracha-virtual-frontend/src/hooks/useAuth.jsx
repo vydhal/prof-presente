@@ -75,6 +75,23 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const loginWithGoogle = async (idToken) => {
+    try {
+      const response = await api.post("/auth/google", { idToken });
+      const { user: loggedInUser, token, isNewUser } = response.data;
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(loggedInUser));
+      setUser(loggedInUser);
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      return { success: true, isNewUser, user: loggedInUser };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || "Erro de login com Google",
+      };
+    }
+  };
+
   const register = async (userData) => {
     try {
       const response = await api.post("/auth/register", userData);
@@ -122,6 +139,7 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     login,
+    loginWithGoogle,
     register,
     logout,
     // A função 'updateUser' foi removida para evitar duplicidade

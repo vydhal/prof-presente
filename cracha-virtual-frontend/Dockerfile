@@ -17,6 +17,8 @@ COPY . .
 # Definir argumentos de build
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
+ARG VITE_GOOGLE_CLIENT_ID
+ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 
 # Build da aplicação
 RUN npm run build

@@ -5,6 +5,7 @@ const { generateToken } = require("../utils/jwt");
 const { generateQRCode } = require("../utils/qrcode");
 const { sendEmail } = require("../utils/email"); // Import sendEmail
 const jwt = require("jsonwebtoken"); // Import jsonwebtoken for reset token
+const axios = require("axios");
 
 // --- NOVO: Copie esta função para cá ou importe-a de um arquivo de utils ---
 const generateBadgeCode = (userName) => {
@@ -321,6 +322,12 @@ const getProfile = async (req, res) => {
         hasConsentFacialRecognition: true,
         createdAt: true,
         updatedAt: true,
+        workplaces: {
+          select: {
+            id: true,
+            name: true,
+          }
+        }
       },
     });
 
@@ -439,6 +446,144 @@ const resetPassword = async (req, res) => {
 };
 
 
+const googleLogin = async (req, res) => {
+  try {
+    const { idToken } = req.body;
+    if (!idToken) {
+      return res.status(400).json({ error: "Token do Google é obrigatório" });
+    }
+
+    // 1. Validar o ID Token do Google
+    let googleUser;
+    try {
+      const response = await axios.get(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+      googleUser = response.data;
+    } catch (e) {
+      console.error("Erro ao validar token do Google:", e.message);
+      return res.status(400).json({ error: "Token do Google inválido ou expirado" });
+    }
+
+    // Verificar se o e-mail está verificado
+    if (googleUser.email_verified !== "true" && googleUser.email_verified !== true) {
+      return res.status(400).json({ error: "E-mail do Google não verificado" });
+    }
+
+    const email = googleUser.email;
+    const name = googleUser.name;
+    const picture = googleUser.picture;
+
+    // 2. Buscar se o usuário já existe
+    let user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        workplaces: { select: { id: true, name: true } },
+        profession: { select: { name: true } },
+      }
+    });
+
+    let isNewUser = false;
+
+    if (!user) {
+      isNewUser = true;
+
+      // Código de crachá único
+      let badgeCode;
+      let isUnique = false;
+      while (!isUnique) {
+        badgeCode = generateBadgeCode(name);
+        const existingBadge = await prisma.userBadge.findUnique({
+          where: { badgeCode },
+        });
+        if (!existingBadge) isUnique = true;
+      }
+
+      // Hash de senha padrão aleatória
+      const randomPassword = Math.random().toString(36).slice(-10);
+      const saltRounds = 12;
+      const hashedPassword = await bcrypt.hash(randomPassword, saltRounds);
+
+      // Usar data de nascimento padrão
+      const defaultBirthDate = new Date("1990-01-01");
+
+      user = await prisma.$transaction(async (tx) => {
+        const newUser = await tx.user.create({
+          data: {
+            name,
+            email,
+            password: hashedPassword,
+            birthDate: defaultBirthDate,
+            photoUrl: picture || null,
+            role: "TEACHER",
+            hasCompletedOnboarding: false,
+          },
+        });
+
+        // Geração do QR Code e criação do crachá universal
+        const qrData = JSON.stringify({
+          userId: newUser.id,
+          badgeCode,
+          badgeType: "user",
+        });
+        const qrCodeFilename = `user_badge_${newUser.id}`;
+        await generateQRCode(qrData, qrCodeFilename);
+        const qrCodeUrl = `/uploads/qrcodes/${qrCodeFilename}.png`;
+        const badgeImageUrl = `/api/badges/${newUser.id}/image`;
+
+        await tx.userBadge.create({
+          data: {
+            userId: newUser.id,
+            badgeCode,
+            qrCodeUrl,
+            badgeImageUrl,
+          },
+        });
+
+        return newUser;
+      });
+
+      // Recarregar relações
+      user = await prisma.user.findUnique({
+        where: { id: user.id },
+        include: {
+          workplaces: { select: { id: true, name: true } },
+          profession: { select: { name: true } },
+        }
+      });
+    } else {
+      if (!user.photoUrl && picture) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { photoUrl: picture },
+          include: {
+            workplaces: { select: { id: true, name: true } },
+            profession: { select: { name: true } },
+          }
+        });
+      }
+    }
+
+    // 4. Gerar JWT do sistema
+    const token = generateToken({ userId: user.id });
+
+    // Remover senha do retorno
+    const { password: _, ...userResponse } = user;
+
+    res.json({
+      message: isNewUser ? "Cadastro via Google realizado com sucesso" : "Login via Google realizado com sucesso",
+      token,
+      user: {
+        ...userResponse,
+        professionName: userResponse.profession?.name || null,
+      },
+      isNewUser,
+    });
+
+  } catch (error) {
+    console.error("Erro no login com Google:", error);
+    res.status(500).json({ error: "Erro interno ao processar login com Google" });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -447,4 +592,5 @@ module.exports = {
   resetPassword,
   registerValidation,
   loginValidation,
+  googleLogin,
 };

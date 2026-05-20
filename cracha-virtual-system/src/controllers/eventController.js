@@ -1078,6 +1078,46 @@ const deletePresentationFile = async (req, res) => {
   }
 };
 
+const sendIndividualCertificate = async (req, res) => {
+  const { id: parentEventId, userId } = req.params;
+
+  try {
+    const parentEvent = await prisma.event.findUnique({
+      where: { id: parentEventId },
+    });
+
+    if (!parentEvent) {
+      return res.status(404).json({ error: "Evento não encontrado" });
+    }
+
+    // CHECK DE PROPRIEDADE
+    if (req.user.role === "ORGANIZER" && parentEvent.creatorId !== req.user.id) {
+      return res.status(403).json({
+        error: "Acesso negado. Você só pode enviar certificados de eventos que você criou.",
+      });
+    }
+
+    if (
+      !parentEvent ||
+      !parentEvent.certificateTemplateUrl ||
+      !parentEvent.certificateTemplateConfig
+    ) {
+      return res.status(404).json({
+        error: "Evento não possui um modelo de certificado configurado.",
+      });
+    }
+
+    const result = await certificateService.sendSingleCertificate(parentEventId, userId);
+
+    res.json({
+      message: `Certificado enviado com sucesso! (${result.totalHours} horas)`,
+    });
+  } catch (error) {
+    console.error("Erro ao enviar certificado individual:", error);
+    res.status(400).json({ error: error.message || "Erro ao enviar certificado" });
+  }
+};
+
 module.exports = {
   getAllEvents,
   getEventById,
@@ -1096,5 +1136,6 @@ module.exports = {
   getEventEnrollments,
   getEventQuestions,
   uploadPresentationFile,
-  deletePresentationFile
+  deletePresentationFile,
+  sendIndividualCertificate
 };

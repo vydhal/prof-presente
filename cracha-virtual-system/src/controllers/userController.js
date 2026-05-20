@@ -169,6 +169,12 @@ const getUserById = async (req, res) => {
         hasConsentFacialRecognition: true,
         createdAt: true,
         updatedAt: true,
+        workplaces: {
+          select: {
+            id: true,
+            name: true,
+          }
+        },
         _count: {
           select: {
             enrollments: true,
@@ -212,7 +218,7 @@ const updateUser = async (req, res) => {
     const { id } = req.params;
     const {
       name, email, cpf, birthDate, phone, address, neighborhood, password,
-      professionName, serie, subject, workload
+      professionName, serie, subject, workload, workplaceIds
     } = req.body;
 
     // Verificar se o usuário existe
@@ -265,6 +271,12 @@ const updateUser = async (req, res) => {
     if (subject !== undefined) updateData.subject = subject;
     if (workload !== undefined) updateData.workload = workload;
 
+    if (workplaceIds && Array.isArray(workplaceIds)) {
+      updateData.workplaces = {
+        set: workplaceIds.map(id => ({ id }))
+      };
+    }
+
     if (professionName) {
       updateData.profession = {
         connectOrCreate: {
@@ -298,6 +310,12 @@ const updateUser = async (req, res) => {
         serie: true,
         subject: true,
         workload: true,
+        workplaces: {
+          select: {
+            id: true,
+            name: true,
+          }
+        },
         profession: {
           select: {
             name: true

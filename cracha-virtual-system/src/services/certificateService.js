@@ -372,4 +372,159 @@ const processCertificateBatch = async (eventId, adminEmail) => {
   }
 };
 
-module.exports = { processCertificateBatch, generateCertificatePdf };
+const sendSingleCertificate = async (eventId, userId) => {
+  console.log(`[CertificateService] Starting single certificate for event: ${eventId}, user: ${userId}`);
+  const projectRoot = process.cwd();
+  
+  const settings = await prisma.systemSettings.findFirst();
+  let brandingLogoBuffer = null;
+  if (settings && settings.logoUrl) {
+      try {
+          const logoPath = path.join(projectRoot, settings.logoUrl.startsWith('/') ? settings.logoUrl.substring(1) : settings.logoUrl);
+          brandingLogoBuffer = await fs.readFile(logoPath);
+      } catch (e) {
+          console.warn(`[CertificateService] Could not load branding logo: ${e.message}`);
+      }
+  }
+
+  const parentEvent = await prisma.event.findUnique({
+      where: { id: eventId },
+      include: { children: true }
+  });
+
+  if (!parentEvent) {
+      throw new Error("Evento não encontrado.");
+  }
+
+  if (!parentEvent.certificateTemplateConfig) {
+      throw new Error("Evento não possui um modelo de certificado configurado.");
+  }
+
+  const subEventIds = parentEvent.children.map(e => e.id);
+  const eventIds = [parentEvent.id, ...subEventIds];
+
+  // 1. BUSCAR A INSCRIÇÃO APROVADA
+  const enrollment = await prisma.enrollment.findFirst({
+      where: { 
+          eventId: parentEvent.id, 
+          userId: userId,
+          status: "APPROVED"
+      },
+      include: { user: true }
+  });
+
+  if (!enrollment) {
+      throw new Error("O participante não possui inscrição aprovada neste evento.");
+  }
+
+  const user = enrollment.user;
+
+  // 2. INICIALIZAÇÃO DO LOG DO CERTIFICADO
+  const logData = { 
+      status: "PROCESSING", 
+      details: "Iniciando processamento individual...", 
+      createdAt: new Date() 
+  };
+  const existingLog = await prisma.certificateLog.findFirst({ 
+      where: { userId: user.id, eventId: parentEvent.id } 
+  });
+  
+  if (existingLog) {
+      await prisma.certificateLog.update({ where: { id: existingLog.id }, data: logData });
+  } else {
+      await prisma.certificateLog.create({ 
+          data: { ...logData, userId: user.id, eventId: parentEvent.id } 
+      });
+  }
+
+  // 3. VERIFICAR ELEGIBILIDADE (CHECK-IN)
+  const rawCheckins = await prisma.userCheckin.findMany({
+      where: { 
+          eventId: { in: eventIds },
+          userBadge: { userId: user.id }
+      }
+  });
+
+  if (rawCheckins.length === 0) {
+      const failDetails = "Não elegível: Nenhum check-in registrado neste evento ou sub-eventos.";
+      await prisma.certificateLog.updateMany({
+          where: { userId: user.id, eventId: parentEvent.id },
+          data: { 
+              status: "FAILED", 
+              details: failDetails,
+              createdAt: new Date()
+          }
+      });
+      throw new Error(failDetails);
+  }
+
+  // 4. Carregar template
+  let templateImageBuffer = null;
+  if (parentEvent.certificateTemplateUrl) {
+      const safeTemplatePath = path.join(projectRoot, parentEvent.certificateTemplateUrl.startsWith('/') ? parentEvent.certificateTemplateUrl.substring(1) : parentEvent.certificateTemplateUrl);
+      try {
+          await fs.access(safeTemplatePath);
+          templateImageBuffer = await fs.readFile(safeTemplatePath);
+      } catch (e) {
+           console.error(`[CertificateService] Template file not found: ${safeTemplatePath}`);
+      }
+  }
+
+  const config = parentEvent.certificateTemplateConfig;
+  const eventsData = await prisma.event.findMany({
+      where: { id: { in: eventIds } },
+      select: { id: true, startDate: true, endDate: true },
+  });
+  const eventsMap = new Map(eventsData.map((event) => [event.id, event]));
+
+  // 5. Calcular Carga Horária
+  let totalMilliseconds = 0;
+  const attendedEvents = new Set();
+  rawCheckins.forEach((checkin) => {
+      if (!attendedEvents.has(checkin.eventId)) {
+          const event = eventsMap.get(checkin.eventId);
+          if (event) {
+              const duration = new Date(event.endDate) - new Date(event.startDate);
+              totalMilliseconds += duration;
+              attendedEvents.add(checkin.eventId);
+          }
+      }
+  });
+
+  const roundedHours = Math.round(totalMilliseconds / (1000 * 60 * 60));
+  const totalHours = roundedHours.toString().padStart(2, "0");
+
+  try {
+      const pdfBytes = await generateCertificatePdf(
+          user, config, templateImageBuffer, totalHours, 
+          parentEvent.startDate, brandingLogoBuffer, parentEvent.title
+      );
+
+      await sendEmail({
+          to: user.email,
+          subject: `Seu certificado do evento: ${parentEvent.title}`,
+          html: `<p>Olá, ${user.name}!</p><p>Agradecemos sua participação no evento "${parentEvent.title}".</p><p>Seu certificado de participação está em anexo.</p><p>Atenciosamente,<br>Equipe Organizadora</p>`,
+          attachments: [{
+              filename: `certificado_${user.name.replace(/\s+/g, "_")}.pdf`,
+              content: Buffer.from(pdfBytes),
+              contentType: "application/pdf",
+          }],
+      });
+
+      await prisma.certificateLog.updateMany({
+          where: { userId: user.id, eventId: parentEvent.id },
+          data: { status: "SUCCESS", details: `Enviado com ${totalHours}h`, createdAt: new Date() }
+      });
+
+      return { totalHours };
+  } catch (error) {
+      console.error(`[CertificateService] Error sending single certificate for ${user.email}: ${error.message}`);
+      await prisma.certificateLog.updateMany({
+          where: { userId: user.id, eventId: parentEvent.id },
+          data: { status: "FAILED", details: error.message, createdAt: new Date() }
+      });
+      throw error;
+  }
+};
+
+module.exports = { processCertificateBatch, generateCertificatePdf, sendSingleCertificate };
