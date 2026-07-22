@@ -1,6 +1,23 @@
-# Progresso do Projeto - 20/05/2026
+# Progresso do Projeto - 25/05/2026
 
-## Alterações Realizadas (Fase 4 - Certificados Individuais, Login Google e UX Mobile)
+## 📊 Tabela de Progresso Atual
+
+| Item | Descrição | Status | Data Conclusão |
+| :--- | :--- | :--- | :--- |
+| **1. Servir Assets Estáticos** | Mapeamento no `src/app.js` das rotas `/assets` e `/api/assets` para expor o logo e recursos padrão | **Concluído** | 25/05/2026 |
+| **2. Fallback de Logo** | Implementado o getAbsoluteUrl para `/assets/logo.png` em `badgeService.js` quando `logoUrl` for nulo | **Concluído** | 25/05/2026 |
+| **3. Transição para URLs Absolutas** | Alteração no `email.js` para usar URLs absolutas das imagens do crachá, desativando anexos CID inline | **Concluído** | 25/05/2026 |
+| **4. Robustez de Código (Badge)** | Adicionado optional chaining no `badgeService.js` para prevenir quebra por dados incompletos | **Concluído** | 25/05/2026 |
+| **5. Fix: Logout indevido do Organizador** | Corrigido permissões de atualização de usuários e logout global em erros 403. | **Concluído** | 22/07/2026 |
+
+---
+
+## Alterações Realizadas recentemente (Fase 4 - Certificados Individuais, Login Google e UX Mobile)
+
+### Correções (Fixes)
+- **Logout Indevido (Frontend)**: Atualizado o interceptor do Axios (`api.js`) para não deslogar o usuário em caso de erro 403 (Acesso Negado), apenas no 401 (Token Inválido).
+- **Permissões de Organizador (Backend)**: Adicionada permissão `requireOwnershipOrAdminOrOrganizer` na rota `PUT /users/:id` para permitir que Organizadores editem o perfil de usuários sem erro de autorização.
+- **Retorno de Token Inválido (Backend)**: Corrigido o status de erro de `403` para `401` no middleware `authenticateToken` em `auth.js` quando o token é inválido/expirado, seguindo as semânticas corretas do HTTP.
 
 ### Backend (`cracha-virtual-system`)
 - **Envio Individual de Certificados**: Implementada a rota `POST /events/:id/send-certificate-individual/:userId`, o serviço `sendSingleCertificate` e a lógica do controlador para validar check-ins, calcular carga horária total (incluindo sub-eventos), gerar PDF e logar o envio na tabela `CertificateLog`.
@@ -16,7 +33,16 @@
 ### Ferramentas e Infraestrutura
 - **Build Arg para Google Client ID**: Atualizado o `Dockerfile` do frontend e o script `build-images.ps1` para lerem automaticamente o `VITE_GOOGLE_CLIENT_ID` do arquivo `.env` do frontend e injetarem na compilação do React.
 
-## Próximos Passos
-- Executar o deploy da nova versão com o script `build-images.ps1`.
-- Configurar as credenciais do Google nos arquivos `.env`.
-- Testar e validar a experiência de ponta a ponta.
+---
+
+## Próximos Passos (Para o Usuário Executar)
+
+1. **Rodar a atualização dos containers do Docker**:
+   Como você mesmo indicou que cuida dessa parte (conforme nossa Regra de Ouro), execute o comando a seguir na máquina de deploy/desenvolvimento para aplicar as correções:
+   ```bash
+   docker-compose down
+   docker-compose build backend
+   docker-compose up -d
+   ```
+2. **Testar o fluxo**:
+   Acesse o painel e envie/reenvie a confirmação de inscrição para um usuário e valide na caixa de entrada se as imagens aparecem bonitas e sem erros.

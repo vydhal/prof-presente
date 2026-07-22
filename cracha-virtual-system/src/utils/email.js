@@ -80,71 +80,14 @@ const sendEnrollmentConfirmationEmail = async (
 
   // ... (existing code) ...
 
-  // 1. Identificar o caminho físico do QR code para anexar como CID
+  // NOTA: Para máxima compatibilidade com provedores de e-mail (como o Gmail e Outlook),
+  // agora geramos o crachá usando URLs públicas absolutas em vez de anexos inline (CIDs).
+  // Isso reduz o tamanho do e-mail, agiliza o envio e evita imagens bloqueadas ou com cache quebrado.
   let attachments = [];
-  let qrCodeCid = null;
-  let userPhotoCid = null; // Novo
 
-  if (userBadge && userBadge.qrCodeUrl) {
-    // A URL é algo como "/uploads/qrcodes/user_badge_123.png"
-    // Removemos a barra inicial para o path.join funcionar corretamente a partir da raiz
-    const relativePath = userBadge.qrCodeUrl.startsWith("/")
-      ? userBadge.qrCodeUrl.slice(1)
-      : userBadge.qrCodeUrl;
-
-    const qrCodePath = path.join(process.cwd(), relativePath);
-    qrCodeCid = `qrcode_${userBadge.badgeCode}`;
-
-    if (fs.existsSync(qrCodePath)) {
-      attachments.push({
-        filename: "qrcode.png",
-        path: qrCodePath,
-        cid: qrCodeCid,
-      });
-    }
-  }
-
-  // Lógica para anexar a foto do usuário (se for local)
-  if (user.photoUrl && user.photoUrl.startsWith("/uploads")) {
-    const relativePath = user.photoUrl.startsWith("/")
-      ? user.photoUrl.slice(1)
-      : user.photoUrl;
-
-    const photoPath = path.join(process.cwd(), relativePath);
-
-    if (fs.existsSync(photoPath)) {
-      userPhotoCid = `userphoto_${user.id}`;
-      attachments.push({
-        filename: path.basename(photoPath),
-        path: photoPath,
-        cid: userPhotoCid
-      });
-    }
-  }
-
-  // Lógica para anexar o LOGO do sistema (local)
-  const logoPath = path.join(__dirname, "../assets/logo.png");
-  console.log(`[EMAIL-DEBUG] Tentando anexar logo de: ${logoPath}`);
-
-  let logoCid = null;
-  if (fs.existsSync(logoPath)) {
-    console.log("[EMAIL-DEBUG] Logo encontrado via fs.existsSync");
-    logoCid = "logo_prof_presente";
-    attachments.push({
-      filename: "logo.png",
-      path: logoPath,
-      cid: logoCid
-    });
-  } else {
-    console.warn(`[EMAIL-DEBUG] Logo NÃO encontrado no caminho: ${logoPath}`);
-  }
-
-  // 2. Gera o HTML do crachá dinamicamente, passando os CIDs
-  const badgeHtml = generateBadgeHtml(user, userBadge, awards, {
-    qrCodeCid,
-    userPhotoCid,
-    logoCid // Novo CID do logo
-  });
+  // 2. Gera o HTML do crachá dinamicamente. Sem fornecer os CIDs nas opções,
+  // a função generateBadgeHtml resolve automaticamente as URLs absolutas das imagens.
+  const badgeHtml = generateBadgeHtml(user, userBadge, awards);
 
   console.log(`[EMAIL-DEBUG] Attachments preparados: ${attachments.length} arquivos.`);
   attachments.forEach(att => console.log(` - ${att.filename} (${att.cid}) -> ${att.path}`));

@@ -59,6 +59,8 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 // Servir arquivos estáticos (uploads)
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 app.use("/api/uploads", express.static(path.join(__dirname, "../uploads")));
+app.use("/assets", express.static(path.join(__dirname, "assets")));
+app.use("/api/assets", express.static(path.join(__dirname, "assets")));
 
 // Middleware de log de requisições
 app.use((req, res, next) => {

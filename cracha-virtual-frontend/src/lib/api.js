@@ -41,11 +41,11 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Verifica se o erro é 401 ou 403 (HTTP status ou código no corpo da resposta verificado acima)
+    // Verifica se o erro é 401 (HTTP status ou código no corpo da resposta verificado acima)
     const status = error.response?.status;
     const code = error.response?.data?.code;
 
-    if (status === 401 || status === 403 || code === 401 || code === 403) {
+    if (status === 401 || code === 401) {
       // Pega a URL da requisição original que falhou
       // (Ex: "/auth/login" ou "/events")
       const originalRequestUrl = error.config.url;

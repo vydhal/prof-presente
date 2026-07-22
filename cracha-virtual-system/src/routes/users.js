@@ -39,7 +39,7 @@ router.get("/:id", authenticateToken, requireOwnershipOrAdminOrOrganizer, getUse
 router.put(
   "/:id",
   authenticateToken,
-  requireOwnershipOrAdmin,
+  requireOwnershipOrAdminOrOrganizer,
   updateUserValidation,
   updateUser
 );

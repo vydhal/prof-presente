@@ -71,13 +71,18 @@ const generateBadgeHtml = (user, badge, awards = [], options = {}) => {
     `);
   }
 
-  // Lógica do Logo (Fallback para Wireframe/SVG se não houver URL)
+  // Lógica do Logo (Fallback para Logo Padrão Estático se não houver URL)
   let logoSource = logoUrl;
   if (options && options.logoUrl) {
     logoSource = getAbsoluteUrl(baseUrl, options.logoUrl);
   }
   if (options && options.logoCid) {
     logoSource = `cid:${options.logoCid}`;
+  }
+
+  // Fallback para o logo padrão servido estaticamente pelo backend
+  if (!logoSource && baseUrl) {
+    logoSource = getAbsoluteUrl(baseUrl, "/assets/logo.png");
   }
 
   // Se não tem logo, usa um placeholder SVG (Wireframe)
@@ -107,7 +112,7 @@ const generateBadgeHtml = (user, badge, awards = [], options = {}) => {
   }
 
   // Lógica do QR Code
-  let qrCodeUrl = getAbsoluteUrl(baseUrl, badge.qrCodeUrl); // Padrão
+  let qrCodeUrl = getAbsoluteUrl(baseUrl, badge?.qrCodeUrl); // Padrão
 
   // Se um CID for fornecido (para e-mails), usa ele no lugar da URL
   if (options && options.qrCodeCid) {
@@ -173,7 +178,7 @@ const generateBadgeHtml = (user, badge, awards = [], options = {}) => {
                 style="width: 100%; max-width: 256px; height: auto; margin: 0 auto;" 
               />
               <p style="margin-top: 8px; font-family: monospace; font-size: 0.875rem; font-weight: bold; letter-spacing: 0.05em; color: #1f2937; word-wrap: break-word;">
-                ${badge.badgeCode}
+                ${badge?.badgeCode || ""}
               </p>
             </div>
           </td>

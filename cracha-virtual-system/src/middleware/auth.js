@@ -36,7 +36,7 @@ const authenticateToken = async (req, res, next) => {
     next();
   } catch (error) {
     console.error("Erro na autenticação:", error);
-    return res.status(403).json({
+    return res.status(401).json({
       error: "Token inválido",
     });
   }
