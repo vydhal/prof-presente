@@ -48,15 +48,23 @@ const teachingSegmentOptions = [
 ];
 
 const professionOptions = [
+    { value: "apoio", label: "Apoio" },
+    { value: "assistente social", label: "Assistente Social" },
+    { value: "coordenador(a) pedagógico(a)", label: "Coordenador(a) Pedagógico(a)" },
+    { value: "educador social voluntário", label: "Educador Social Voluntário" },
     { value: "gestor", label: "Gestor" },
     { value: "gestor adjunto", label: "Gestor Adjunto" },
-    { value: "secretário", label: "Secretário" },
-    { value: "supervisor", label: "Supervisor" },
-    { value: "educador social voluntário", label: "Educador Social Voluntário" },
-    { value: "professor", label: "Professor" },
+    { value: "mediador de sala de leitura", label: "Mediador de Sala de Leitura" },
     { value: "merendeiro", label: "Merendeiro" },
-    { value: "apoio", label: "Apoio" },
+    { value: "nutricionista", label: "Nutricionista" },
     { value: "organizador", label: "Organizador" },
+    { value: "orientador(a) educacional", label: "Orientador(a) Educacional" },
+    { value: "professor", label: "Professor" },
+    { value: "psicólogo(a) educacional", label: "Psicólogo(a) Educacional" },
+    { value: "secretário", label: "Secretário" },
+    { value: "suporte pedagógico", label: "Suporte Pedagógico" },
+    { value: "supervisor(a) educacional", label: "Supervisor(a) Educacional" },
+    { value: "vigia", label: "Vigia" },
 ];
 
 const serieOptions = [

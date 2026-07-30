@@ -9,6 +9,7 @@
 | **3. Transição para URLs Absolutas** | Alteração no `email.js` para usar URLs absolutas das imagens do crachá, desativando anexos CID inline | **Concluído** | 25/05/2026 |
 | **4. Robustez de Código (Badge)** | Adicionado optional chaining no `badgeService.js` para prevenir quebra por dados incompletos | **Concluído** | 25/05/2026 |
 | **5. Fix: Logout indevido do Organizador** | Corrigido permissões de atualização de usuários e logout global em erros 403. | **Concluído** | 22/07/2026 |
+| **6. Novos Cargos Educacionais** | Inseridos novos cargos nas telas de perfis, registros e gestão de usuários (Assistente Social, Orientador(a), etc) | **Concluído** | 30/07/2026 |
 
 ---
 
