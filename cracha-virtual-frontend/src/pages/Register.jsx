@@ -248,6 +248,14 @@ const Register = () => {
         .replace(/(\d{5})(\d)/, "$1-$2");
     }
 
+    if (e.target.name === "birthDate") {
+      value = value
+        .replace(/\D/g, "")
+        .replace(/(\d{2})(\d)/, "$1/$2")
+        .replace(/(\d{2})(\d)/, "$1/$2");
+      if (value.length > 10) value = value.substring(0, 10);
+    }
+
     setFormData({
       ...formData,
       [e.target.name]: value,
@@ -321,7 +329,7 @@ const Register = () => {
     if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "As senhas não coincidem";
 
     if (!formData.cpf || formData.cpf.replace(/\D/g, "").length !== 11) newErrors.cpf = "CPF inválido (11 dígitos obrigatórios)";
-    if (!formData.birthDate) newErrors.birthDate = "Data de Nascimento é obrigatória";
+    if (!formData.birthDate || formData.birthDate.length !== 10) newErrors.birthDate = "Data de Nascimento inválida";
     if (!formData.phone) newErrors.phone = "Telefone é obrigatório";
     if (!formData.address) newErrors.address = "Endereço é obrigatório";
     if (!formData.neighborhood) newErrors.neighborhood = "Bairro é obrigatório";
@@ -361,6 +369,11 @@ const Register = () => {
         delete submissionData[key];
       }
     });
+
+    if (submissionData.birthDate && submissionData.birthDate.length === 10) {
+      const [day, month, year] = submissionData.birthDate.split('/');
+      submissionData.birthDate = `${year}-${month}-${day}T12:00:00.000Z`;
+    }
 
     const result = await register(submissionData);
 
@@ -419,9 +432,13 @@ const Register = () => {
                   </FieldWrapper>
 
                   <FieldWrapper id="field-wrapper-birthDate" error={errors.birthDate} label="Data de Nascimento">
-                    <DatePicker
-                      value={formData.birthDate ? toZonedTime(formData.birthDate, "America/Sao_Paulo") : null}
-                      onSelect={(date) => handleSelectChange("birthDate", date ? fromZonedTime(date, "America/Sao_Paulo") : "")}
+                    <Input
+                      id="birthDate"
+                      name="birthDate"
+                      placeholder="DD/MM/AAAA"
+                      value={formData.birthDate || ""}
+                      onChange={handleChange}
+                      maxLength={10}
                     />
                   </FieldWrapper>
 

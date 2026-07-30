@@ -1,4 +1,4 @@
-# Progresso do Projeto - 25/05/2026
+# Progresso do Projeto - 30/07/2026
 
 ## 📊 Tabela de Progresso Atual
 
@@ -10,6 +10,7 @@
 | **4. Robustez de Código (Badge)** | Adicionado optional chaining no `badgeService.js` para prevenir quebra por dados incompletos | **Concluído** | 25/05/2026 |
 | **5. Fix: Logout indevido do Organizador** | Corrigido permissões de atualização de usuários e logout global em erros 403. | **Concluído** | 22/07/2026 |
 | **6. Novos Cargos Educacionais** | Inseridos novos cargos nas telas de perfis, registros e gestão de usuários (Assistente Social, Orientador(a), etc) | **Concluído** | 30/07/2026 |
+| **7. UX Data de Nascimento** | Substituído DatePicker por Input livre com máscara DD/MM/AAAA para facilitar o cadastro | **Concluído** | 30/07/2026 |
 
 ---
 
