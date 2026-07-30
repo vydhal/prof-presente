@@ -20,6 +20,7 @@ const AdminTracks = () => {
     const [editingTrack, setEditingTrack] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
+    const [eventSearch, setEventSearch] = useState('');
 
     // Estados do formulário
     const [formData, setFormData] = useState({
@@ -91,6 +92,7 @@ const AdminTracks = () => {
             setSelectedFile(null);
             setImagePreview(null);
         }
+        setEventSearch('');
         setIsDialogOpen(true);
     };
 
@@ -111,6 +113,7 @@ const AdminTracks = () => {
         setEditingTrack(null);
         setSelectedFile(null);
         setImagePreview(null);
+        setEventSearch('');
     };
 
     const handleSubmit = (e) => {
@@ -243,15 +246,16 @@ const AdminTracks = () => {
 
             {/* DIALOG DE CRIAÇÃO/EDIÇÃO */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl sm:rounded-3xl">
+                <DialogContent className="sm:max-w-[90vw] lg:max-w-5xl max-h-[90vh] overflow-y-auto rounded-3xl sm:rounded-3xl p-6 md:p-10">
                     <DialogHeader>
                         <DialogTitle className="text-2xl font-black">{editingTrack ? 'Editar Trilha' : 'Nova Trilha'}</DialogTitle>
                     </DialogHeader>
 
-                    <form onSubmit={handleSubmit} className="space-y-6 pt-4">
-                        <div className="space-y-4">
-                            <div className="grid gap-2">
-                                <label className="text-sm font-bold uppercase tracking-wider text-slate-500">Título</label>
+                    <form onSubmit={handleSubmit} className="space-y-8 pt-4">
+                        <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-8 lg:gap-12">
+                            <div className="space-y-6">
+                                <div className="grid gap-2">
+                                    <label className="text-sm font-bold uppercase tracking-wider text-slate-500">Título</label>
                                 <Input
                                     value={formData.title}
                                     onChange={e => setFormData({ ...formData, title: e.target.value })}
@@ -288,20 +292,30 @@ const AdminTracks = () => {
                                             className="rounded-xl border-slate-200 cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                                         />
                                         <p className="text-[10px] text-slate-400 mt-1">PNG, JPG ou WEBP até 5MB.</p>
-                                    </div>
                                 </div>
                             </div>
+                            </div>
+                        </div>
 
-                            <div className="grid gap-4">
+                        <div className="space-y-4">
                                 <div className="flex items-center justify-between">
                                     <label className="text-sm font-bold uppercase tracking-wider text-slate-500">Vincular Eventos ({formData.eventIds.length})</label>
                                 </div>
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                    <Input 
+                                        placeholder="Buscar eventos..."
+                                        value={eventSearch}
+                                        onChange={(e) => setEventSearch(e.target.value)}
+                                        className="pl-9 rounded-xl border-slate-200"
+                                    />
+                                </div>
 
-                                <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
-                                    <div className="max-h-[300px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+                                <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden flex flex-col h-[350px]">
+                                    <div className="overflow-y-auto flex-1 divide-y divide-slate-100 dark:divide-slate-800">
                                         {loadingEvents ? (
                                             <div className="p-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-500" /></div>
-                                        ) : eventsData?.map((event) => {
+                                        ) : eventsData?.filter(event => event.title.toLowerCase().includes(eventSearch.toLowerCase())).map((event) => {
                                             const isSelected = formData.eventIds.includes(event.id);
                                             return (
                                                 <div
@@ -324,12 +338,15 @@ const AdminTracks = () => {
                                                 </div>
                                             );
                                         })}
+                                        {eventsData?.filter(event => event.title.toLowerCase().includes(eventSearch.toLowerCase())).length === 0 && (
+                                            <div className="p-8 text-center text-slate-500 text-sm">Nenhum evento encontrado.</div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <DialogFooter className="gap-2 sm:gap-0">
+                        <DialogFooter className="gap-2 sm:gap-0 pt-4 border-t border-slate-100 dark:border-slate-800">
                             <Button type="button" variant="ghost" onClick={closeDialog} className="rounded-xl font-bold">Cancelar</Button>
                             <Button
                                 type="submit"

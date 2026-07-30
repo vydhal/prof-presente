@@ -11,6 +11,7 @@
 | **5. Fix: Logout indevido do Organizador** | Corrigido permissões de atualização de usuários e logout global em erros 403. | **Concluído** | 22/07/2026 |
 | **6. Novos Cargos Educacionais** | Inseridos novos cargos nas telas de perfis, registros e gestão de usuários (Assistente Social, Orientador(a), etc) | **Concluído** | 30/07/2026 |
 | **7. UX Data de Nascimento** | Substituído DatePicker por Input livre com máscara DD/MM/AAAA para facilitar o cadastro | **Concluído** | 30/07/2026 |
+| **8. Melhoria UX Trilha** | Adicionado campo de busca e ajustado o Shadcn UI Dialog (com `sm:max-w-[90vw] lg:max-w-5xl`) para garantir responsividade e layout amplo no modal de Nova Trilha (`AdminTracks.jsx`) | **Concluído** | 30/07/2026 |
 
 ---
 
@@ -47,4 +48,4 @@
    docker-compose up -d
    ```
 2. **Testar o fluxo**:
-   Acesse o painel e envie/reenvie a confirmação de inscrição para um usuário e valide na caixa de entrada se as imagens aparecem bonitas e sem erros.
+   Acesse a aba de Gestão de Trilhas, clique em "Nova Trilha" e verifique se o campo de busca funciona direitinho e se o layout está luxuoso como pedimos!
