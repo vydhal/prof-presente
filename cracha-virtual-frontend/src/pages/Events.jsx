@@ -209,18 +209,7 @@ const Events = () => {
   const privateEvents = allEvents.filter((event) => event.isPrivate);
   const publicEvents = allEvents.filter((event) => !event.isPrivate);
 
-  if (isLoading && allEvents.length === 0) {
-    return (
-      <PublicLayout>
-        <div className="max-w-7xl mx-auto p-6 md:p-12 flex justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-12 h-12 border-4 border-[#137fec] border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-slate-500 font-medium font-sans">Carregando eventos...</p>
-          </div>
-        </div>
-      </PublicLayout>
-    );
-  }
+  // Early return REMOVED so we don't unmount the search bar
 
   if (error) {
     return (
@@ -303,7 +292,12 @@ const Events = () => {
           </div>
         </div>
 
-        {allEvents.length === 0 ? (
+        {isLoading && allEvents.length === 0 ? (
+          <div className="flex flex-col items-center gap-4 py-12">
+            <div className="w-12 h-12 border-4 border-[#137fec] border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-slate-500 font-medium font-sans">Carregando eventos...</p>
+          </div>
+        ) : allEvents.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-600">
               {debouncedSearchTerm

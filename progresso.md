@@ -12,6 +12,7 @@
 | **6. Novos Cargos Educacionais** | Inseridos novos cargos nas telas de perfis, registros e gestão de usuários (Assistente Social, Orientador(a), etc) | **Concluído** | 30/07/2026 |
 | **7. UX Data de Nascimento** | Substituído DatePicker por Input livre com máscara DD/MM/AAAA para facilitar o cadastro | **Concluído** | 30/07/2026 |
 | **8. Melhoria UX Trilha** | Adicionado campo de busca e ajustado o Shadcn UI Dialog (com `sm:max-w-[90vw] lg:max-w-5xl`) para garantir responsividade e layout amplo no modal de Nova Trilha (`AdminTracks.jsx`) | **Concluído** | 30/07/2026 |
+| **9. UX Landing Page** | Substituído a grade de Trilhas e Eventos por Carrosséis do Shadcn UI na página inicial. Adicionado menu inferior de navegação rápida para dispositivos móveis (`md:hidden`). | **Concluído** | 31/07/2026 |
 
 ---
 
@@ -32,6 +33,8 @@
 - **Login e Registro Social**: Integrado o script do Google Identity Services nas telas de Login e Registro com botão personalizado. Redireciona usuários com onboarding pendente para a tela de perfil.
 - **Banner de Onboarding e Gestão Profissional**: Adicionado banner explicativo de onboarding incompleto no topo do perfil (`Profile.jsx`) e implementada a seleção múltipla de Unidades Escolares (Popover + Command) para persistir as informações profissionais.
 - **UX Bottom Navbar Mobile**: Reestruturado o menu inferior para exibir 4 atalhos fixos rápidos (Home, Eventos, Salas, Inscrições) e um botão "Menu" que abre um dialog em tela cheia com uma grade de todas as opções de navegação do sistema, otimizando o espaço da tela.
+- **UX Landing Page Carrosséis e Mobile Menu**: Implementados Carrosséis (Shadcn UI) para as listagens de Trilhas e Eventos, poupando espaço vertical no desktop. Adicionado um Menu Bottom fixo para telas mobile, facilitando a navegação rápida.
+- **Ajustes de Carrossel**: Ajuste nas proporções dos cards para ficarem mais horizontais (`basis-[85%]`) e adição de indicador de swipe (Deslize para ver mais) para melhor UX.
 
 ### Ferramentas e Infraestrutura
 - **Build Arg para Google Client ID**: Atualizado o `Dockerfile` do frontend e o script `build-images.ps1` para lerem automaticamente o `VITE_GOOGLE_CLIENT_ID` do arquivo `.env` do frontend e injetarem na compilação do React.

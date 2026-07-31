@@ -8,6 +8,7 @@ import {
     Search, Moon, Sun, Menu, X, Share2, Mail, GraduationCap, Laptop, Palette, Users, FlaskConical
 } from "lucide-react";
 import LogoDefault from "../assets/logo-prof-presente.svg";
+import PublicBottomNav from "./PublicBottomNav";
 
 const PublicLayout = ({ children }) => {
     const { user } = useAuth();
@@ -18,7 +19,7 @@ const PublicLayout = ({ children }) => {
     const location = useLocation();
 
     return (
-        <div className="min-h-screen bg-[#f6f7f8] dark:bg-[#101922] text-[#0d141b] dark:text-slate-100 transition-colors duration-300 font-sans">
+        <div className="min-h-screen bg-[#f6f7f8] dark:bg-[#101922] text-[#0d141b] dark:text-slate-100 transition-colors duration-300 font-sans pb-20 md:pb-0">
             {/* HEADER */}
             <header className="sticky top-0 z-50 bg-white/80 dark:bg-[#101922]/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 transition-colors duration-300">
                 <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
@@ -110,9 +111,9 @@ const PublicLayout = ({ children }) => {
             <main>{children}</main>
 
             {/* FOOTER */}
-            <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-12 mt-12 transition-colors duration-300">
+            <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-12 transition-colors duration-300">
                 <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
-                    <div className="col-span-1 md:col-span-1 space-y-4">
+                    <div className="col-span-1 md:col-span-1 space-y-4 flex flex-col items-center md:items-start text-center md:text-left">
                         <div className="flex items-center gap-2">
                             {logoUrl ? (
                                 <img src={logoUrl} alt={platformName} className="h-8 w-auto object-contain" />
@@ -130,7 +131,7 @@ const PublicLayout = ({ children }) => {
                         </p>
                     </div>
 
-                    <div>
+                    <div className="hidden md:block">
                         <h4 className="font-bold mb-4">Links Rápidos</h4>
                         <ul className="space-y-2 text-sm text-slate-500 dark:text-slate-400">
                             <li><Link to="/events" className="hover:text-[#137fec]">Próximos Eventos</Link></li>
@@ -138,7 +139,7 @@ const PublicLayout = ({ children }) => {
                         </ul>
                     </div>
 
-                    <div>
+                    <div className="hidden md:block">
                         <h4 className="font-bold mb-4">Suporte</h4>
                         <ul className="space-y-2 text-sm text-slate-500 dark:text-slate-400">
                             <li><a href="#" className="hover:text-[#137fec]">Central de Ajuda</a></li>
@@ -146,7 +147,7 @@ const PublicLayout = ({ children }) => {
                         </ul>
                     </div>
 
-                    <div>
+                    <div className="hidden md:block">
                         <h4 className="font-bold mb-4">Contato</h4>
                         <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
                             Siga-nos nas redes sociais para ficar por dentro das novidades.
@@ -161,6 +162,8 @@ const PublicLayout = ({ children }) => {
                     © 2026 {platformName}. Desenvolvido para Excelência Educacional.
                 </div>
             </footer>
+            
+            <PublicBottomNav />
         </div>
     );
 };

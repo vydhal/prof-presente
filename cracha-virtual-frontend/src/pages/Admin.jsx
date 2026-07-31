@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useDebounce } from "../hooks/useDebounce";
 import {
   useSearchParams,
   useNavigate
@@ -190,6 +191,7 @@ const Admin = () => {
   const [eventThumbnailFile, setEventThumbnailFile] = useState(null);
   const [eventThumbnailPreviewUrl, setEventThumbnailPreviewUrl] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   const [speakerPhotoFile, setSpeakerPhotoFile] = useState(null);
   const [speakerPhotoPreviewUrl, setSpeakerPhotoPreviewUrl] = useState(null);
@@ -200,9 +202,9 @@ const Admin = () => {
   const [isLoadingEnrollments, setIsLoadingEnrollments] = useState(false);
 
   const { data: events, isLoading: eventsLoading } = useQuery({
-    queryKey: ["admin-events"],
+    queryKey: ["admin-events", debouncedSearchTerm],
     queryFn: async () => {
-      const response = await api.get("/events?limit=100&managedOnly=true");
+      const response = await api.get(`/events?limit=500&managedOnly=true&search=${debouncedSearchTerm}`);
       return response.data.events;
     },
   });
@@ -1664,11 +1666,7 @@ const Admin = () => {
                       </TableRow>
                     ) : (
                       events
-                        ?.filter(event =>
-                          event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          event.location.toLowerCase().includes(searchTerm.toLowerCase())
-                        )
-                        .map((event) => (
+                        ?.map((event) => (
                           <TableRow key={event.id} className="text-xs md:text-sm">
                             <TableCell className="font-medium max-w-[200px] lg:max-w-[300px] truncate" title={event.title}>
                               {event.title}

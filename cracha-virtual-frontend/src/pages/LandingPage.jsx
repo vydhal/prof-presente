@@ -28,8 +28,17 @@ import {
     Mail,
     Menu,
     X,
-    Loader2
+    Loader2,
+    Home
 } from "lucide-react";
+import {
+    Carousel,
+    CarouselContent,
+    CarouselItem,
+    CarouselNext,
+    CarouselPrevious,
+} from "../components/ui/carousel";
+import PublicBottomNav from "../components/PublicBottomNav";
 import HeroCarousel from "../components/HeroCarousel";
 import { useBranding } from "../contexts/BrandingContext";
 import LogoDefault from "../assets/logo-prof-presente.svg";
@@ -358,7 +367,7 @@ const LandingPage = () => {
                 )}
             </header>
 
-            <main className="max-w-7xl mx-auto px-4 py-6 space-y-8 md:space-y-12">
+            <main className="max-w-7xl mx-auto px-4 py-6 pb-24 md:pb-6 space-y-8 md:space-y-12">
 
                 {/* HERO SECTION */}
                 <HeroCarousel />
@@ -405,89 +414,101 @@ const LandingPage = () => {
                         </Link>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div className="relative px-12 md:px-0">
                         {tracksLoading ? (
-                            <div className="col-span-1 md:col-span-4 flex justify-center py-20">
+                            <div className="flex justify-center py-20">
                                 <Loader2 className="h-10 w-10 animate-spin text-[#137fec]" />
                             </div>
                         ) : allTracks?.length === 0 ? (
-                            <div className="col-span-1 md:col-span-4 text-center py-20 bg-slate-50 dark:bg-white/5 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800">
+                            <div className="text-center py-20 bg-slate-50 dark:bg-white/5 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800">
                                 <GraduationCap className="h-12 w-12 mx-auto text-slate-300 mb-4" />
                                 <p className="text-slate-500 italic">Nenhuma trilha disponível no momento.</p>
                             </div>
                         ) : (
-                            allTracks?.map((track, trackIdx) => (
-                                <div
-                                    key={track.id}
-                                    className={`relative overflow-hidden group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] shadow-sm hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 flex flex-col ${trackIdx === 0 ? 'md:col-span-2 md:row-span-2' : 'md:col-span-2 lg:col-span-1'
-                                        }`}
-                                >
-                                    {/* Track Header/Badge */}
-                                    <div className="absolute top-6 left-6 z-10">
-                                        <div className="bg-black/50 backdrop-blur-md px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10">
-                                            <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
-                                            <span className="text-[10px] font-bold text-white uppercase tracking-widest">{track._count?.events || 0} Etapas</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="absolute top-6 right-6 z-10">
-                                        <button
-                                            onClick={(e) => { e.preventDefault(); handleShareTrack(track); }}
-                                            className="bg-black/50 hover:bg-black/70 backdrop-blur-md p-2 rounded-full flex items-center justify-center border border-white/10 text-white transition-colors"
-                                            title="Compartilhar Trilha"
-                                        >
-                                            <Share2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
-
-                                    {/* Image Container */}
-                                    <div className={`relative overflow-hidden ${trackIdx === 0 ? 'h-64 md:h-80' : 'h-48'}`}>
-                                        <img
-                                            src={track.imageUrl || "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2070&auto=format&fit=crop"}
-                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                            alt={track.title}
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-slate-900 via-transparent to-transparent"></div>
-                                    </div>
-
-                                    {/* Content */}
-                                    <div className="p-8 flex-1 flex flex-col">
-                                        <h4 className="text-2xl font-black mb-3 tracking-tight group-hover:text-blue-500 transition-colors">{track.title}</h4>
-                                        <p className="text-slate-500 text-sm line-clamp-2 mb-6 leading-relaxed">
-                                            {track.description}
-                                        </p>
-
-                                        {/* Journey Preview */}
-                                        <div className="space-y-4 mb-8">
-                                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Sua Jornada:</p>
-                                            <div className="space-y-2">
-                                                {track.events?.slice(0, 3).map((te, idx) => (
-                                                    <div key={te.id} className="flex items-center gap-3 group/item">
-                                                        <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-black text-slate-500 group-hover/item:bg-blue-500 group-hover/item:text-white transition-colors shrink-0">
-                                                            {idx + 1}
-                                                        </div>
-                                                        <span className="text-xs font-bold text-slate-600 dark:text-slate-400 truncate group-hover/item:text-slate-900 dark:group-hover/item:text-white transition-colors">
-                                                            {te.event?.title}
-                                                        </span>
+                            <Carousel opts={{ align: "start" }} className="w-full">
+                                <CarouselContent className="-ml-4">
+                                    {allTracks?.map((track) => (
+                                        <CarouselItem key={track.id} className="pl-4 basis-[85%] sm:basis-[70%] md:basis-1/2 lg:basis-1/3">
+                                            <div
+                                                className="relative overflow-hidden group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col h-full"
+                                            >
+                                                {/* Track Header/Badge */}
+                                                <div className="absolute top-6 left-6 z-10">
+                                                    <div className="bg-black/50 backdrop-blur-md px-4 py-2 rounded-2xl flex items-center gap-2 border border-white/10">
+                                                        <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                                                        <span className="text-[10px] font-bold text-white uppercase tracking-widest">{track._count?.events || 0} Etapas</span>
                                                     </div>
-                                                ))}
-                                                {(track._count?.events || 0) > 3 && (
-                                                    <p className="pl-9 text-[10px] font-bold text-blue-500">+ {(track._count?.events || 0) - 3} outros eventos</p>
-                                                )}
-                                            </div>
-                                        </div>
+                                                </div>
 
-                                        <div className="mt-auto">
-                                            <Link to={`/tracks/${track.id}`} className="block w-full">
-                                                <Button className="w-full h-14 bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-blue-600 dark:hover:bg-blue-500 hover:text-white rounded-2xl font-black text-base shadow-xl shadow-slate-200 dark:shadow-none transition-all flex items-center justify-center gap-2 group-hover:scale-[1.02]">
-                                                    Ver Detalhes
-                                                    <ArrowRight className="w-5 h-5" />
-                                                </Button>
-                                            </Link>
-                                        </div>
-                                    </div>
+                                                <div className="absolute top-6 right-6 z-10">
+                                                    <button
+                                                        onClick={(e) => { e.preventDefault(); handleShareTrack(track); }}
+                                                        className="bg-black/50 hover:bg-black/70 backdrop-blur-md p-2 rounded-full flex items-center justify-center border border-white/10 text-white transition-colors"
+                                                        title="Compartilhar Trilha"
+                                                    >
+                                                        <Share2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+
+                                                {/* Image Container */}
+                                                <div className="relative overflow-hidden h-28 md:h-36 shrink-0 bg-slate-200 dark:bg-slate-800">
+                                                    <img
+                                                        src={track.imageUrl || "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2070&auto=format&fit=crop"}
+                                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100"
+                                                        alt={track.title}
+                                                    />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-slate-900 via-transparent to-transparent"></div>
+                                                </div>
+
+                                                {/* Content */}
+                                                <div className="p-4 md:p-5 flex-1 flex flex-col bg-white dark:bg-slate-900 relative z-10">
+                                                    <h4 className="text-base font-bold leading-snug line-clamp-2 min-h-[2.75rem] flex-1 text-slate-900 dark:text-slate-100">{track.title}</h4>
+                                                    <p className="text-slate-500 dark:text-slate-400 text-xs line-clamp-2 mb-4">
+                                                        {track.description}
+                                                    </p>
+
+                                                    {/* Journey Preview */}
+                                                    <div className="space-y-3 mb-6 flex-1">
+                                                        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Sua Jornada</p>
+                                                        <div className="space-y-2">
+                                                            {track.events?.slice(0, 2).map((te, idx) => (
+                                                                <div key={te.id} className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/50 p-1.5 rounded-lg group/item">
+                                                                    <div className="w-5 h-5 rounded-md bg-[#137fec] text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+                                                                        {idx + 1}
+                                                                    </div>
+                                                                    <span className="text-[11px] font-medium text-slate-600 dark:text-slate-300 truncate group-hover/item:text-[#137fec] transition-colors">
+                                                                        {te.event?.title}
+                                                                    </span>
+                                                                </div>
+                                                            ))}
+                                                            {(track._count?.events || 0) > 2 && (
+                                                                <p className="pl-2 text-[10px] font-bold text-[#137fec]">+ {(track._count?.events || 0) - 2} outras etapas</p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center justify-between pt-4 mt-auto">
+                                                        <span className="text-emerald-500 text-xs font-bold">{track._count?.events || 0} Etapas</span>
+                                                        <Link to={`/tracks/${track.id}`} className="text-[#137fec] text-xs font-bold flex items-center gap-1 group/link">
+                                                            Ver detalhes
+                                                            <ArrowRight className="w-3 h-3 transition-transform group-hover/link:translate-x-0.5" />
+                                                        </Link>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </CarouselItem>
+                                    ))}
+                                </CarouselContent>
+                                <div className="hidden md:block">
+                                    <CarouselPrevious className="-left-12 lg:-left-16" />
+                                    <CarouselNext className="-right-12 lg:-right-16" />
                                 </div>
-                            ))
+                                <div className="flex items-center justify-center gap-2 mt-6 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest md:hidden">
+                                    <ChevronLeft className="w-4 h-4 animate-pulse" />
+                                    <span>Deslize para ver mais</span>
+                                    <ChevronRight className="w-4 h-4 animate-pulse" />
+                                </div>
+                            </Carousel>
                         )}
                     </div>
 
@@ -507,65 +528,71 @@ const LandingPage = () => {
                             </Link>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="relative px-12 md:px-0">
                             {isLoading ? (
-                                <div className="col-span-1 md:col-span-2 flex justify-center py-12">
+                                <div className="flex justify-center py-12">
                                     <Loader2 className="h-8 w-8 animate-spin text-[#137fec]" />
                                 </div>
                             ) : isError ? (
-                                <div className="col-span-1 md:col-span-2 text-center py-12 text-red-500">
+                                <div className="text-center py-12 text-red-500">
                                     <p>Não foi possível carregar os eventos. Tente novamente mais tarde.</p>
                                     {error?.message && <p className="text-xs mt-2 text-slate-400">{error.message}</p>}
                                 </div>
                             ) : upcomingEvents.length === 0 ? (
-                                <div className="col-span-1 md:col-span-2 text-center py-12 text-slate-500">
+                                <div className="text-center py-12 text-slate-500">
                                     <p>Nenhum evento disponível no momento.</p>
                                 </div>
                             ) : (
-                                upcomingEvents.map(event => (
-                                    <div key={event.id} className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden hover:border-[#137fec]/50 transition-all hover:scale-[1.02] shadow-sm hover:shadow-lg group cursor-pointer">
-                                        <div className="relative h-48 bg-slate-200 flex items-center justify-center overflow-hidden">
-                                            {event.imageUrl ? (
-                                                <img
-                                                    src={getAssetUrl(event.imageUrl)}
-                                                    alt={event.title}
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            ) : (
-                                                <img
-                                                    src="/placeholder-event.jpg"
-                                                    alt="Placeholder"
-                                                    className="w-full h-full object-cover opacity-50"
-                                                    onError={(e) => {
-                                                        e.target.src = "https://images.unsplash.com/photo-1544531586-fde5298cdd40?q=80&w=2070&auto=format&fit=crop";
-                                                    }}
-                                                />
-                                            )}
-                                            <div className="absolute top-3 right-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-3 py-1 rounded-lg text-center shadow-lg">
-                                                <span className="block text-xs font-bold text-[#137fec] uppercase">{getMonthAbbr(event.startDate)}</span>
-                                                <span className="block text-lg font-black dark:text-white leading-tight">{getDay(event.startDate)}</span>
-                                            </div>
-                                            {!event.location && event.isOnline && (
-                                                <div className="absolute top-3 left-3 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg uppercase">Online</div>
-                                            )}
-                                        </div>
-                                        <div className="p-5 space-y-3">
-                                            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
-                                                <MapPin className="h-3.5 w-3.5" /> Local: {event.location || "Online"}
-                                            </div>
-                                            <h4 className="text-lg font-bold leading-tight line-clamp-2 min-h-[3.5rem]">{event.title}</h4>
-                                            <div className="flex items-center justify-between pt-2">
-                                                {/* Mock price/free logic */}
-                                                <span className="text-emerald-500 font-bold">Gratuito</span>
-                                                <Link to={`/events/${event.id}`}>
-                                                    <Button size="sm" className="bg-[#137fec]/10 hover:bg-[#137fec] text-[#137fec] hover:text-white rounded-lg text-xs font-bold transition-colors">
-                                                        Ver Detalhes
-                                                    </Button>
-                                                </Link>
-                                            </div>
-                                        </div>
+                                <Carousel opts={{ align: "start" }} className="w-full">
+                                    <CarouselContent className="-ml-4">
+                                        {upcomingEvents.map(event => (
+                                            <CarouselItem key={event.id} className="pl-4 basis-[85%] sm:basis-[70%] md:basis-1/2">
+                                                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl overflow-hidden hover:border-[#137fec]/50 transition-all shadow-sm hover:shadow-md group h-full flex flex-col">
+                                                    <div className="relative h-28 md:h-36 bg-slate-800 dark:bg-slate-900 flex items-center justify-center overflow-hidden shrink-0">
+                                                        {event.imageUrl ? (
+                                                            <img
+                                                                src={getAssetUrl(event.imageUrl)}
+                                                                alt={event.title}
+                                                                className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                                                            />
+                                                        ) : (
+                                                            <Users className="w-12 h-12 text-slate-600" />
+                                                        )}
+                                                        <div className="absolute top-3 right-3 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-xl text-center shadow-sm">
+                                                            <span className="block text-[10px] font-bold text-[#137fec] uppercase tracking-wider">{getMonthAbbr(event.startDate)}</span>
+                                                            <span className="block text-base font-black text-slate-900 dark:text-white leading-none mt-0.5">{getDay(event.startDate)}</span>
+                                                        </div>
+                                                        {!event.location && event.isOnline && (
+                                                            <div className="absolute top-3 left-3 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg uppercase">Online</div>
+                                                        )}
+                                                    </div>
+                                                    <div className="p-4 md:p-5 flex-1 flex flex-col">
+                                                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+                                                            <MapPin className="h-3 w-3" /> {event.location || "Online"}
+                                                        </div>
+                                                        <h4 className="text-base font-bold leading-snug line-clamp-2 min-h-[2.75rem] flex-1 text-slate-900 dark:text-slate-100">{event.title}</h4>
+                                                        <div className="flex items-center justify-between pt-4 mt-auto">
+                                                            <span className="text-emerald-500 text-xs font-bold">Gratuito</span>
+                                                            <Link to={`/events/${event.id}`} className="text-[#137fec] text-xs font-bold flex items-center gap-1 group/link">
+                                                                Ver detalhes
+                                                                <ArrowRight className="w-3 h-3 transition-transform group-hover/link:translate-x-0.5" />
+                                                            </Link>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </CarouselItem>
+                                        ))}
+                                    </CarouselContent>
+                                    <div className="hidden md:block">
+                                        <CarouselPrevious className="-left-12 lg:-left-16" />
+                                        <CarouselNext className="-right-12 lg:-right-16" />
                                     </div>
-                                ))
+                                    <div className="flex items-center justify-center gap-2 mt-6 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest md:hidden">
+                                        <ChevronLeft className="w-4 h-4 animate-pulse" />
+                                        <span>Deslize para ver mais</span>
+                                        <ChevronRight className="w-4 h-4 animate-pulse" />
+                                    </div>
+                                </Carousel>
                             )}
                         </div>
                     </div>
@@ -577,13 +604,13 @@ const LandingPage = () => {
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="font-bold flex items-center gap-2"><Calendar className="w-5 h-5 text-[#137fec]" /> Calendário de Eventos</h3>
                             </div>
-                            <div className="calendar-container -mx-3">
+                            <div className="flex justify-center w-full">
                                 <CalendarUI
                                     mode="single"
                                     selected={selectedDate}
                                     onSelect={handleDateSelect}
                                     locale={ptBR}
-                                    className="rounded-md border-0 w-full"
+                                    className="rounded-md border-0"
                                     modifiers={{
                                         hasEvent: (date) => {
                                             if (!allEvents) return false;
@@ -593,13 +620,8 @@ const LandingPage = () => {
                                             });
                                         }
                                     }}
-                                    modifiersStyles={{
-                                        hasEvent: {
-                                            fontWeight: 'bold',
-                                            backgroundColor: 'rgba(19, 127, 236, 0.15)',
-                                            color: '#137fec',
-                                            textDecoration: 'none'
-                                        }
+                                    modifiersClassNames={{
+                                        hasEvent: "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-black rounded-md relative after:content-[''] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:bg-blue-600 after:rounded-full"
                                     }}
                                 />
                             </div>
@@ -698,9 +720,9 @@ const LandingPage = () => {
             </Dialog>
 
             {/* FOOTER */}
-            <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-12 mt-12 transition-colors duration-300">
+            <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-12 transition-colors duration-300">
                 <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
-                    <div className="col-span-1 md:col-span-1 space-y-4">
+                    <div className="col-span-1 md:col-span-1 space-y-4 flex flex-col items-center md:items-start text-center md:text-left">
                         <div className="flex items-center gap-2">
                             {logoUrl ? (
                                 <img src={logoUrl} alt={platformName} className="h-8 w-auto object-contain" />
@@ -718,7 +740,7 @@ const LandingPage = () => {
                         </p>
                     </div>
 
-                    <div>
+                    <div className="hidden md:block">
                         <h4 className="font-bold mb-4">Links Rápidos</h4>
                         <ul className="space-y-2 text-sm text-slate-500 dark:text-slate-400">
                             <li><a href="#" className="hover:text-[#137fec]">Próximos Eventos</a></li>
@@ -726,7 +748,7 @@ const LandingPage = () => {
                         </ul>
                     </div>
 
-                    <div>
+                    <div className="hidden md:block">
                         <h4 className="font-bold mb-4">Suporte</h4>
                         <ul className="space-y-2 text-sm text-slate-500 dark:text-slate-400">
                             <li><a href="#" className="hover:text-[#137fec]">Central de Ajuda</a></li>
@@ -734,7 +756,7 @@ const LandingPage = () => {
                         </ul>
                     </div>
 
-                    <div>
+                    <div className="hidden md:block">
                         <h4 className="font-bold mb-4">Contato</h4>
                         <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
                             Rua Getúlio Vargas, 123<br />Centro, Campina Grande - PB
@@ -749,6 +771,9 @@ const LandingPage = () => {
                     © 2026 {platformName}. Desenvolvido para Excelência Educacional.
                 </div>
             </footer>
+
+            {/* BOTTOM MOBILE MENU */}
+            <PublicBottomNav onSearchClick={() => setSearchModalOpen(true)} />
         </div>
     );
 };
