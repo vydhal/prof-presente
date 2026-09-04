@@ -179,6 +179,7 @@ const getAllEvents = async (req, res) => {
         location: true,
         maxAttendees: true,
         imageUrl: true,
+        modality: true,
         createdAt: true,
         badgeTemplateUrl: true,
         badgeTemplateConfig: true,
@@ -250,6 +251,9 @@ const getEventById = async (req, res) => {
     const event = await prisma.event.findUnique({
       where: { id },
       include: {
+        // Só o status é exposto aqui (rota pública). O streamId do YouTube só é
+        // liberado via GET /live-streams/events/:id, que exige inscrição aprovada.
+        liveStream: { select: { id: true, status: true } },
         _count: {
           select: {
             enrollments: {
@@ -308,6 +312,7 @@ const createEvent = async (req, res) => {
       speakerRole,
       speakerPhotoUrl,
       categoryId,
+      modality,
     } = req.body;
 
     // 1. Pegamos o usuário logado que está fazendo a requisição
@@ -335,6 +340,7 @@ const createEvent = async (req, res) => {
       speakerRole,
       speakerPhotoUrl,
       categoryId: categoryId || null,
+      modality: ["PRESENCIAL", "ONLINE", "HIBRIDO"].includes(modality) ? modality : "PRESENCIAL",
     };
 
     // 3. Se o criador for um GESTOR_ESCOLA ou ORGANIZER, associamos o criador
@@ -385,6 +391,7 @@ const updateEvent = async (req, res) => {
       speakerPhotoUrl,
       categoryId,
       creatorId,
+      modality,
     } = req.body;
 
     // Verificar se o evento existe
@@ -428,6 +435,7 @@ const updateEvent = async (req, res) => {
     if (speakerRole !== undefined) updateData.speakerRole = speakerRole;
     if (speakerPhotoUrl !== undefined) updateData.speakerPhotoUrl = speakerPhotoUrl;
     if (categoryId !== undefined) updateData.categoryId = categoryId || null;
+    if (["PRESENCIAL", "ONLINE", "HIBRIDO"].includes(modality)) updateData.modality = modality;
 
     // ADICIONAL: Admin pode mudar o organizador/responsável pelo evento
     if (creatorId && req.user.role === "ADMIN") {

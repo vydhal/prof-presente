@@ -275,6 +275,8 @@ const getFrequencyRanking = async (req, res) => {
   try {
     const userRole = req.user.role;
     const userId = req.user.id;
+    const { period, page = 1, limit = 20, modality } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
 
     // Filtro de período e propriedade
     let dateFilter = {};
@@ -298,12 +300,22 @@ const getFrequencyRanking = async (req, res) => {
       }
     }
 
+    // Filtro por modalidade do evento (ex.: "ONLINE" para medir frequência só em
+    // eventos online, "PRESENCIAL" ou "HIBRIDO"). Sem o filtro, considera todos.
+    const eventFilter = {};
+    if (modality && ["PRESENCIAL", "ONLINE", "HIBRIDO"].includes(modality)) {
+      eventFilter.modality = modality;
+    }
+    if (userRole === "ORGANIZER") {
+      eventFilter.creatorId = userId;
+    }
+
     // MUDANÇA: Agrupa por usuário e evento para obter participações únicas.
     const uniqueParticipations = await prisma.userCheckin.groupBy({
       by: ["userBadgeId", "eventId"],
       where: {
         ...dateFilter,
-        ...(userRole === "ORGANIZER" ? { event: { creatorId: userId } } : {}),
+        ...(Object.keys(eventFilter).length > 0 ? { event: eventFilter } : {}),
       },
     });
 
@@ -344,6 +356,7 @@ const getFrequencyRanking = async (req, res) => {
 
     const report = {
       period: period || "all",
+      modality: eventFilter.modality || "all",
       summary: {
         totalUsers: sortedUsers.length,
         totalCheckins: sortedUsers.reduce(

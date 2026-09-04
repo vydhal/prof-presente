@@ -18,6 +18,7 @@ const server = app.listen(PORT, HOST, () => {
 
 // Inicializar Sockets
 const io = setupSockets(server);
+app.set('io', io); // Permite que controllers REST emitam eventos em tempo real
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useSocket } from "../contexts/SocketContext";
 import api from "../lib/api";
-import { Send, Users, AlertCircle, Loader2 } from "lucide-react";
+import { Send, Users, AlertCircle, Loader2, CheckCircle2, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import YouTube from "react-youtube";
 
@@ -19,6 +19,9 @@ const LiveStreamRoom = () => {
     const [onlineCount, setOnlineCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [checkinWindow, setCheckinWindow] = useState(null);
+    const [hasConfirmedCheckin, setHasConfirmedCheckin] = useState(false);
+    const [confirmingCheckin, setConfirmingCheckin] = useState(false);
 
     const chatEndRef = useRef(null);
 
@@ -40,6 +43,7 @@ const LiveStreamRoom = () => {
 
             if (res.data.id) {
                 fetchChatHistory(res.data.id);
+                fetchCheckinStatus(res.data.id);
             }
         } catch (err) {
             setError(
@@ -56,6 +60,37 @@ const LiveStreamRoom = () => {
             setMessages(res.data);
         } catch (err) {
             console.error("Erro ao carregar chat", err);
+        }
+    };
+
+    const fetchCheckinStatus = async (liveStreamId) => {
+        try {
+            const res = await api.get(`/live-streams/${liveStreamId}/checkin/status`);
+            setCheckinWindow(res.data.open ? res.data.window : null);
+            setHasConfirmedCheckin(!!res.data.alreadyConfirmed);
+        } catch (err) {
+            console.error("Erro ao carregar status do check-in ao vivo", err);
+        }
+    };
+
+    const handleConfirmCheckin = async () => {
+        if (!liveStream?.id || confirmingCheckin) return;
+        setConfirmingCheckin(true);
+        try {
+            await api.post(`/live-streams/${liveStream.id}/checkin/confirm`);
+            setHasConfirmedCheckin(true);
+            toast.success("Presença confirmada com sucesso!");
+        } catch (err) {
+            const message = err.response?.data?.error || "Não foi possível confirmar sua presença.";
+            // Já ter check-in prévio (ex.: autocheckin por tempo assistido) não é um erro real para o usuário
+            if (err.response?.status === 409) {
+                setHasConfirmedCheckin(true);
+                toast.info("Sua presença já estava registrada neste evento.");
+            } else {
+                toast.error(message);
+            }
+        } finally {
+            setConfirmingCheckin(false);
         }
     };
 
@@ -76,12 +111,25 @@ const LiveStreamRoom = () => {
             setOnlineCount(count);
         };
 
+        const handleCheckinOpened = (data) => {
+            setCheckinWindow(data);
+            toast.info("Check-in liberado! Confirme sua presença.");
+        };
+
+        const handleCheckinClosed = () => {
+            setCheckinWindow(null);
+        };
+
         socket.on("new_live_message", handleNewMessage);
         socket.on("live_online_count", handleOnlineCount);
+        socket.on("checkin_window_opened", handleCheckinOpened);
+        socket.on("checkin_window_closed", handleCheckinClosed);
 
         return () => {
             socket.off("new_live_message", handleNewMessage);
             socket.off("live_online_count", handleOnlineCount);
+            socket.off("checkin_window_opened", handleCheckinOpened);
+            socket.off("checkin_window_closed", handleCheckinClosed);
         };
     }, [socket, liveStream?.id, user]);
 
@@ -165,6 +213,30 @@ const LiveStreamRoom = () => {
                     {onlineCount} assistindo agora
                 </div>
 
+                {checkinWindow && !hasConfirmedCheckin && (
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 w-[92%] max-w-sm">
+                        <button
+                            onClick={handleConfirmCheckin}
+                            disabled={confirmingCheckin}
+                            className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-70 text-white font-semibold px-6 py-3 rounded-full shadow-lg shadow-green-900/30 transition-all animate-in fade-in slide-in-from-bottom-4"
+                        >
+                            {confirmingCheckin ? (
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                                <CheckCircle2 className="w-5 h-5" />
+                            )}
+                            Confirmar Presença
+                        </button>
+                    </div>
+                )}
+
+                {hasConfirmedCheckin && checkinWindow && (
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-green-600/90 backdrop-blur-md text-white text-sm font-medium px-4 py-2 rounded-full shadow-lg">
+                        <CheckCircle2 className="w-4 h-4" />
+                        Presença confirmada
+                    </div>
+                )}
+
                 {liveStream.provider === "YOUTUBE" && liveStream.streamId ? (
                     <div className="w-full h-full">
                         <YouTube
@@ -197,6 +269,13 @@ const LiveStreamRoom = () => {
 
                 {/* Mensagens */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
+                    {messages.length === 0 && (
+                        <div className="h-full flex flex-col items-center justify-center text-center text-gray-400 gap-2 py-10">
+                            <MessageCircle className="w-10 h-10 opacity-40" />
+                            <p className="text-sm">Nenhuma mensagem ainda.</p>
+                            <p className="text-xs">Seja o primeiro a comentar na transmissão!</p>
+                        </div>
+                    )}
                     {messages.map((msg, idx) => {
                         const isMe = msg.user.id === user.id;
                         return (

@@ -108,19 +108,20 @@ model User {
   workload                    String? // Carga Horária
 
   // Relacionamentos
-  enrollments       Enrollment[]
-  userAwards        UserAward[]
-  userBadge         UserBadge?
-  profession        Profession?        @relation(fields: [professionId], references: [id], onDelete: SetNull) // Novo relacionamento
-  workplaces        Workplace[]        @relation("UserWorkplaces")
-  createdEvents     Event[]            @relation("CreatedEvents") // Eventos criados pelo usuário
-  questions         Question[]
-  wonGiveaways      Giveaway[]
-  staffEvents       EventStaff[]
-  trackEnrollments  TrackEnrollment[]
-  spaceReservations SpaceReservation[]
-  liveChatMessages  LiveChatMessage[]
-  liveAttendances   LiveAttendance[]
+  enrollments              Enrollment[]
+  userAwards               UserAward[]
+  userBadge                UserBadge?
+  profession               Profession?               @relation(fields: [professionId], references: [id], onDelete: SetNull) // Novo relacionamento
+  workplaces               Workplace[]               @relation("UserWorkplaces")
+  createdEvents            Event[]                   @relation("CreatedEvents") // Eventos criados pelo usuário
+  questions                Question[]
+  wonGiveaways             Giveaway[]
+  staffEvents              EventStaff[]
+  trackEnrollments         TrackEnrollment[]
+  spaceReservations        SpaceReservation[]
+  liveChatMessages         LiveChatMessage[]
+  liveAttendances          LiveAttendance[]
+  liveCheckinConfirmations LiveCheckinConfirmation[]
 
   @@index([email])
   @@index([role])
@@ -142,8 +143,14 @@ model Profession {
   @@map("professions")
 }
 
+enum EventModality {
+  PRESENCIAL
+  ONLINE
+  HIBRIDO
+}
+
 model Event {
-  id           String   @id @default(uuid())
+  id           String        @id @default(uuid())
   title        String
   description  String
   startDate    DateTime
@@ -151,8 +158,9 @@ model Event {
   location     String
   maxAttendees Int?
   imageUrl     String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  modality     EventModality @default(PRESENCIAL)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
   // NOVOS CAMPOS: Detalhes do evento
   schedule        String? // Descrição da programação (texto livre ou JSON string)
@@ -527,20 +535,21 @@ model SpaceReservation {
 // ==========================================
 
 model LiveStream {
-  id          String   @id @default(uuid())
-  eventId     String   @unique @map("event_id")
-  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  
-  provider    String   @default("YOUTUBE") // Preparado para escalabilidade (Vimeo, LiveKit, etc)
-  streamId    String?  @map("stream_id")   // ID do Vídeo (ex: dQw4w9WgXcQ)
-  status      String   @default("SCHEDULED") // SCHEDULED, LIVE, ENDED
-  
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id      String @id @default(uuid())
+  eventId String @unique @map("event_id")
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
-  chatMessages LiveChatMessage[]
-  attendances  LiveAttendance[]
-  
+  provider String  @default("YOUTUBE") // Preparado para escalabilidade (Vimeo, LiveKit, etc)
+  streamId String? @map("stream_id") // ID do Vídeo (ex: dQw4w9WgXcQ)
+  status   String  @default("SCHEDULED") // SCHEDULED, LIVE, ENDED
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  chatMessages   LiveChatMessage[]
+  attendances    LiveAttendance[]
+  checkinWindows LiveCheckinWindow[]
+
   @@map("live_streams")
 }
 
@@ -553,7 +562,7 @@ model LiveChatMessage {
   message      String
   isBlocked    Boolean    @default(false) @map("is_blocked") // Para moderação
   createdAt    DateTime   @default(now()) @map("created_at")
-  
+
   @@index([liveStreamId])
   @@index([userId])
   @@map("live_chat_messages")
@@ -567,7 +576,35 @@ model LiveAttendance {
   user             User       @relation(fields: [userId], references: [id])
   watchTimeSeconds Int        @default(0) @map("watch_time_seconds") // Acumula tempo assistido
   lastPingAt       DateTime   @default(now()) @map("last_ping_at")
-  
+
   @@unique([liveStreamId, userId])
   @@map("live_attendances")
+}
+
+model LiveCheckinWindow {
+  id           String     @id @default(uuid())
+  liveStreamId String     @map("live_stream_id")
+  liveStream   LiveStream @relation(fields: [liveStreamId], references: [id], onDelete: Cascade)
+
+  openedAt   DateTime  @default(now()) @map("opened_at")
+  closedAt   DateTime? @map("closed_at")
+  openedById String?   @map("opened_by_id") // Quem liberou o check-in (auditoria)
+
+  confirmations LiveCheckinConfirmation[]
+
+  @@index([liveStreamId])
+  @@map("live_checkin_windows")
+}
+
+model LiveCheckinConfirmation {
+  id       String            @id @default(uuid())
+  windowId String            @map("window_id")
+  window   LiveCheckinWindow @relation(fields: [windowId], references: [id], onDelete: Cascade)
+  userId   String            @map("user_id")
+  user     User              @relation(fields: [userId], references: [id])
+
+  confirmedAt DateTime @default(now()) @map("confirmed_at")
+
+  @@unique([windowId, userId])
+  @@map("live_checkin_confirmations")
 }

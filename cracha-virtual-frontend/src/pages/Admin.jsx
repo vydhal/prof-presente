@@ -94,6 +94,7 @@ import EventStaffManager from "../components/EventStaffManager";
 import BannerManagement from "../components/BannerManagement";
 import BrandingManagement from "../components/BrandingManagement";
 import LiveStreamConfig from "../components/LiveStreamConfig";
+import LiveCheckinControl from "../components/LiveCheckinControl";
 import { Badge } from "../components/ui/badge";
 import { Combobox } from "../components/ui/combobox";
 import { getAssetUrl } from "../lib/utils";
@@ -107,6 +108,9 @@ const Admin = () => {
   const [activeTab, setActiveTab] = useState(tabFromUrl);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
+  // Wizard de criação: passo 1 escolhe a modalidade, passo 2 é o formulário completo (abas)
+  const [creationStep, setCreationStep] = useState(1);
+  const [eventDialogTab, setEventDialogTab] = useState("details");
   
   // States para progresso de envio
   const [isSendConfirmOpen, setIsSendConfirmOpen] = useState(false);
@@ -173,6 +177,7 @@ const Admin = () => {
     categoryId: "",
     isPrivate: false,
     creatorId: "",
+    modality: "PRESENCIAL",
   });
 
   const [badgeTemplateFile, setBadgeTemplateFile] = useState(null);
@@ -281,12 +286,20 @@ const Admin = () => {
       const response = await api.post("/events", data);
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries(["admin-events"]);
       queryClient.invalidateQueries(["events"]);
       toast.success("Evento criado com sucesso!");
-      setIsCreateDialogOpen(false);
-      resetForm();
+
+      if (data.event?.modality && data.event.modality !== "PRESENCIAL") {
+        // Evento online: mantém o modal aberto e avança para a aba de Transmissão,
+        // evitando que o organizador precise fechar e reabrir em modo de edição.
+        setEditingEvent(data.event);
+        setEventDialogTab("streaming");
+      } else {
+        setIsCreateDialogOpen(false);
+        resetForm();
+      }
     },
     onError: (error) => {
       toast.error(error.response?.data?.error || "Erro ao criar evento");
@@ -471,7 +484,10 @@ const Admin = () => {
       speakerName: "",
       speakerRole: "",
       categoryId: "",
+      modality: "PRESENCIAL",
     });
+    setCreationStep(1);
+    setEventDialogTab("details");
 
     setBadgeTemplateFile(null);
     setBadgeTemplatePreviewUrl(null);
@@ -556,7 +572,10 @@ const Admin = () => {
       categoryId: event.categoryId || "",
       isPrivate: event.isPrivate ?? false,
       creatorId: event.creatorId || "",
+      modality: event.modality || "PRESENCIAL",
     });
+    setCreationStep(2);
+    setEventDialogTab("details");
 
     setBadgeTemplatePreviewUrl(null);
     setBadgeTemplateFile(null);
@@ -997,7 +1016,12 @@ const Admin = () => {
                 }}
               >
                 <DialogTrigger asChild>
-                  <Button>
+                  <Button
+                    onClick={() => {
+                      setCreationStep(1);
+                      setEventDialogTab("details");
+                    }}
+                  >
                     <Plus className="h-4 w-4 mr-2" />
                     Novo Evento
                   </Button>
@@ -1010,16 +1034,59 @@ const Admin = () => {
                         {editingEvent ? "Editar Evento" : "Criar Novo Evento"}
                       </DialogTitle>
                       <DialogDescription>
-                        Gerencie os detalhes, personalização e equipe do evento.
+                        {!editingEvent && creationStep === 1
+                          ? "Escolha a modalidade do evento para continuar."
+                          : "Gerencie os detalhes, personalização e equipe do evento."}
                       </DialogDescription>
                     </DialogHeader>
 
-                    <Tabs defaultValue="details" className="w-full flex-1 flex flex-col min-h-0 overflow-hidden">
+                    {!editingEvent && creationStep === 1 ? (
+                      <div className="flex-1 flex flex-col items-center justify-center gap-6 py-10">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-xl">
+                          <button
+                            type="button"
+                            onClick={() => setEventForm((prev) => ({ ...prev, modality: "PRESENCIAL" }))}
+                            className={`rounded-lg border-2 p-6 text-left transition-colors ${eventForm.modality === "PRESENCIAL" ? "border-primary bg-primary/5" : "border-muted hover:border-primary/50"}`}
+                          >
+                            <h3 className="font-semibold text-lg mb-1">Presencial</h3>
+                            <p className="text-sm text-muted-foreground">
+                              Evento realizado em um local físico, com check-in por crachá, QR code ou reconhecimento facial.
+                            </p>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEventForm((prev) => ({ ...prev, modality: "ONLINE" }))}
+                            className={`rounded-lg border-2 p-6 text-left transition-colors ${eventForm.modality === "ONLINE" ? "border-primary bg-primary/5" : "border-muted hover:border-primary/50"}`}
+                          >
+                            <h3 className="font-semibold text-lg mb-1">Online</h3>
+                            <p className="text-sm text-muted-foreground">
+                              Transmissão ao vivo pelo YouTube, com check-in liberado durante a live.
+                            </p>
+                          </button>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              setIsCreateDialogOpen(false);
+                              resetForm();
+                            }}
+                          >
+                            Cancelar
+                          </Button>
+                          <Button type="button" onClick={() => setCreationStep(2)}>
+                            Continuar
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                    <Tabs value={eventDialogTab} onValueChange={setEventDialogTab} className="w-full flex-1 flex flex-col min-h-0 overflow-hidden">
                       <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
                         <TabsTrigger value="details">Detalhes</TabsTrigger>
                         <TabsTrigger value="badge" disabled={!editingEvent}>Crachá</TabsTrigger>
                         <TabsTrigger value="certificate" disabled={!editingEvent}>Certificado</TabsTrigger>
-                        <TabsTrigger value="streaming" disabled={!editingEvent}>Transmissão</TabsTrigger>
+                        <TabsTrigger value="streaming" disabled={eventForm.modality === "PRESENCIAL"}>Transmissão</TabsTrigger>
                         <TabsTrigger value="staff" disabled={!editingEvent}>Equipe</TabsTrigger>
                       </TabsList>
 
@@ -1529,11 +1596,28 @@ const Admin = () => {
                       </TabsContent>
 
                       <TabsContent value="streaming" className="space-y-4 py-4">
-                        {editingEvent && (
-                          <LiveStreamConfig eventId={editingEvent.id} />
+                        {editingEvent ? (
+                          <>
+                            <LiveStreamConfig eventId={editingEvent.id} />
+                            <LiveCheckinControl eventId={editingEvent.id} />
+                          </>
+                        ) : (
+                          <div className="rounded-lg border border-dashed p-6 text-center space-y-3">
+                            <p className="text-sm text-muted-foreground">
+                              Salve os detalhes do evento primeiro para liberar a configuração da transmissão.
+                            </p>
+                            <Button
+                              type="button"
+                              onClick={() => handleSubmit({ preventDefault: () => {} })}
+                              disabled={createEventMutation.isPending}
+                            >
+                              {createEventMutation.isPending ? "Salvando..." : "Salvar Detalhes e Continuar"}
+                            </Button>
+                          </div>
                         )}
                       </TabsContent>
                     </Tabs>
+                    )}
                   </div>
                 </DialogContent>
               </Dialog>

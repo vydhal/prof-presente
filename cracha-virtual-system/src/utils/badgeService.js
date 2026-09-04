@@ -8,6 +8,9 @@ const getAbsoluteUrl = (baseUrl, relativePath) => {
   if (relativePath.startsWith("http") || relativePath.startsWith("data:")) {
     return relativePath;
   }
+  // Sem baseUrl configurada (PUBLIC_API_URL ausente), não há como montar uma URL
+  // absoluta - retorna vazio em vez de quebrar (o aviso já é logado em generateBadgeHtml).
+  if (!baseUrl) return "";
 
   // Garante que a baseUrl não tenha barra no final e o path tenha no início
   const cleanBase = baseUrl.replace(/\/$/, "");

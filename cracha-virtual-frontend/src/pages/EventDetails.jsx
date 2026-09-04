@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { eventsAPI, enrollmentsAPI } from "../lib/api";
-import { Loader2, Calendar, MapPin, Mail, ArrowRight, Share2, AlertCircle, LayoutDashboard, CheckCircle, Users, Facebook, Twitter, Linkedin, Link as LinkIcon } from "lucide-react";
+import { Loader2, Calendar, MapPin, Mail, ArrowRight, Share2, AlertCircle, LayoutDashboard, CheckCircle, Users, Facebook, Twitter, Linkedin, Link as LinkIcon, Radio } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
 import { useAuth } from "../hooks/useAuth";
@@ -416,6 +416,32 @@ const EventDetails = () => {
                         </>
                       )}
                     </Button>
+                  )}
+
+                  {isEnrolled && event.modality && event.modality !== "PRESENCIAL" && (
+                    event.liveStream?.status === "ENDED" ? (
+                      <Button disabled className="w-full mt-3 bg-slate-200 text-slate-500 font-bold py-6 rounded-xl cursor-not-allowed flex items-center justify-center gap-2">
+                        <Radio className="w-5 h-5" />
+                        Transmissão Encerrada
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => navigate(`/events/${id}/live`)}
+                        className="w-full mt-3 bg-slate-900 hover:bg-slate-800 text-white font-bold py-6 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
+                      >
+                        {event.liveStream?.status === "LIVE" ? (
+                          <>
+                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                            Assistir Ao Vivo Agora
+                          </>
+                        ) : (
+                          <>
+                            <Radio className="w-5 h-5" />
+                            Acessar Sala de Transmissão
+                          </>
+                        )}
+                      </Button>
+                    )
                   )}
 
                   {!user && (

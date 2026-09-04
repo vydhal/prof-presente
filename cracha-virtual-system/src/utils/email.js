@@ -76,41 +76,45 @@ const sendEnrollmentConfirmationEmail = async (
     return;
   }
 
+  // Best-effort: falha ao enviar e-mail (SMTP indisponível, credenciais erradas,
+  // erro ao montar o crachá, etc.) nunca deve derrubar o processo. A maioria dos
+  // chamadores dispara esta função sem aguardar (fire-and-forget), então qualquer
+  // rejeição aqui vira uma unhandledRejection não tratada em outro lugar.
+  try {
+    // NOTA: Para máxima compatibilidade com provedores de e-mail (como o Gmail e Outlook),
+    // agora geramos o crachá usando URLs públicas absolutas em vez de anexos inline (CIDs).
+    // Isso reduz o tamanho do e-mail, agiliza o envio e evita imagens bloqueadas ou com cache quebrado.
+    let attachments = [];
 
+    // 2. Gera o HTML do crachá dinamicamente. Sem fornecer os CIDs nas opções,
+    // a função generateBadgeHtml resolve automaticamente as URLs absolutas das imagens.
+    const badgeHtml = generateBadgeHtml(user, userBadge, awards);
 
-  // ... (existing code) ...
+    console.log(`[EMAIL-DEBUG] Attachments preparados: ${attachments.length} arquivos.`);
+    attachments.forEach(att => console.log(` - ${att.filename} (${att.cid}) -> ${att.path}`));
 
-  // NOTA: Para máxima compatibilidade com provedores de e-mail (como o Gmail e Outlook),
-  // agora geramos o crachá usando URLs públicas absolutas em vez de anexos inline (CIDs).
-  // Isso reduz o tamanho do e-mail, agiliza o envio e evita imagens bloqueadas ou com cache quebrado.
-  let attachments = [];
+    const subject = `Crachá e Confirmação de Inscrição: ${event.title}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; text-align: center; background-color: #f4f4f4; padding: 20px;">
+        <div style="max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px;">
+          <h2 style="color: #333;">Olá, ${user.name}!</h2>
+          <p style="color: #555;">Sua inscrição no evento <strong>${event.title}</strong> foi confirmada com sucesso.</p>
+          <p style="color: #555;">Abaixo está o seu crachá de acesso. Ele será necessário para o check-in no dia do evento.</p>
 
-  // 2. Gera o HTML do crachá dinamicamente. Sem fornecer os CIDs nas opções,
-  // a função generateBadgeHtml resolve automaticamente as URLs absolutas das imagens.
-  const badgeHtml = generateBadgeHtml(user, userBadge, awards);
+          <div style="margin: 20px auto; display: inline-block;">
+            ${badgeHtml}
+          </div>
 
-  console.log(`[EMAIL-DEBUG] Attachments preparados: ${attachments.length} arquivos.`);
-  attachments.forEach(att => console.log(` - ${att.filename} (${att.cid}) -> ${att.path}`));
-
-  const subject = `Crachá e Confirmação de Inscrição: ${event.title}`;
-  const html = `
-    <div style="font-family: Arial, sans-serif; line-height: 1.6; text-align: center; background-color: #f4f4f4; padding: 20px;">
-      <div style="max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px;">
-        <h2 style="color: #333;">Olá, ${user.name}!</h2>
-        <p style="color: #555;">Sua inscrição no evento <strong>${event.title}</strong> foi confirmada com sucesso.</p>
-        <p style="color: #555;">Abaixo está o seu crachá de acesso. Ele será necessário para o check-in no dia do evento.</p>
-        
-        <div style="margin: 20px auto; display: inline-block;">
-          ${badgeHtml}
+          <p style="color: #555;">Recomendamos salvar este e-mail para fácil acesso.</p>
+          <p style="color: #555; margin-top: 30px;">Atenciosamente,<br>Equipe Prof Presente</p>
         </div>
-
-        <p style="color: #555;">Recomendamos salvar este e-mail para fácil acesso.</p>
-        <p style="color: #555; margin-top: 30px;">Atenciosamente,<br>Equipe Prof Presente</p>
       </div>
-    </div>
-  `;
+    `;
 
-  await sendEmail({ to: user.email, subject, html, attachments });
+    await sendEmail({ to: user.email, subject, html, attachments });
+  } catch (error) {
+    console.error(`[EMAIL-ERROR] Falha ao preparar/enviar e-mail de confirmação para ${user.email}:`, error.message);
+  }
 };
 
 /**
@@ -127,18 +131,23 @@ const sendEnrollmentCancellationEmail = async (user, event) => {
     return;
   }
 
-  const subject = `Inscrição Cancelada: ${event.title}`;
-  const html = `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-          <h2>Olá, ${user.name},</h2>
-          <p>Confirmamos o cancelamento da sua inscrição no evento <strong>${event.title}</strong>.</p>
-          <p>Se você não solicitou este cancelamento, por favor, entre em contato com o suporte.</p>
-          <p>Esperamos te ver em eventos futuros!</p>
-          <p>Atenciosamente,<br>Equipe Prof Presente</p>
-      </div>
-  `;
+  // Best-effort: ver comentário em sendEnrollmentConfirmationEmail.
+  try {
+    const subject = `Inscrição Cancelada: ${event.title}`;
+    const html = `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+            <h2>Olá, ${user.name},</h2>
+            <p>Confirmamos o cancelamento da sua inscrição no evento <strong>${event.title}</strong>.</p>
+            <p>Se você não solicitou este cancelamento, por favor, entre em contato com o suporte.</p>
+            <p>Esperamos te ver em eventos futuros!</p>
+            <p>Atenciosamente,<br>Equipe Prof Presente</p>
+        </div>
+    `;
 
-  await sendEmail({ to: user.email, subject, html });
+    await sendEmail({ to: user.email, subject, html });
+  } catch (error) {
+    console.error(`[EMAIL-ERROR] Falha ao enviar e-mail de cancelamento para ${user.email}:`, error.message);
+  }
 };
 
 module.exports = {

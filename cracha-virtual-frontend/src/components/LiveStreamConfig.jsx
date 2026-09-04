@@ -5,7 +5,26 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { toast } from "sonner";
-import { Video, Loader2, Save, Youtube, Sparkles } from "lucide-react";
+import { Video, Loader2, Save, ExternalLink } from "lucide-react";
+
+// Aceita o link completo (varios formatos do YouTube) ou so o ID e devolve so o ID.
+const extractYoutubeId = (input) => {
+    if (!input) return "";
+    const trimmed = input.trim();
+
+    const patterns = [
+        /(?:youtube\.com\/(?:live|watch|embed)\/?(?:\?v=)?)([a-zA-Z0-9_-]{6,})/,
+        /youtu\.be\/([a-zA-Z0-9_-]{6,})/,
+    ];
+
+    for (const pattern of patterns) {
+        const match = trimmed.match(pattern);
+        if (match) return match[1];
+    }
+
+    // Nao bateu com nenhum padrao de URL - assume que ja e o ID puro
+    return trimmed;
+};
 
 const LiveStreamConfig = ({ eventId }) => {
     const queryClient = useQueryClient();
@@ -37,8 +56,9 @@ const LiveStreamConfig = ({ eventId }) => {
             const res = await api.post(`/live-streams/events/${eventId}`, data);
             return res.data;
         },
-        onSuccess: () => {
+        onSuccess: (data) => {
             toast.success("Configuração de transmissão salva!");
+            setStreamId(data.streamId || "");
             queryClient.invalidateQueries(["liveStream", eventId]);
         },
         onError: (err) => {
@@ -46,28 +66,10 @@ const LiveStreamConfig = ({ eventId }) => {
         },
     });
 
-    const connectYoutubeMutation = useMutation({
-        mutationFn: async () => {
-            const res = await api.get('/live-streams/youtube/auth');
-            return res.data;
-        },
-        onSuccess: (data) => {
-            window.location.href = data.url;
-        },
-        onError: () => {
-            toast.error("Erro ao conectar com o Google");
-        }
-    });
-
     const handleSave = (e) => {
         e.preventDefault();
-        saveMutation.mutate({ provider: "YOUTUBE", streamId, status });
-    };
-
-    const handleAutoGenerate = () => {
-        if (window.confirm("Isso criará automaticamente uma live privada (Não Listada) no canal do YouTube conectado. Tem certeza?")) {
-            saveMutation.mutate({ provider: "YOUTUBE", streamId: "auto", status: "SCHEDULED" });
-        }
+        const cleanId = extractYoutubeId(streamId);
+        saveMutation.mutate({ provider: "YOUTUBE", streamId: cleanId, status });
     };
 
     if (isLoading) {
@@ -76,55 +78,38 @@ const LiveStreamConfig = ({ eventId }) => {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                    <Video className="w-5 h-5 text-accent" />
-                    <h3 className="text-lg font-semibold">Transmissão Online</h3>
-                </div>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => connectYoutubeMutation.mutate()}
-                    disabled={connectYoutubeMutation.isPending}
-                >
-                    <Youtube className="w-4 h-4 mr-2 text-red-600" />
-                    {connectYoutubeMutation.isPending ? "Conectando..." : "Conectar Conta YouTube"}
-                </Button>
+            <div className="flex items-center gap-2 mb-2">
+                <Video className="w-5 h-5 text-accent" />
+                <h3 className="text-lg font-semibold">Transmissão Online</h3>
             </div>
             <p className="text-sm text-gray-500 mb-4">
-                Configure a sala de cinema VIP (LiveStream) nativa da plataforma. Você pode gerar o link pelo YouTube automaticamente ou colar o ID de uma live já existente.
+                A transmissão é criada e gerenciada fora da plataforma (ex: StreamYard, que publica direto no seu canal do YouTube). Aqui você só cola o link ou ID do vídeo gerado para vincular ao evento.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="border p-4 rounded-lg bg-red-50/50 flex flex-col justify-center items-center text-center space-y-3">
-                    <Sparkles className="w-8 h-8 text-red-500" />
-                    <h4 className="font-semibold text-gray-800">Gerar Live Automática</h4>
-                    <p className="text-xs text-gray-600">A plataforma criará a live no seu YouTube e vinculará a este evento na mesma hora.</p>
-                    <Button
-                        onClick={handleAutoGenerate}
-                        disabled={saveMutation.isPending}
-                        className="w-full bg-red-600 hover:bg-red-700"
-                    >
-                        {saveMutation.isPending && streamId === 'auto' ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <Youtube className="w-4 h-4 mr-2" />}
-                        Gerar Tudo Sozinho
+                <div className="border p-4 rounded-lg bg-slate-50 flex flex-col justify-center items-center text-center space-y-3">
+                    <ExternalLink className="w-8 h-8 text-slate-400" />
+                    <h4 className="font-semibold text-gray-800">Criar a transmissão</h4>
+                    <p className="text-xs text-gray-600">
+                        Abra o StreamYard, inicie a live conectada ao seu YouTube e copie o link do vídeo gerado.
+                    </p>
+                    <Button asChild variant="outline" className="w-full">
+                        <a href="https://streamyard.com/" target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            Abrir StreamYard
+                        </a>
                     </Button>
                 </div>
 
                 <form onSubmit={handleSave} className="space-y-4 border p-4 rounded-lg bg-gray-50 flex flex-col justify-between">
                     <div className="space-y-2">
-                        <Label htmlFor="streamId">ID do Vídeo do YouTube (Manual)</Label>
-                        <div className="flex gap-2">
-                            <span className="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 border border-gray-300 rounded-l-md font-mono shrink-0">
-                                youtube.com/live/
-                            </span>
-                            <Input
-                                id="streamId"
-                                placeholder="Ex: dQw4w9WgXcQ"
-                                value={streamId}
-                                onChange={(e) => setStreamId(e.target.value)}
-                                className="rounded-l-none"
-                            />
-                        </div>
+                        <Label htmlFor="streamId">Link ou ID do Vídeo do YouTube</Label>
+                        <Input
+                            id="streamId"
+                            placeholder="Cole aqui o link do YouTube (ou só o ID)"
+                            value={streamId}
+                            onChange={(e) => setStreamId(e.target.value)}
+                        />
                     </div>
 
                     <div className="space-y-2">
@@ -141,9 +126,9 @@ const LiveStreamConfig = ({ eventId }) => {
                         </select>
                     </div>
 
-                    <Button type="submit" disabled={saveMutation.isPending} className="w-full" variant="outline">
-                        {saveMutation.isPending && streamId !== 'auto' ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                        Salvar ID Manual
+                    <Button type="submit" disabled={saveMutation.isPending || !streamId} className="w-full">
+                        {saveMutation.isPending ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                        Salvar Transmissão
                     </Button>
                 </form>
             </div>
