@@ -897,7 +897,7 @@ const Admin = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b pb-4">
         <div>
           <h1 className="text-xl md:text-2xl font-bold">Administração</h1>
-          <p className="text-xs text-gray-500 hidden md:block">
+          <p className="text-xs text-muted-foreground hidden md:block">
             Gerencie o sistema e visualize estatísticas
           </p>
         </div>
@@ -965,7 +965,7 @@ const Admin = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
                   Total de Eventos
                 </CardTitle>
               </CardHeader>
@@ -978,7 +978,7 @@ const Admin = () => {
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
                   Total de Usuários
                 </CardTitle>
               </CardHeader>
@@ -991,7 +991,7 @@ const Admin = () => {
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
                   Inscrições Ativas
                 </CardTitle>
               </CardHeader>
@@ -1004,7 +1004,7 @@ const Admin = () => {
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
                   Total de Check-ins
                 </CardTitle>
               </CardHeader>
@@ -1164,7 +1164,7 @@ const Admin = () => {
                           </div>
 
                           {isAdmin && (
-                            <div className="space-y-2 p-3 bg-slate-50 border rounded-lg">
+                            <div className="space-y-2 p-3 bg-muted/50 border rounded-lg">
                               <Label className="flex items-center gap-2">
                                 <Users className="h-4 w-4 text-primary" />
                                 <span className="font-semibold">Responsável pelo Evento (Admin Only)</span>
@@ -1180,7 +1180,7 @@ const Admin = () => {
                                 }
                                 placeholder="Selecione o novo responsável..."
                                 searchPlaceholder="Buscar organizador..."
-                                className="bg-white"
+                                className="bg-background"
                               />
                               <p className="text-[10px] text-muted-foreground">
                                 Ao alterar o responsável, o novo usuário terá permissões de gerenciamento sobre este evento.
@@ -1670,7 +1670,7 @@ const Admin = () => {
                     )
                     ?.map((event) => (
                       <Card key={event.id} className="overflow-hidden">
-                        <div className="bg-gray-50 px-4 py-2 border-b flex justify-between items-center gap-2">
+                        <div className="bg-muted/50 px-4 py-2 border-b flex justify-between items-center gap-2">
                           <span className="font-semibold truncate max-w-[150px]">{event.title}</span>
                           <div className="flex items-center gap-1 shrink-0">
                             <Badge variant={getModalityBadgeVariant(event.modality)} className="text-[10px]">
@@ -1953,10 +1953,10 @@ const Admin = () => {
                     <CardContent>
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border border-amber-500/50 rounded-lg bg-amber-500/5">
                         <div>
-                          <h4 className="font-semibold text-amber-800">
+                          <h4 className="font-semibold text-amber-700 dark:text-amber-400">
                             Ação Necessária
                           </h4>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-muted-foreground">
                             Encontramos{" "}
                             <strong>
                               {missingBadgesData.count} usuário(s)
@@ -2053,15 +2053,15 @@ const Admin = () => {
             </div>
             <Progress value={sendProgress.total > 0 ? (sendProgress.current / sendProgress.total) * 100 : 0} className="h-2" />
             
-            <div className="max-h-40 overflow-y-auto border rounded p-2 text-[10px] bg-slate-50 font-mono space-y-1">
+            <div className="max-h-40 overflow-y-auto border rounded p-2 text-[10px] bg-muted/50 font-mono space-y-1">
               {certificateLogs?.slice(0, 10).map((log, i) => (
-                <div key={i} className={log.status === 'SUCCESS' ? 'text-green-600' : log.status === 'FAILED' ? 'text-red-600' : 'text-slate-500'}>
-                  [{log.createdAt ? new Date(log.createdAt).toLocaleTimeString() : 'Pendente'}] {log.userName}: {log.status} 
+                <div key={i} className={log.status === 'SUCCESS' ? 'text-green-600' : log.status === 'FAILED' ? 'text-red-600' : 'text-muted-foreground'}>
+                  [{log.createdAt ? new Date(log.createdAt).toLocaleTimeString() : 'Pendente'}] {log.userName}: {log.status}
                   {log.details && <span className="block text-[8px] opacity-70 ml-4 font-sans">{log.details}</span>}
                 </div>
               ))}
               {(!certificateLogs || certificateLogs.length === 0) && (
-                <div className="text-slate-400 italic">Aguardando início do processamento...</div>
+                <div className="text-muted-foreground italic">Aguardando início do processamento...</div>
               )}
             </div>
           </div>
