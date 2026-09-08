@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "../hooks/useDebounce";
 import {
@@ -80,6 +80,7 @@ import {
   Palette,
   Tags,
   Radio,
+  ArrowUpDown,
 } from "lucide-react";
 import CertificateEditor from "../components/CertificateEditor"; // Adjusted path to match existing imports
 import { toast } from "sonner";
@@ -100,6 +101,9 @@ import { Badge } from "../components/ui/badge";
 import { Combobox } from "../components/ui/combobox";
 import { getAssetUrl } from "../lib/utils";
 
+const MODALITY_LABELS = { PRESENCIAL: "Presencial", ONLINE: "Online", HIBRIDO: "Híbrido" };
+const MODALITY_ORDER = { PRESENCIAL: 0, ONLINE: 1, HIBRIDO: 2 };
+
 const Admin = () => {
   const { isAdmin, isOrg } = useAuth();
   const navigate = useNavigate();
@@ -114,6 +118,8 @@ const Admin = () => {
   const [eventDialogTab, setEventDialogTab] = useState("details");
   // Atalho na lista de eventos: gerenciar o check-in ao vivo sem abrir a edição completa
   const [checkinManageEvent, setCheckinManageEvent] = useState(null);
+  // Ordenação da lista de eventos por modalidade (coluna "Tipo")
+  const [modalitySortDir, setModalitySortDir] = useState(null); // null | "asc" | "desc"
   
   // States para progresso de envio
   const [isSendConfirmOpen, setIsSendConfirmOpen] = useState(false);
@@ -706,6 +712,27 @@ const Admin = () => {
       minute: "2-digit",
     });
   };
+
+  const getModalityLabel = (modality) => MODALITY_LABELS[modality] || "Presencial";
+  const getModalityBadgeVariant = (modality) => {
+    if (modality === "ONLINE") return "default";
+    if (modality === "HIBRIDO") return "secondary";
+    return "outline";
+  };
+
+  const toggleModalitySort = () => {
+    setModalitySortDir((prev) => (prev === "asc" ? "desc" : prev === "desc" ? null : "asc"));
+  };
+
+  // Lista de eventos ordenada por modalidade quando o usuário clica no cabeçalho "Tipo"
+  const sortedEvents = useMemo(() => {
+    if (!events || !modalitySortDir) return events;
+    const sorted = [...events].sort((a, b) => {
+      const diff = (MODALITY_ORDER[a.modality] ?? 0) - (MODALITY_ORDER[b.modality] ?? 0);
+      return modalitySortDir === "asc" ? diff : -diff;
+    });
+    return sorted;
+  }, [events, modalitySortDir]);
 
   // FUNÇÃO CORRIGIDA: para lidar com a mudança no input de arquivo do certificado
   const handleCertificateFileChange = (e) => {
@@ -1633,23 +1660,28 @@ const Admin = () => {
               <div className="md:hidden space-y-4">
                 {eventsLoading ? (
                   <div className="text-center p-4">Carregando...</div>
-                ) : events?.length === 0 ? (
+                ) : sortedEvents?.length === 0 ? (
                   <div className="text-center p-4">Nenhum evento cadastrado</div>
                 ) : (
-                  events
+                  sortedEvents
                     ?.filter(event =>
                       event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                       event.location.toLowerCase().includes(searchTerm.toLowerCase())
                     )
                     ?.map((event) => (
                       <Card key={event.id} className="overflow-hidden">
-                        <div className="bg-gray-50 px-4 py-2 border-b flex justify-between items-center">
-                          <span className="font-semibold truncate max-w-[200px]">{event.title}</span>
-                          {event.isPrivate ? (
-                            <Badge variant="secondary" className="text-[10px]">Privado</Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-[10px]">Público</Badge>
-                          )}
+                        <div className="bg-gray-50 px-4 py-2 border-b flex justify-between items-center gap-2">
+                          <span className="font-semibold truncate max-w-[150px]">{event.title}</span>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Badge variant={getModalityBadgeVariant(event.modality)} className="text-[10px]">
+                              {getModalityLabel(event.modality)}
+                            </Badge>
+                            {event.isPrivate ? (
+                              <Badge variant="secondary" className="text-[10px]">Privado</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[10px]">Público</Badge>
+                            )}
+                          </div>
                         </div>
                         <CardContent className="p-4 space-y-2">
                           <div className="grid grid-cols-2 gap-2 text-sm">
@@ -1743,6 +1775,17 @@ const Admin = () => {
                     <TableRow>
                       <TableHead>Título</TableHead>
                       <TableHead>Local</TableHead>
+                      <TableHead>
+                        <button
+                          type="button"
+                          onClick={toggleModalitySort}
+                          className="inline-flex items-center gap-1 hover:text-foreground"
+                          title="Ordenar por tipo de evento"
+                        >
+                          Tipo
+                          <ArrowUpDown className="h-3 w-3" />
+                        </button>
+                      </TableHead>
                       <TableHead>Visibilidade</TableHead>
                       <TableHead>Início</TableHead>
                       <TableHead>Inscritos</TableHead>
@@ -1753,18 +1796,18 @@ const Admin = () => {
                   <TableBody>
                     {eventsLoading ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center">
+                        <TableCell colSpan={8} className="text-center">
                           Carregando...
                         </TableCell>
                       </TableRow>
-                    ) : events?.length === 0 ? (
+                    ) : sortedEvents?.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center">
+                        <TableCell colSpan={8} className="text-center">
                           Nenhum evento cadastrado
                         </TableCell>
                       </TableRow>
                     ) : (
-                      events
+                      sortedEvents
                         ?.map((event) => (
                           <TableRow key={event.id} className="text-xs md:text-sm">
                             <TableCell className="font-medium max-w-[200px] lg:max-w-[300px] truncate" title={event.title}>
@@ -1772,6 +1815,11 @@ const Admin = () => {
                             </TableCell>
                             <TableCell className="max-w-[150px] lg:max-w-[250px] truncate" title={event.location}>
                               {event.location}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={getModalityBadgeVariant(event.modality)}>
+                                {getModalityLabel(event.modality)}
+                              </Badge>
                             </TableCell>
                             <TableCell>
                               {event.isPrivate ? (
