@@ -73,24 +73,24 @@ const LiveStreamConfig = ({ eventId }) => {
     };
 
     if (isLoading) {
-        return <div className="p-4 flex justify-center"><Loader2 className="animate-spin w-5 h-5 text-accent" /></div>;
+        return <div className="p-4 flex justify-center"><Loader2 className="animate-spin w-5 h-5 text-primary" /></div>;
     }
 
     return (
         <div className="space-y-4">
             <div className="flex items-center gap-2 mb-2">
-                <Video className="w-5 h-5 text-accent" />
+                <Video className="w-5 h-5 text-primary" />
                 <h3 className="text-lg font-semibold">Transmissão Online</h3>
             </div>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
                 A transmissão é criada e gerenciada fora da plataforma (ex: StreamYard, que publica direto no seu canal do YouTube). Aqui você só cola o link ou ID do vídeo gerado para vincular ao evento.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="border p-4 rounded-lg bg-slate-50 flex flex-col justify-center items-center text-center space-y-3">
-                    <ExternalLink className="w-8 h-8 text-slate-400" />
-                    <h4 className="font-semibold text-gray-800">Criar a transmissão</h4>
-                    <p className="text-xs text-gray-600">
+                <div className="border p-4 rounded-lg bg-muted/50 flex flex-col justify-center items-center text-center space-y-3">
+                    <ExternalLink className="w-8 h-8 text-muted-foreground" />
+                    <h4 className="font-semibold">Criar a transmissão</h4>
+                    <p className="text-xs text-muted-foreground">
                         Abra o StreamYard, inicie a live conectada ao seu YouTube e copie o link do vídeo gerado.
                     </p>
                     <Button asChild variant="outline" className="w-full">
@@ -101,7 +101,7 @@ const LiveStreamConfig = ({ eventId }) => {
                     </Button>
                 </div>
 
-                <form onSubmit={handleSave} className="space-y-4 border p-4 rounded-lg bg-gray-50 flex flex-col justify-between">
+                <form onSubmit={handleSave} className="space-y-4 border p-4 rounded-lg bg-muted/50 flex flex-col justify-between">
                     <div className="space-y-2">
                         <Label htmlFor="streamId">Link ou ID do Vídeo do YouTube</Label>
                         <Input
@@ -118,7 +118,7 @@ const LiveStreamConfig = ({ eventId }) => {
                             id="status"
                             value={status}
                             onChange={(e) => setStatus(e.target.value)}
-                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-accent focus:border-accent p-2 text-sm"
+                            className="w-full border border-input bg-background text-foreground rounded-md shadow-sm focus:ring-2 focus:ring-ring focus:border-ring p-2 text-sm"
                         >
                             <option value="SCHEDULED">Agendado (Aguardando Início)</option>
                             <option value="LIVE">Ao Vivo Agora</option>

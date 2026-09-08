@@ -1758,7 +1758,7 @@ const Admin = () => {
                                 onClick={() => setCheckinManageEvent(event)}
                                 title="Check-in ao Vivo"
                               >
-                                <Radio className="h-4 w-4 text-accent" />
+                                <Radio className="h-4 w-4 text-primary" />
                               </Button>
                             )}
                           </div>
@@ -1908,7 +1908,7 @@ const Admin = () => {
                                     onClick={() => setCheckinManageEvent(event)}
                                     title="Check-in ao Vivo"
                                   >
-                                    <Radio className="h-4 w-4 text-accent" />
+                                    <Radio className="h-4 w-4 text-primary" />
                                   </Button>
                                 )}
                               </div>

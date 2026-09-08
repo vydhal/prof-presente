@@ -87,7 +87,7 @@ const LiveCheckinControl = ({ eventId, showHeader = true }) => {
     // Só faz sentido liberar o check-in de uma transmissão já configurada
     if (!liveStream?.streamId) {
         return (
-            <div className="border rounded-lg p-4 bg-gray-50/50 text-sm text-gray-500 text-center">
+            <div className="border rounded-lg p-4 bg-muted/50 text-sm text-muted-foreground text-center">
                 Configure o link ou ID da transmissão (aba Transmissão do evento) antes de liberar o check-in ao vivo.
             </div>
         );
@@ -96,32 +96,32 @@ const LiveCheckinControl = ({ eventId, showHeader = true }) => {
     const isOpen = !!checkinStatus?.open;
 
     return (
-        <div className="border rounded-lg p-4 space-y-3 bg-gray-50/50">
+        <div className="border rounded-lg p-4 space-y-3 bg-muted/50">
             {showHeader && (
                 <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-accent" />
+                    <CheckCircle2 className="w-5 h-5 text-primary" />
                     <h3 className="text-lg font-semibold">Check-in ao Vivo</h3>
                 </div>
             )}
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
                 Libere o check-in durante a transmissão para que os participantes confirmem presença em tempo real.
             </p>
 
             {isLoading ? (
                 <div className="flex justify-center p-2">
-                    <Loader2 className="animate-spin w-5 h-5 text-accent" />
+                    <Loader2 className="animate-spin w-5 h-5 text-primary" />
                 </div>
             ) : isOpen ? (
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3 border rounded-md p-3 bg-green-50 border-green-200">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 border border-primary/30 rounded-md p-3 bg-primary/10">
                     <div className="flex-1 space-y-1">
-                        <p className="text-sm font-medium text-green-800">
+                        <p className="text-sm font-medium text-primary">
                             Check-in aberto desde{" "}
                             {new Date(checkinStatus.window.openedAt).toLocaleTimeString("pt-BR", {
                                 hour: "2-digit",
                                 minute: "2-digit",
                             })}
                         </p>
-                        <p className="text-xs text-green-700 flex items-center gap-1">
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
                             <Users className="w-3.5 h-3.5" />
                             {checkinStatus.window.confirmationsCount} confirmação(ões)
                         </p>
@@ -143,7 +143,7 @@ const LiveCheckinControl = ({ eventId, showHeader = true }) => {
                 <Button
                     onClick={() => openMutation.mutate()}
                     disabled={openMutation.isPending}
-                    className="w-full bg-green-600 hover:bg-green-700"
+                    className="w-full"
                 >
                     {openMutation.isPending ? (
                         <Loader2 className="animate-spin w-4 h-4 mr-2" />
