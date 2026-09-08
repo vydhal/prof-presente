@@ -905,7 +905,7 @@ const Admin = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6 lg:mb-0">
         <div className="w-full overflow-x-auto pb-2 block">
-          <TabsList className="inline-flex w-auto space-x-2 lg:grid lg:w-full lg:grid-cols-9">
+          <TabsList className="inline-flex w-auto space-x-2">
             <TabsTrigger value="dashboard">
               <BarChart className="h-4 w-4 mr-2" />
               Dashboard
