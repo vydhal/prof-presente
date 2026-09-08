@@ -79,6 +79,7 @@ import {
   Image as ImageIcon,
   Palette,
   Tags,
+  Radio,
 } from "lucide-react";
 import CertificateEditor from "../components/CertificateEditor"; // Adjusted path to match existing imports
 import { toast } from "sonner";
@@ -111,6 +112,8 @@ const Admin = () => {
   // Wizard de criação: passo 1 escolhe a modalidade, passo 2 é o formulário completo (abas)
   const [creationStep, setCreationStep] = useState(1);
   const [eventDialogTab, setEventDialogTab] = useState("details");
+  // Atalho na lista de eventos: gerenciar o check-in ao vivo sem abrir a edição completa
+  const [checkinManageEvent, setCheckinManageEvent] = useState(null);
   
   // States para progresso de envio
   const [isSendConfirmOpen, setIsSendConfirmOpen] = useState(false);
@@ -1714,6 +1717,18 @@ const Admin = () => {
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
+
+                            {event.modality && event.modality !== "PRESENCIAL" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={() => setCheckinManageEvent(event)}
+                                title="Check-in ao Vivo"
+                              >
+                                <Radio className="h-4 w-4 text-accent" />
+                              </Button>
+                            )}
                           </div>
                         </CardContent>
                       </Card>
@@ -1837,6 +1852,17 @@ const Admin = () => {
                                 >
                                   <Users className="h-4 w-4" />
                                 </Button>
+
+                                {event.modality && event.modality !== "PRESENCIAL" && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setCheckinManageEvent(event)}
+                                    title="Check-in ao Vivo"
+                                  >
+                                    <Radio className="h-4 w-4 text-accent" />
+                                  </Button>
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -1848,7 +1874,23 @@ const Admin = () => {
             </CardContent>
           </Card>
 
-
+          {/* Atalho: gerenciar o check-in ao vivo sem precisar abrir a edição completa do evento */}
+          <Dialog
+            open={!!checkinManageEvent}
+            onOpenChange={(open) => !open && setCheckinManageEvent(null)}
+          >
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Check-in ao Vivo</DialogTitle>
+                <DialogDescription>
+                  {checkinManageEvent?.title}
+                </DialogDescription>
+              </DialogHeader>
+              {checkinManageEvent && (
+                <LiveCheckinControl eventId={checkinManageEvent.id} showHeader={false} />
+              )}
+            </DialogContent>
+          </Dialog>
 
         </TabsContent>
         {(isAdmin || isOrg) && (

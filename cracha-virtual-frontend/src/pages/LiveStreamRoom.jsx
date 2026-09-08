@@ -200,17 +200,17 @@ const LiveStreamRoom = () => {
     };
 
     return (
-        <div className="h-[calc(100vh-80px)] flex flex-col md:flex-row overflow-hidden bg-gray-50 border-t border-gray-200">
+        <div className="h-[calc(100vh-160px)] lg:h-[calc(100vh-80px)] flex flex-col md:flex-row overflow-hidden bg-gray-50 border-t border-gray-200">
 
             {/* Esquerda: Player de Vídeo */}
-            <div className="flex-1 bg-black flex flex-col relative">
-                <div className="absolute top-4 left-4 z-10 hidden md:flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full text-white text-sm font-medium border border-white/10 shadow-lg">
-                    <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+            <div className="relative bg-black flex flex-col shrink-0 h-[38vh] sm:h-[45vh] md:h-auto md:flex-1 md:shrink">
+                <div className="absolute top-2 left-2 md:top-4 md:left-4 z-10 flex items-center gap-1.5 md:gap-2 bg-black/60 backdrop-blur-md px-2.5 py-1 md:px-3 md:py-1.5 rounded-full text-white text-xs md:text-sm font-medium border border-white/10 shadow-lg">
+                    <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-red-500 animate-pulse"></div>
                     AO VIVO
                 </div>
-                <div className="absolute top-4 right-4 z-10 hidden md:flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full text-white text-sm font-medium border border-white/10 shadow-lg">
-                    <Users className="w-4 h-4 text-gray-300" />
-                    {onlineCount} assistindo agora
+                <div className="absolute top-2 right-2 md:top-4 md:right-4 z-10 flex items-center gap-1.5 md:gap-2 bg-black/60 backdrop-blur-md px-2.5 py-1 md:px-3 md:py-1.5 rounded-full text-white text-xs md:text-sm font-medium border border-white/10 shadow-lg">
+                    <Users className="w-3.5 h-3.5 md:w-4 md:h-4 text-gray-300" />
+                    {onlineCount}<span className="hidden sm:inline"> assistindo agora</span>
                 </div>
 
                 {checkinWindow && !hasConfirmedCheckin && (
@@ -255,20 +255,16 @@ const LiveStreamRoom = () => {
             </div>
 
             {/* Direita: Chat em Tempo Real */}
-            <div className="w-full md:w-[380px] lg:w-[420px] bg-white border-l border-gray-200 flex flex-col h-full shrink-0 shadow-[-5px_0_20px_-15px_rgba(0,0,0,0.1)]">
+            <div className="w-full flex-1 min-h-0 md:h-full md:flex-none md:w-[380px] lg:w-[420px] bg-white border-t md:border-t-0 md:border-l border-gray-200 flex flex-col shrink-0 shadow-[-5px_0_20px_-15px_rgba(0,0,0,0.1)]">
                 {/* Header do Chat */}
-                <div className="h-16 border-b border-gray-200 flex items-center justify-between px-6 bg-gradient-to-r from-accent/5 to-transparent shrink-0">
-                    <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                <div className="h-12 md:h-16 border-b border-gray-200 flex items-center justify-between px-4 md:px-6 bg-gradient-to-r from-accent/5 to-transparent shrink-0">
+                    <h3 className="font-bold text-gray-800 flex items-center gap-2 text-sm md:text-base">
                         Chat Interativo
                     </h3>
-                    <div className="md:hidden flex items-center gap-1.5 text-sm font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-md">
-                        <Users className="w-3.5 h-3.5" />
-                        {onlineCount}
-                    </div>
                 </div>
 
                 {/* Mensagens */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
+                <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
                     {messages.length === 0 && (
                         <div className="h-full flex flex-col items-center justify-center text-center text-gray-400 gap-2 py-10">
                             <MessageCircle className="w-10 h-10 opacity-40" />

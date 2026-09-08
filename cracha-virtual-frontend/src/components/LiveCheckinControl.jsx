@@ -7,7 +7,7 @@ import { Button } from "./ui/button";
 import { toast } from "sonner";
 import { CheckCircle2, Loader2, PlayCircle, StopCircle, Users } from "lucide-react";
 
-const LiveCheckinControl = ({ eventId }) => {
+const LiveCheckinControl = ({ eventId, showHeader = true }) => {
     const queryClient = useQueryClient();
     const { user } = useAuth();
     const socket = useSocket();
@@ -84,19 +84,25 @@ const LiveCheckinControl = ({ eventId }) => {
         },
     });
 
-    // Só faz sentido gerenciar o check-in de uma transmissão já configurada
+    // Só faz sentido liberar o check-in de uma transmissão já configurada
     if (!liveStream?.streamId) {
-        return null;
+        return (
+            <div className="border rounded-lg p-4 bg-gray-50/50 text-sm text-gray-500 text-center">
+                Configure o link ou ID da transmissão (aba Transmissão do evento) antes de liberar o check-in ao vivo.
+            </div>
+        );
     }
 
     const isOpen = !!checkinStatus?.open;
 
     return (
         <div className="border rounded-lg p-4 space-y-3 bg-gray-50/50">
-            <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-accent" />
-                <h3 className="text-lg font-semibold">Check-in ao Vivo</h3>
-            </div>
+            {showHeader && (
+                <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-accent" />
+                    <h3 className="text-lg font-semibold">Check-in ao Vivo</h3>
+                </div>
+            )}
             <p className="text-sm text-gray-500">
                 Libere o check-in durante a transmissão para que os participantes confirmem presença em tempo real.
             </p>
