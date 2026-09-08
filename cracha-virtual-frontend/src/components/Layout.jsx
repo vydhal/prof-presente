@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.jsx";
+import { useTheme } from "../contexts/ThemeContext";
 import {
   Sheet,
   SheetContent,
@@ -36,7 +37,9 @@ import {
   Trophy,
   MessageSquare,
   GraduationCap,
-  Globe
+  Globe,
+  Moon,
+  Sun,
 } from "lucide-react";
 import Logo from "../assets/logo-prof-presente.svg"; // Importe o seu logo
 import { getAssetUrl } from "../lib/utils"; // NOVO: Importa a função auxiliar
@@ -47,6 +50,7 @@ import { useBranding } from "../contexts/BrandingContext";
 const Layout = ({ children }) => {
   const { user, logout, isAdmin, isOrg } = useAuth();
   const { platformName, logoUrl } = useBranding();
+  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -271,6 +275,15 @@ const Layout = ({ children }) => {
             </div>
 
             <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                title={theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"}
+              >
+                {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </Button>
+
               {showInstallButton && (
                 <Button
                   variant="outline"
