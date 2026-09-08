@@ -1,4 +1,4 @@
-# Progresso do Projeto - 30/07/2026
+# Progresso do Projeto - 08/09/2026
 
 ## 📊 Tabela de Progresso Atual
 
@@ -13,6 +13,14 @@
 | **7. UX Data de Nascimento** | Substituído DatePicker por Input livre com máscara DD/MM/AAAA para facilitar o cadastro | **Concluído** | 30/07/2026 |
 | **8. Melhoria UX Trilha** | Adicionado campo de busca e ajustado o Shadcn UI Dialog (com `sm:max-w-[90vw] lg:max-w-5xl`) para garantir responsividade e layout amplo no modal de Nova Trilha (`AdminTracks.jsx`) | **Concluído** | 30/07/2026 |
 | **9. UX Landing Page** | Substituído a grade de Trilhas e Eventos por Carrosséis do Shadcn UI na página inicial. Adicionado menu inferior de navegação rápida para dispositivos móveis (`md:hidden`). | **Concluído** | 31/07/2026 |
+| **10. Modalidade de Evento (Presencial/Online)** | Novo campo `modality` no evento, escolhido logo na criação (wizard), com a aba de Transmissão liberada no mesmo fluxo | **Concluído** | 08/09/2026 |
+| **11. Check-in ao Vivo** | Organizador libera/encerra o check-in durante a transmissão; participante confirma presença em tempo real (socket.io), gerando `UserCheckin` real | **Concluído** | 08/09/2026 |
+| **12. Transmissão via StreamYard** | Substituído o fluxo de OAuth com o YouTube (Conectar Conta / Gerar Automática) por um botão que abre o StreamYard + campo para colar o link/ID gerado | **Concluído** | 08/09/2026 |
+| **13. Correções de robustez do Backend** | Corrigido crash do servidor por falha de e-mail não tratada, vazamento de `streamId` em rota pública, bug de permissão de organizador e bug no relatório de ranking de frequência | **Concluído** | 08/09/2026 |
+| **14. UX Lista de Eventos (Admin)** | Adicionada coluna "Tipo" com ordenação, atalho de check-in ao vivo na lista (sem precisar abrir edição), e correção do bug de quebra de linha/scroll nas abas do Admin | **Concluído** | 08/09/2026 |
+| **15. Responsividade da Live (Mobile)** | Corrigido layout da sala de transmissão para não empurrar o chat para trás do menu inferior fixo no celular | **Concluído** | 08/09/2026 |
+| **16. Contraste no Modo Escuro** | Corrigidas várias telas do Admin (lista de eventos mobile, dashboard, painéis de transmissão/check-in) que usavam cores fixas e ficavam ilegíveis no tema escuro | **Concluído** | 08/09/2026 |
+| **17. Alternar Tema na Área Logada** | Adicionado o mesmo botão de claro/escuro da landing page também no header da área autenticada (antes só dava pra trocar deslogado) | **Concluído** | 08/09/2026 |
 
 ---
 
@@ -41,14 +49,46 @@
 
 ---
 
+## Alterações Realizadas em 08/09/2026 (Fase 5 - Eventos Online + Check-in ao Vivo)
+
+### Backend (`cracha-virtual-system`)
+- **Modalidade do evento**: novo enum `EventModality` (`PRESENCIAL`, `ONLINE`, `HIBRIDO`) e campo `modality` em `Event` (migration `20260904145800_add_event_modality_and_live_checkin`).
+- **Check-in ao vivo**: novos models `LiveCheckinWindow` e `LiveCheckinConfirmation`. Novos endpoints em `liveStreamController.js`/`routes/liveStreams.js`:
+  - `POST /live-streams/:id/checkin/open` e `/close` (organizador/admin liberam e encerram)
+  - `GET /live-streams/:id/checkin/status` (participante consulta, cobre reload no meio da janela)
+  - `POST /live-streams/:id/checkin/confirm` (participante confirma presença, reaproveitando `processUserCheckin` do `checkinController.js`)
+  - Eventos em tempo real via socket.io (`checkin_window_opened`, `checkin_window_closed`, `checkin_confirmed_count`) — exigiu anexar a instância `io` ao `app` (`app.set('io', io)`) em `server.js` para os controllers REST conseguirem emitir.
+- **Correção de permissão**: rotas de YouTube/streaming exigiam `ADMIN` puro; organizadores tomavam 403 ao configurar a própria transmissão. Corrigido para `requireAdminOrOrganizer` + checagem de dono do evento.
+- **Correção de segurança**: `getEventById` (rota pública) ia expor o `streamId` do YouTube de qualquer evento sem exigir inscrição. Agora só expõe o `status` publicamente; o `streamId` continua exigindo inscrição aprovada via `GET /live-streams/events/:id`.
+- **Correção de crash do servidor**: `sendEnrollmentConfirmationEmail`/`sendEnrollmentCancellationEmail` (`email.js`) propagavam qualquer erro (SMTP fora do ar, `PUBLIC_API_URL` ausente) como uma `unhandledRejection`, e o handler global em `server.js` derrubava **o processo inteiro** a cada falha de e-mail. Agora essas funções tratam o próprio erro internamente (best-effort). Também corrigido `getAbsoluteUrl` (`badgeService.js`) para não quebrar quando `PUBLIC_API_URL` não está definida.
+- **Correção do ranking de frequência**: `getFrequencyRanking` (`reportController.js`) referenciava `period`/`page`/`limit`/`skip` sem nunca declará-los — sempre retornava 500. Corrigido e adicionado filtro `?modality=ONLINE|PRESENCIAL|HIBRIDO`, permitindo medir frequência separada em eventos online (nenhuma tela ainda consome esse filtro — ver Próximos Passos).
+- **Documentação de ambiente**: `.env-modelo` passou a documentar `PUBLIC_API_URL`, `YOUTUBE_CLIENT_ID/SECRET` e `FACIAL_SERVICE_URL`.
+
+### Frontend (`cracha-virtual-frontend`)
+- **Wizard de criação de evento** (`Admin.jsx`): escolha de modalidade (Presencial/Online) logo no início; para eventos online, a aba "Transmissão" fica liberada no mesmo fluxo (o modal permanece aberto e avança automaticamente após salvar os detalhes, sem precisar reabrir em edição).
+- **`LiveStreamConfig.jsx` redesenhado**: removido o fluxo de OAuth com o YouTube (Conectar Conta / Gerar Automática); agora tem um botão "Abrir StreamYard" (link externo) + campo único para colar o link ou ID do vídeo gerado (extrai o ID automaticamente de várias formas de URL do YouTube).
+- **`LiveCheckinControl.jsx` (novo componente)**: painel com botão "Liberar Check-in Agora" / "Encerrar Check-in", usado dentro da aba Transmissão e também num atalho rápido na lista de eventos.
+- **Atalho na lista de eventos** (`Admin.jsx`): ícone de check-in ao vivo (rádio) nas Ações, visível só para eventos não-presenciais, abre um dialog compacto sem precisar entrar na edição completa.
+- **Coluna "Tipo" com ordenação** (`Admin.jsx`): mostra a modalidade de cada evento (Presencial/Online/Híbrido) e permite ordenar clicando no cabeçalho.
+- **Correção de layout das abas do Admin**: a barra de abas (Dashboard, Eventos, Banners, ...) virava um grid de colunas fixas e quebrava linha com scroll vertical indevido quando havia mais abas que colunas (variação por perfil admin/organizador). Trocado para layout flexível que cabe numa linha ou rola horizontalmente.
+- **`EventDetails.jsx`**: botão "Acessar Sala de Transmissão" / "Assistir Ao Vivo Agora" para participantes inscritos em eventos online (gap de navegação que não existia antes).
+- **`LiveStreamRoom.jsx`**: botão "Confirmar Presença" que aparece em tempo real via socket quando o organizador libera o check-in; estado vazio no chat ("Nenhuma mensagem ainda..."); responsividade mobile corrigida (vídeo e chat brigavam pela mesma altura, empurrando o campo de mensagem para trás do menu inferior fixo).
+- **Tema claro/escuro na área logada** (`Layout.jsx`): adicionado o mesmo botão de alternar tema que já existia na landing page — antes só dava para trocar deslogado.
+- **Correções de contraste no modo escuro**: `LiveCheckinControl`, `LiveStreamConfig` e vários pontos do `Admin.jsx` (card de evento mobile, cards de estatística do dashboard, bloco "Responsável pelo Evento", log de certificados, alerta de crachás pendentes) usavam cores fixas do Tailwind (`bg-gray-50`, `text-gray-500`, `text-accent` etc.) em vez dos tokens de tema do app — em alguns casos o texto ficava literalmente invisível (branco sobre branco). Trocado pelos tokens semânticos (`bg-muted`, `text-muted-foreground`, `text-primary`) que já se adaptam entre claro/escuro e entre marcas (o `--primary` reflete a cor do tenant, ex: azul no branding "SEDUC").
+
+### Decisões tomadas
+- A conta do YouTube continua sendo **única/global da plataforma** (não implementamos OAuth por organizador) — mas isso ficou ainda menos relevante depois de trocar pelo fluxo StreamYard.
+- Check-in ao vivo é **uma única liberação por evento** (não múltiplas janelas/checkpoints), mas o modelo de dados (`LiveCheckinWindow`) já comporta isso no futuro sem retrabalho.
+
+### Commits desta fase
+`a7c5251` → `7a6465e` (nesta ordem): modalidade+check-in ao vivo, correções de robustez (email/ranking/permissão), atalho de check-in + responsividade mobile, contraste dark mode (2x), botão de tema na área logada, fix das abas do Admin.
+
+---
+
 ## Próximos Passos (Para o Usuário Executar)
 
-1. **Rodar a atualização dos containers do Docker**:
-   Como você mesmo indicou que cuida dessa parte (conforme nossa Regra de Ouro), execute o comando a seguir na máquina de deploy/desenvolvimento para aplicar as correções:
-   ```bash
-   docker-compose down
-   docker-compose build backend
-   docker-compose up -d
-   ```
-2. **Testar o fluxo**:
-   Acesse a aba de Gestão de Trilhas, clique em "Nova Trilha" e verifique se o campo de busca funciona direitinho e se o layout está luxuoso como pedimos!
+1. **Build e deploy das imagens**: rodar `build-images.ps1` (opção 3 - Ambos) com uma versão nova (ex: `2.5.0`), dar push, e **atualizar o número da versão no `docker-compose.yml`/`docker-compose.older.yml`** antes de rodar o deploy — esses arquivos fixam a versão exata da imagem e não são atualizados automaticamente pelo build. A migration do banco roda sozinha no start do container (`prisma db push --accept-data-loss`).
+2. **Não é necessário** configurar `YOUTUBE_CLIENT_ID`/`YOUTUBE_CLIENT_SECRET` em produção — esse fluxo de OAuth não é mais usado pela interface (trocado pelo StreamYard).
+3. **Pendente / não implementado nesta fase**: uma tela dedicada de relatório de "frequência em eventos online" — o endpoint (`GET /reports/ranking?modality=ONLINE`) já existe e funciona, mas nenhuma tela do frontend o consome ainda.
+4. **Ambiente de teste local**: durante os testes desta fase, foram criados dois arquivos locais (não commitados, não sobem pro git): `cracha-virtual-frontend/.env.local` (aponta o frontend dev pro backend local) e `docker-compose.dev.override.yml` (remapeia a porta do Postgres de 5433→5434, porque outro projeto seu já usa a 5433 nesta máquina). Pode apagar os dois se não for mais testar localmente, ou mantê-los para a próxima sessão.
+5. **Testar de ponta a ponta** o fluxo completo antes de considerar encerrado: criar evento online → colar link do StreamYard → liberar check-in → participante confirma → conferir no Ranking de Checkins.
