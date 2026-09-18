@@ -680,11 +680,34 @@ const updateFacialConsent = async (req, res) => {
   }
 };
 
-// --- NOVA FUNÇÃO: LISTAR HISTÓRICO DE EVENTOS DO USUÁRIO ---
+// --- NOVA FUNÇÃO: LISTAR HISTÓRICO DE EVENTOS E CHECK-INS DO USUÁRIO ---
 const getUserEnrollments = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // 1. Busca os check-ins reais do usuário na tabela UserCheckin
+    const userCheckins = await prisma.userCheckin.findMany({
+      where: {
+        userBadge: {
+          userId: id,
+        },
+      },
+      select: {
+        eventId: true,
+        checkinTime: true,
+      },
+      orderBy: { checkinTime: "desc" },
+    });
+
+    // Mapa eventId -> checkinTime mais recente
+    const checkInMap = {};
+    userCheckins.forEach((ci) => {
+      if (!checkInMap[ci.eventId]) {
+        checkInMap[ci.eventId] = ci.checkinTime;
+      }
+    });
+
+    // 2. Busca Inscrições diretas em Eventos
     const enrollments = await prisma.enrollment.findMany({
       where: { userId: id },
       include: {
@@ -694,23 +717,95 @@ const getUserEnrollments = async (req, res) => {
             title: true,
             startDate: true,
             endDate: true,
-            location: true
-          }
-        }
+            location: true,
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: "desc" },
     });
 
-    const formattedHistory = enrollments.map(enrollment => ({
-      eventId: enrollment.event.id,
-      eventTitle: enrollment.event.title,
-      eventDate: enrollment.event.startDate,
-      location: enrollment.event.location,
-      status: enrollment.status,
-      enrolledAt: enrollment.createdAt,
-      checkInTime: enrollment.checkInTime,
-      certificateUrl: enrollment.certificateUrl // Se tiver certificado gerado
-    }));
+    // 3. Busca Inscrições em Trilhas de Aprendizagem (Cursos)
+    const trackEnrollments = await prisma.trackEnrollment.findMany({
+      where: { userId: id },
+      include: {
+        track: {
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            events: {
+              include: {
+                event: {
+                  select: {
+                    id: true,
+                    title: true,
+                    startDate: true,
+                    endDate: true,
+                    location: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const eventsMap = new Map();
+
+    // Adiciona inscrições de eventos diretos
+    enrollments.forEach((enrollment) => {
+      if (enrollment.event) {
+        const eventId = enrollment.event.id;
+        eventsMap.set(eventId, {
+          eventId: eventId,
+          eventTitle: enrollment.event.title,
+          eventDate: enrollment.event.startDate,
+          endDate: enrollment.event.endDate,
+          location: enrollment.event.location || "Não informado",
+          status: enrollment.status,
+          enrolledAt: enrollment.createdAt,
+          type: "EVENTO",
+          sourceName: "Inscrição Direta",
+          checkInTime: checkInMap[eventId] || null,
+          hasCheckIn: !!checkInMap[eventId],
+        });
+      }
+    });
+
+    // Adiciona eventos vindos de trilhas
+    trackEnrollments.forEach((te) => {
+      if (te.track && te.track.events) {
+        te.track.events.forEach((teEvent) => {
+          if (teEvent.event) {
+            const eventId = teEvent.event.id;
+            const existing = eventsMap.get(eventId);
+            if (!existing) {
+              eventsMap.set(eventId, {
+                eventId: eventId,
+                eventTitle: teEvent.event.title,
+                eventDate: teEvent.event.startDate,
+                endDate: teEvent.event.endDate,
+                location: teEvent.event.location || "Não informado",
+                status: "APPROVED",
+                enrolledAt: te.createdAt,
+                type: "TRILHA",
+                sourceName: te.track.title,
+                checkInTime: checkInMap[eventId] || null,
+                hasCheckIn: !!checkInMap[eventId],
+              });
+            } else {
+              existing.sourceName = `${existing.sourceName} / Trilha: ${te.track.title}`;
+            }
+          }
+        });
+      }
+    });
+
+    const formattedHistory = Array.from(eventsMap.values()).sort(
+      (a, b) => new Date(b.eventDate) - new Date(a.eventDate)
+    );
 
     res.json(formattedHistory);
   } catch (error) {

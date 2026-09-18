@@ -21,6 +21,7 @@
 | **15. Responsividade da Live (Mobile)** | Corrigido layout da sala de transmissão para não empurrar o chat para trás do menu inferior fixo no celular | **Concluído** | 08/09/2026 |
 | **16. Contraste no Modo Escuro** | Corrigidas várias telas do Admin (lista de eventos mobile, dashboard, painéis de transmissão/check-in) que usavam cores fixas e ficavam ilegíveis no tema escuro | **Concluído** | 08/09/2026 |
 | **17. Alternar Tema na Área Logada** | Adicionado o mesmo botão de claro/escuro da landing page também no header da área autenticada (antes só dava pra trocar deslogado) | **Concluído** | 08/09/2026 |
+| **18. Histórico de Inscrições, PDF e Fix Check-in** | Ajuste de largura do Modal de Histórico de Inscrições (`sm:max-w-5xl`), exportação em PDF via `jsPDF`/`autoTable` e correção do backend para retornar o check-in real da tabela `UserCheckin` e eventos de Trilhas | **Concluído** | 18/09/2026 |
 
 ---
 
@@ -85,10 +86,20 @@
 
 ---
 
+## Alterações Realizadas em 18/09/2026 (Fase 6 - Histórico de Inscrições, PDF e Check-in Real)
+
+### Backend (`cracha-virtual-system`)
+- **Busca de Check-in Real**: Atualizada a rota `GET /users/:id/enrollments` no `userController.js` para consultar a tabela `UserCheckin` via o `userBadge` do usuário. Agora resgata o horário real e exato em que o check-in foi efetuado.
+- **Suporte a Trilhas de Aprendizagem (Cursos)**: Unificou as inscrições de eventos diretos (`Enrollment`) com inscrições de cursos/trilhas (`TrackEnrollment`), trazendo todos os eventos nos quais o usuário possui participação.
+
+### Frontend (`cracha-virtual-frontend`)
+- **Ajuste de Tamanho e Layout do Dialog (`UserManagement.jsx`)**: Atualizado de `max-w-4xl` estreito para `sm:max-w-5xl w-[95vw]` responsivo, eliminando barras de rolagem horizontais e quebras desagradáveis no desktop e mobile.
+- **Exportação para PDF (`handleDownloadPDF`)**: Adicionado o botão "Baixar PDF" utilizando `jsPDF` e `jspdf-autotable`. Gera um relatório oficial completo com os dados do usuário, lista de cursos/eventos, origem (Direto ou Trilha), datas, locais, status e horários de check-in confirmados.
+- **Indicadores Visuais de Frequência**: Exibição de Badges modernas com status de confirmação e pílulas em verde destacando a data e o horário do check-in realizado.
+
+---
+
 ## Próximos Passos (Para o Usuário Executar)
 
-1. **Build e deploy das imagens**: rodar `build-images.ps1` (opção 3 - Ambos) com uma versão nova (ex: `2.5.0`), dar push, e **atualizar o número da versão no `docker-compose.yml`/`docker-compose.older.yml`** antes de rodar o deploy — esses arquivos fixam a versão exata da imagem e não são atualizados automaticamente pelo build. A migration do banco roda sozinha no start do container (`prisma db push --accept-data-loss`).
-2. **Não é necessário** configurar `YOUTUBE_CLIENT_ID`/`YOUTUBE_CLIENT_SECRET` em produção — esse fluxo de OAuth não é mais usado pela interface (trocado pelo StreamYard).
-3. **Pendente / não implementado nesta fase**: uma tela dedicada de relatório de "frequência em eventos online" — o endpoint (`GET /reports/ranking?modality=ONLINE`) já existe e funciona, mas nenhuma tela do frontend o consome ainda.
-4. **Ambiente de teste local**: durante os testes desta fase, foram criados dois arquivos locais (não commitados, não sobem pro git): `cracha-virtual-frontend/.env.local` (aponta o frontend dev pro backend local) e `docker-compose.dev.override.yml` (remapeia a porta do Postgres de 5433→5434, porque outro projeto seu já usa a 5433 nesta máquina). Pode apagar os dois se não for mais testar localmente, ou mantê-los para a próxima sessão.
-5. **Testar de ponta a ponta** o fluxo completo antes de considerar encerrado: criar evento online → colar link do StreamYard → liberar check-in → participante confirma → conferir no Ranking de Checkins.
+1. **Build e deploy das imagens**: rodar `build-images.ps1` (opção 3 - Ambos) com uma versão nova (ex: `2.5.0`), dar push, e **atualizar o número da versão no `docker-compose.yml`/`docker-compose.older.yml`** antes de rodar o deploy.
+2. **Testar o Modal de Histórico**: Acessar o Painel Admin > Gerenciamento de Usuários > Clicar em "Histórico" em qualquer usuário -> Verificar a abertura ampla do diálogo, a presença do check-in real e o download do PDF.

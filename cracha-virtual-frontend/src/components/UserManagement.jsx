@@ -44,7 +44,9 @@ import {
   PaginationPrevious,
 } from "./ui/pagination";
 import { Badge } from "./ui/badge";
-import { Shield, Key, Search, Plus, UserPlus, Calendar, MapPin, Clock, Trash2 } from "lucide-react";
+import { Shield, Key, Search, Plus, UserPlus, Calendar, MapPin, Clock, Trash2, Download, FileText } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { toast } from "sonner";
 import AdminUserRegister from "./AdminUserRegister";
 import { DatePicker } from "./ui/date-picker";
@@ -147,6 +149,118 @@ const UserManagement = () => {
     },
     enabled: !!selectedUserForEnrollments,
   });
+
+  // Função para baixar o relatório de inscrições e frequência em PDF
+  const handleDownloadPDF = () => {
+    if (!userEnrollments || userEnrollments.length === 0) {
+      toast.error("Nenhuma inscrição encontrada para gerar o PDF.");
+      return;
+    }
+
+    const doc = new jsPDF();
+    const userName = selectedUserForEnrollments?.name || "Usuário";
+    const userEmail = selectedUserForEnrollments?.email || "";
+
+    // Cabeçalho do PDF
+    doc.setFontSize(16);
+    doc.setTextColor(19, 127, 236); // #137fec
+    doc.text("PROF PRESENTE", 14, 18);
+
+    doc.setFontSize(13);
+    doc.setTextColor(30, 41, 59);
+    doc.text("Relatório de Inscrições & Frequência", 14, 25);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Participante: ${userName} (${userEmail})`, 14, 32);
+    const dataEmissao = new Date().toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    doc.text(`Data de Emissão: ${dataEmissao}`, 14, 37);
+
+    doc.setDrawColor(226, 232, 240);
+    doc.line(14, 41, 196, 41);
+
+    const tableColumn = [
+      "#",
+      "Evento / Curso",
+      "Origem",
+      "Data",
+      "Local",
+      "Status",
+      "Check-in Realizado",
+    ];
+
+    const tableRows = userEnrollments.map((item, index) => {
+      const dateFormatted = item.eventDate
+        ? new Date(item.eventDate).toLocaleDateString("pt-BR")
+        : "-";
+      const checkinFormatted = item.checkInTime
+        ? `${new Date(item.checkInTime).toLocaleDateString("pt-BR")} às ${new Date(
+            item.checkInTime
+          ).toLocaleTimeString("pt-BR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}`
+        : "Pendente / Sem check-in";
+
+      const statusText =
+        item.status === "APPROVED"
+          ? "Confirmado"
+          : item.status === "PENDING"
+          ? "Pendente"
+          : "Cancelado";
+
+      return [
+        index + 1,
+        item.eventTitle,
+        item.type === "TRILHA" ? `Trilha: ${item.sourceName}` : "Inscrição Direta",
+        dateFormatted,
+        item.location || "Não informado",
+        statusText,
+        checkinFormatted,
+      ];
+    });
+
+    autoTable(doc, {
+      startY: 45,
+      head: [tableColumn],
+      body: tableRows,
+      theme: "grid",
+      headStyles: {
+        fillColor: [19, 127, 236],
+        textColor: 255,
+        fontStyle: "bold",
+        fontSize: 9,
+      },
+      styles: { fontSize: 8, cellPadding: 3 },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+    });
+
+    const total = userEnrollments.length;
+    const totalCheckins = userEnrollments.filter(
+      (e) => e.hasCheckIn || e.checkInTime
+    ).length;
+    const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 200;
+
+    doc.setFontSize(10);
+    doc.setTextColor(50);
+    doc.text(
+      `Total de Inscrições: ${total}   |   Presenças Confirmadas (Check-ins): ${totalCheckins}`,
+      14,
+      finalY
+    );
+
+    const filename = `historico-inscricoes-${userName
+      .toLowerCase()
+      .replace(/\s+/g, "-")}.pdf`;
+    doc.save(filename);
+    toast.success("Relatório em PDF baixado com sucesso!");
+  };
 
   // QUERY ATUALIZADA para paginação e busca
   const { data, isLoading } = useQuery({
@@ -859,80 +973,128 @@ const UserManagement = () => {
 
       {/* Dialog para Histórico de Inscrições */}
       <Dialog open={isEnrollmentsDialogOpen} onOpenChange={setIsEnrollmentsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Histórico de Inscrições</DialogTitle>
-            <DialogDescription>
-              Eventos participados por <strong>{selectedUserForEnrollments?.name}</strong>
-            </DialogDescription>
+        <DialogContent className="sm:max-w-5xl w-[95vw] max-h-[90vh] flex flex-col p-6 overflow-hidden rounded-2xl">
+          <DialogHeader className="flex flex-row items-center justify-between pb-3 border-b pr-6">
+            <div>
+              <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                <FileText className="w-5 h-5 text-primary" />
+                Histórico de Inscrições & Frequência
+              </DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground mt-1">
+                Eventos e cursos de <strong>{selectedUserForEnrollments?.name}</strong> ({selectedUserForEnrollments?.email})
+              </DialogDescription>
+            </div>
+            {userEnrollments && userEnrollments.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadPDF}
+                className="hidden sm:flex items-center gap-2 border-primary text-primary hover:bg-primary/10 shadow-sm"
+              >
+                <Download className="w-4 h-4" />
+                Baixar PDF
+              </Button>
+            )}
           </DialogHeader>
 
-          {isLoadingEnrollments ? (
-            <div className="py-8 text-center bg-gray-50 rounded-lg">
-              <p className="text-gray-500">Carregando histórico...</p>
-            </div>
-          ) : userEnrollments && userEnrollments.length > 0 ? (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Evento</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Local</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Check-in</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {userEnrollments.map((enrollment) => (
-                    <TableRow key={enrollment.eventId}>
-                      <TableCell className="font-medium">{enrollment.eventTitle}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center text-sm text-gray-500">
-                          <Calendar className="w-3 h-3 mr-1" />
-                          {new Date(enrollment.eventDate).toLocaleDateString()}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center text-sm text-gray-500">
-                          <MapPin className="w-3 h-3 mr-1" />
-                          {enrollment.location}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {enrollment.status === "APPROVED" ? (
-                          <Badge className="bg-green-100 text-green-800 hover:bg-green-200 border-none">Confirmado</Badge>
-                        ) : enrollment.status === "PENDING" ? (
-                          <Badge variant="outline" className="text-yellow-600 border-yellow-200 bg-yellow-50">Pendente</Badge>
-                        ) : (
-                          <Badge variant="destructive">Cancelado</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {enrollment.checkInTime ? (
-                          <div className="flex items-center text-green-600 font-medium text-xs">
-                            <Clock className="w-3 h-3 mr-1" />
-                            {new Date(enrollment.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </div>
-                        ) : (
-                          <span className="text-gray-400 text-xs">-</span>
-                        )}
-                      </TableCell>
+          <div className="flex-1 overflow-y-auto py-4 min-h-0 pr-1 space-y-4">
+            {isLoadingEnrollments ? (
+              <div className="py-12 text-center bg-muted/20 rounded-xl">
+                <p className="text-muted-foreground animate-pulse font-medium">Carregando histórico atualizado...</p>
+              </div>
+            ) : userEnrollments && userEnrollments.length > 0 ? (
+              <div className="rounded-xl border border-border shadow-sm overflow-hidden bg-card">
+                <Table>
+                  <TableHeader className="bg-muted/50">
+                    <TableRow>
+                      <TableHead className="font-semibold">Evento / Curso</TableHead>
+                      <TableHead className="font-semibold">Origem</TableHead>
+                      <TableHead className="font-semibold">Data</TableHead>
+                      <TableHead className="font-semibold">Local</TableHead>
+                      <TableHead className="font-semibold">Status</TableHead>
+                      <TableHead className="font-semibold">Check-in Realizado</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="py-12 text-center bg-gray-50 rounded-lg border border-dashed">
-              <Calendar className="w-10 h-10 mx-auto text-gray-300 mb-3" />
-              <p className="text-gray-500 font-medium">Nenhuma inscrição encontrada</p>
-              <p className="text-sm text-gray-400">Este usuário ainda não se inscreveu em eventos.</p>
-            </div>
-          )}
+                  </TableHeader>
+                  <TableBody>
+                    {userEnrollments.map((enrollment, index) => (
+                      <TableRow key={enrollment.eventId || index} className="hover:bg-muted/30">
+                        <TableCell className="font-medium text-foreground max-w-[280px]">
+                          <span className="line-clamp-2">{enrollment.eventTitle}</span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs font-normal">
+                            {enrollment.type === "TRILHA" ? "Trilha" : "Evento"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <Calendar className="w-3.5 h-3.5 mr-1.5 text-primary/70" />
+                            {new Date(enrollment.eventDate).toLocaleDateString("pt-BR")}
+                          </div>
+                        </TableCell>
+                        <TableCell className="max-w-[180px]">
+                          <div className="flex items-center text-sm text-muted-foreground truncate">
+                            <MapPin className="w-3.5 h-3.5 mr-1.5 text-muted-foreground shrink-0" />
+                            <span className="truncate">{enrollment.location}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {enrollment.status === "APPROVED" ? (
+                            <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/25 border-emerald-500/20">
+                              Confirmado
+                            </Badge>
+                          ) : enrollment.status === "PENDING" ? (
+                            <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-950/30">
+                              Pendente
+                            </Badge>
+                          ) : (
+                            <Badge variant="destructive">Cancelado</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {enrollment.checkInTime ? (
+                            <div className="flex items-center text-emerald-600 dark:text-emerald-400 font-semibold text-xs bg-emerald-500/10 px-2.5 py-1 rounded-full w-fit">
+                              <Clock className="w-3.5 h-3.5 mr-1.5" />
+                              {new Date(enrollment.checkInTime).toLocaleDateString("pt-BR")} às{" "}
+                              {new Date(enrollment.checkInTime).toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-xs italic bg-muted px-2 py-0.5 rounded">
+                              Sem check-in
+                            </span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="py-12 text-center bg-muted/20 rounded-xl border border-dashed p-6">
+                <Calendar className="w-12 h-12 mx-auto text-muted-foreground/40 mb-3" />
+                <p className="text-muted-foreground font-medium text-base">Nenhuma inscrição encontrada</p>
+                <p className="text-sm text-muted-foreground/70">Este usuário ainda não possui inscrições ativas em cursos ou eventos.</p>
+              </div>
+            )}
+          </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEnrollmentsDialogOpen(false)}>Fechar</Button>
+          <DialogFooter className="border-t pt-3 flex flex-row items-center justify-between sm:justify-between">
+            <div className="text-xs text-muted-foreground hidden sm:block">
+              {userEnrollments?.length > 0 && (
+                <span>Total de {userEnrollments.length} evento(s)/curso(s) listado(s)</span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {userEnrollments && userEnrollments.length > 0 && (
+                <Button variant="outline" size="sm" onClick={handleDownloadPDF} className="sm:hidden gap-1.5 border-primary text-primary">
+                  <Download className="w-4 h-4" />
+                  Baixar PDF
+                </Button>
+              )}
+              <Button variant="outline" onClick={() => setIsEnrollmentsDialogOpen(false)}>
+                Fechar
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
