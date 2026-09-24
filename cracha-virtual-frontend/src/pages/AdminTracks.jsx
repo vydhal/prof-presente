@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tracksAPI, eventsAPI } from '../lib/api';
 import { Button } from '../components/ui/button';
@@ -7,14 +7,22 @@ import { Textarea } from '../components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../components/ui/dialog';
-import { Plus, Pencil, Trash2, Loader2, Search, Link as LinkIcon, X, Users } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, Search, Link as LinkIcon, X, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Badge } from '../components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const TRACKS_PER_PAGE = 10;
+
+// Minúsculas e sem acentos, para "formacao" encontrar "Formação"
+const normalizeText = (text) =>
+    (text || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
 const AdminTracks = () => {
     const queryClient = useQueryClient();
+    const [trackSearch, setTrackSearch] = useState('');
+    const [page, setPage] = useState(1);
     // const { notify } = useNotification(); // Removido
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingTrack, setEditingTrack] = useState(null);
@@ -38,6 +46,29 @@ const AdminTracks = () => {
             return Array.isArray(resp.data) ? resp.data : [];
         }
     });
+
+    // Busca (título/descrição, sem acentos) e paginação feitas no cliente:
+    // a API já devolve todas as trilhas e o endpoint é compartilhado com as telas públicas.
+    // Todas as palavras digitadas precisam aparecer (em qualquer ordem) no título ou na descrição.
+    const filteredTracks = useMemo(() => {
+        const terms = normalizeText(trackSearch).split(/\s+/).filter(Boolean);
+        if (terms.length === 0 || !tracks) return tracks || [];
+        return tracks.filter((track) => {
+            const haystack = `${normalizeText(track.title)} ${normalizeText(track.description)}`;
+            return terms.every((term) => haystack.includes(term));
+        });
+    }, [tracks, trackSearch]);
+
+    const totalPages = Math.max(1, Math.ceil(filteredTracks.length / TRACKS_PER_PAGE));
+    // Se a última página esvaziar (ex.: ao excluir), volta para a última que existe
+    const currentPage = Math.min(page, totalPages);
+    const pageStart = (currentPage - 1) * TRACKS_PER_PAGE;
+    const pagedTracks = filteredTracks.slice(pageStart, pageStart + TRACKS_PER_PAGE);
+
+    const handleTrackSearch = (value) => {
+        setTrackSearch(value);
+        setPage(1);
+    };
 
     // Buscar todos os eventos (para vincular), dos mais recentes para os mais antigos.
     // Antes o limite era 100 com ordenação crescente por data: quando havia mais de 100
@@ -158,6 +189,26 @@ const AdminTracks = () => {
                 </Button>
             </div>
 
+            <div className="relative mb-4 max-w-xl">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                    placeholder="Buscar trilhas por título ou descrição..."
+                    value={trackSearch}
+                    onChange={(e) => handleTrackSearch(e.target.value)}
+                    className="pl-9 pr-9 rounded-xl"
+                />
+                {trackSearch && (
+                    <button
+                        type="button"
+                        onClick={() => handleTrackSearch('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        title="Limpar busca"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                )}
+            </div>
+
             <Card className="border-slate-200 dark:border-slate-800 overflow-hidden rounded-2xl">
                 <Table>
                     <TableHeader className="bg-slate-50 dark:bg-slate-900/50">
@@ -172,18 +223,20 @@ const AdminTracks = () => {
                     <TableBody>
                         {loadingTracks ? (
                             <TableRow>
-                                <TableCell colSpan={4} className="text-center py-10">
+                                <TableCell colSpan={5} className="text-center py-10">
                                     <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-500" />
                                 </TableCell>
                             </TableRow>
-                        ) : tracks?.length === 0 ? (
+                        ) : filteredTracks.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={4} className="text-center py-10 text-slate-500 italic">
-                                    Nenhuma trilha cadastrada.
+                                <TableCell colSpan={5} className="text-center py-10 text-slate-500 italic">
+                                    {trackSearch
+                                        ? `Nenhuma trilha encontrada para "${trackSearch}".`
+                                        : 'Nenhuma trilha cadastrada.'}
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            tracks?.map((track) => (
+                            pagedTracks.map((track) => (
                                 <TableRow key={track.id} className="group hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
                                     <TableCell>
                                         <div className="flex items-center gap-3">
@@ -244,6 +297,39 @@ const AdminTracks = () => {
                         )}
                     </TableBody>
                 </Table>
+
+                {!loadingTracks && filteredTracks.length > 0 && (
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-slate-200 dark:border-slate-800">
+                        <p className="text-sm text-muted-foreground">
+                            Mostrando {pageStart + 1}–{Math.min(pageStart + TRACKS_PER_PAGE, filteredTracks.length)} de {filteredTracks.length}{' '}
+                            {filteredTracks.length === 1 ? 'trilha' : 'trilhas'}
+                            {trackSearch && tracks ? ` (filtradas de ${tracks.length})` : ''}
+                        </p>
+                        {totalPages > 1 && (
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setPage(currentPage - 1)}
+                                    disabled={currentPage <= 1}
+                                >
+                                    <ChevronLeft className="w-4 h-4 mr-1" /> Anterior
+                                </Button>
+                                <span className="text-sm text-muted-foreground px-1">
+                                    Página {currentPage} de {totalPages}
+                                </span>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setPage(currentPage + 1)}
+                                    disabled={currentPage >= totalPages}
+                                >
+                                    Próxima <ChevronRight className="w-4 h-4 ml-1" />
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                )}
             </Card>
 
             {/* DIALOG DE CRIAÇÃO/EDIÇÃO */}
