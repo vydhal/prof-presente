@@ -39,11 +39,13 @@ const AdminTracks = () => {
         }
     });
 
-    // Buscar todos os eventos (para vincular)
+    // Buscar todos os eventos (para vincular), dos mais recentes para os mais antigos.
+    // Antes o limite era 100 com ordenação crescente por data: quando havia mais de 100
+    // eventos, a lista era cortada numa certa data e o restante nunca aparecia.
     const { data: eventsData, isLoading: loadingEvents } = useQuery({
         queryKey: ['admin-events-list'],
         queryFn: async () => {
-            const resp = await eventsAPI.getAll({ limit: 100 });
+            const resp = await eventsAPI.getAll({ limit: 1000, sort: 'desc' });
             return resp.data.events;
         }
     });
