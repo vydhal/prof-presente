@@ -7,23 +7,23 @@ Este guia contém os comandos necessários para compilar, enviar as imagens para
 Siga a ordem abaixo para garantir que todas as imagens estejam atualizadas:
 
 ### A. Backend (Sistema)
-No diretório `cracha-virtual-system`:
+No diretório `back`:
 ```bash
 # 1. Gerar Prisma Client (importante para novas tabelas)
 npx prisma generate
 
 # 2. Build da imagem
-docker build -t vydhal/eduagenda-backend:latest ./cracha-virtual-system
+docker build -t vydhal/eduagenda-backend:latest ./back
 
 # 3. Push para o Docker Hub
 docker push vydhal/eduagenda-backend:latest
 ```
 
 ### B. Frontend
-No diretório `cracha-virtual-frontend`:
+No diretório `front`:
 ```bash
 # 1. Build da imagem (Certifique-se que o .env de produção está correto)
-docker build -t vydhal/eduagenda-frontend:latest ./cracha-virtual-frontend
+docker build -t vydhal/eduagenda-frontend:latest ./front
 
 # 2. Push para o Docker Hub
 docker push vydhal/eduagenda-frontend:latest

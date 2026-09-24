@@ -183,7 +183,7 @@ model LessonComment {
 
 ---
 
-## 💻 4. Estrutura de Rotas Backend (`cracha-virtual-system`)
+## 💻 4. Estrutura de Rotas Backend (`back`)
 
 ### Rotas de Cursos (`/api/courses`):
 - `GET /api/courses`: Lista pública de cursos publicados com filtro por categoria e busca.
@@ -211,7 +211,7 @@ model LessonComment {
 
 ---
 
-## 🎨 5. Adaptação do Frontend (`cracha-virtual-frontend`)
+## 🎨 5. Adaptação do Frontend (`front`)
 
 ### 1. Landing Page / Vitrine Pública (`LandingPage.jsx`):
 - **Hero Section**: Apresentação da Plataforma EAD de Cursos Educacionais.

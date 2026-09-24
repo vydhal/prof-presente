@@ -51,7 +51,7 @@ docker exec cracha_postgres_dev pg_isready -U cracha_user -d cracha_virtual_dev 
 if errorlevel 1 (
     echo ❌ ERRO: Banco não está respondendo.
     echo    Aguarde mais alguns segundos e execute as migrações manualmente:
-    echo    cd cracha-virtual-system
+    echo    cd back
     echo    npx prisma migrate dev
     echo.
     pause
@@ -62,8 +62,8 @@ echo ✅ Banco de dados pronto!
 
 echo.
 echo [6/6] Executando migrações e populando dados...
-if exist "cracha-virtual-system" (
-    cd cracha-virtual-system
+if exist "back" (
+    cd back
     
     echo    - Gerando cliente Prisma...
     npx prisma generate >nul 2>&1
@@ -85,9 +85,9 @@ if exist "cracha-virtual-system" (
     
     cd ..
 ) else (
-    echo ⚠️  Diretório cracha-virtual-system não encontrado.
+    echo ⚠️  Diretório back não encontrado.
     echo    Execute as migrações manualmente:
-    echo    cd cracha-virtual-system
+    echo    cd back
     echo    npx prisma migrate dev
     echo    node scripts\seed.js
 )
@@ -103,8 +103,8 @@ echo    Usuário:   user1@cracha.com / 123456
 echo.
 echo 🌐 Para acessar o sistema:
 echo    1. Execute: start-dev.bat
-echo    2. Inicie o backend: cd cracha-virtual-system && npm run dev
-echo    3. Inicie o frontend: cd cracha-virtual-frontend && npm run dev
+echo    2. Inicie o backend: cd back && npm run dev
+echo    3. Inicie o frontend: cd front && npm run dev
 echo    4. Acesse: http://localhost:5173
 echo.
 pause

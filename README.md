@@ -59,7 +59,7 @@ O **Prof Presente** é uma plataforma completa para gerenciamento de eventos edu
 
 ### 1. Iniciar o Backend (Sistema)
 ```bash
-cd cracha-virtual-system
+cd back
 npm install
 npx prisma generate
 npx prisma db push  # Cria o banco de dados local
@@ -69,7 +69,7 @@ O servidor rodará em `http://localhost:3000`.
 
 ### 2. Iniciar o Frontend
 ```bash
-cd cracha-virtual-frontend
+cd front
 npm install
 npm run dev
 ```

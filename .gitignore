@@ -2,8 +2,8 @@ node_modules
 # Keep environment variables out of version control
 .env
 
-/cracha-virtual-frontend/node_modules
+/front/node_modules
 
-/cracha-virtual-system/node_modules
+/back/node_modules
 
 

@@ -40,7 +40,7 @@ services:
       retries: 5
 
   backend:
-    build: ./cracha-virtual-system
+    build: ./back
     ports:
       - "3000:3000"
     environment:
@@ -67,7 +67,7 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./cracha-virtual-system:/app
+      - ./back:/app
       - /app/node_modules
     command: node server.js
 

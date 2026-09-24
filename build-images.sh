@@ -16,19 +16,19 @@ echo "🐳 Iniciando build das imagens Docker..."
 
 # Build da imagem do backend
 echo "📦 Fazendo build da imagem do backend..."
-cd cracha-virtual-system
+cd back
 docker build -t ${DOCKER_USERNAME}/${BACKEND_IMAGE}:${VERSION} .
 cd ..
 
 # Build da imagem do frontend
 echo "📦 Fazendo build da imagem do frontend..."
-cd cracha-virtual-frontend
+cd front
 docker build -t ${DOCKER_USERNAME}/${FRONTEND_IMAGE}:${VERSION} --build-arg VITE_API_URL=https://corre.simplisoft.com.br/api .
 cd ..
 
 # Build da imagem de reconhecimento facial
 echo "📦 Fazendo build da imagem de reconhecimento facial..."
-cd cracha-virtual-facialrec
+cd facialrec
 docker build -t ${DOCKER_USERNAME}/${FACIALREC_IMAGE}:${VERSION} .
 cd ..
 

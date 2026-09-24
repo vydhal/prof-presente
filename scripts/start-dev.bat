@@ -69,12 +69,12 @@ echo.
 echo 📋 Próximos passos:
 echo.
 echo 1. Para iniciar o BACKEND, abra um novo terminal e execute:
-echo    cd cracha-virtual-system
+echo    cd back
 echo    npm install (apenas na primeira vez)
 echo    npm run dev
 echo.
 echo 2. Para iniciar o FRONTEND, abra outro terminal e execute:
-echo    cd cracha-virtual-frontend
+echo    cd front
 echo    npm install (apenas na primeira vez)
 echo    npm run dev
 echo.

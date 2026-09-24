@@ -31,7 +31,7 @@ Write-Host "`n--- Iniciando build das imagens Docker (Versão: $VERSION) ---" -F
 # Backend Build
 if ($buildBack) {
     Write-Host "[BACKEND] Fazendo build da imagem do Backend..." -ForegroundColor Yellow
-    Set-Location cracha-virtual-system
+    Set-Location back
     docker build -t "${DOCKER_USERNAME}/${BACKEND_IMAGE}:${VERSION}" .
     Set-Location ..
 }
@@ -39,7 +39,7 @@ if ($buildBack) {
 # Frontend Build
 if ($buildFront) {
     Write-Host "[FRONTEND] Fazendo build da imagem do Frontend..." -ForegroundColor Yellow
-    Set-Location cracha-virtual-frontend
+    Set-Location front
     $googleClientId = ""
     if (Test-Path ".env") {
         Get-Content ".env" | ForEach-Object {
@@ -55,7 +55,7 @@ if ($buildFront) {
 # Facial Recognition Build
 if ($buildFacial) {
     Write-Host "[FACIAL] Fazendo build da imagem de Reconhecimento Facial..." -ForegroundColor Yellow
-    Set-Location cracha-virtual-facialrec
+    Set-Location facialrec
     docker build -t "${DOCKER_USERNAME}/${FACIALREC_IMAGE}:${VERSION}" .
     Set-Location ..
 }
