@@ -3,6 +3,7 @@ const router = express.Router();
 
 const {
   getAllEvents,
+  getEventOrganizers,
   getEventById,
   createEvent,
   updateEvent,
@@ -83,6 +84,9 @@ router.get(
 
 // Listar todos os eventos (público - authentication optional)
 router.get("/", authenticateOptional, cacheMiddleware(60), getAllEvents);
+
+// Organizadores que possuem eventos (filtro da listagem do admin) - deve vir antes de "/:id"
+router.get("/organizers", authenticateToken, requireAdmin, getEventOrganizers);
 
 // Obter evento por ID (público)
 router.get("/:id", cacheMiddleware(60), getEventById);

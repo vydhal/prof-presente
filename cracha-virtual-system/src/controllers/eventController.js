@@ -68,12 +68,24 @@ const checkValidation = (req, res) => {
 // Listar todos os eventos
 const getAllEvents = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search, upcoming, categoryId, startDate, endDate, managedOnly } = req.query;
+    const { page = 1, limit = 10, search, upcoming, categoryId, startDate, endDate, managedOnly, sort, creatorId } = req.query;
     const skip = (page - 1) * limit;
     const user = req.user; // Usuário autenticado pelo middleware
 
+    // Ordenação por data de início. O padrão continua "asc" (usado pelas listagens públicas).
+    const sortDirection = sort === "desc" ? "desc" : "asc";
+
+    // Dados do organizador só são expostos a perfis de gestão (a listagem também é pública)
+    const canSeeOrganizer =
+      !!user && ["ADMIN", "ORGANIZER", "GESTOR_ESCOLA"].includes(user.role);
+
     // Objeto base para a cláusula WHERE do Prisma
     const baseWhere = {};
+
+    // Filtro por organizador responsável ("none" = eventos sem responsável definido)
+    if (creatorId) {
+      baseWhere.creatorId = creatorId === "none" ? null : creatorId;
+    }
 
     if (search) {
       baseWhere.OR = [
@@ -199,6 +211,18 @@ const getAllEvents = async (req, res) => {
             color: true
           }
         },
+        ...(canSeeOrganizer
+          ? {
+              creatorId: true,
+              creator: {
+                select: {
+                  id: true,
+                  name: true,
+                  workplaces: { select: { id: true, name: true } },
+                },
+              },
+            }
+          : {}),
         _count: {
           select: {
             enrollments: {
@@ -209,7 +233,7 @@ const getAllEvents = async (req, res) => {
       },
       skip: parseInt(skip),
       take: parseInt(limit),
-      orderBy: { startDate: "asc" },
+      orderBy: { startDate: sortDirection },
     });
 
     const total = await prisma.event.count({ where: finalWhere });
@@ -240,6 +264,27 @@ const getAllEvents = async (req, res) => {
     res.status(500).json({
       error: "Erro interno do servidor",
     });
+  }
+};
+
+// Organizadores responsáveis por pelo menos um evento (alimenta o filtro da listagem do admin)
+const getEventOrganizers = async (req, res) => {
+  try {
+    const organizers = await prisma.user.findMany({
+      where: { createdEvents: { some: {} } },
+      select: {
+        id: true,
+        name: true,
+        workplaces: { select: { id: true, name: true } },
+        _count: { select: { createdEvents: true } },
+      },
+      orderBy: { name: "asc" },
+    });
+
+    res.json({ organizers });
+  } catch (error) {
+    console.error("Erro ao listar organizadores de eventos:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
   }
 };
 
@@ -1128,6 +1173,7 @@ const sendIndividualCertificate = async (req, res) => {
 
 module.exports = {
   getAllEvents,
+  getEventOrganizers,
   getEventById,
   createEvent,
   updateEvent,

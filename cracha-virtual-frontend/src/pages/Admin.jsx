@@ -99,6 +99,13 @@ import LiveStreamConfig from "../components/LiveStreamConfig";
 import LiveCheckinControl from "../components/LiveCheckinControl";
 import { Badge } from "../components/ui/badge";
 import { Combobox } from "../components/ui/combobox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 import { getAssetUrl } from "../lib/utils";
 
 const MODALITY_LABELS = { PRESENCIAL: "Presencial", ONLINE: "Online", HIBRIDO: "Híbrido" };
@@ -215,12 +222,35 @@ const Admin = () => {
   const [enrollments, setEnrollments] = useState([]);
   const [isLoadingEnrollments, setIsLoadingEnrollments] = useState(false);
 
+  // Ordenação por data de início e filtro por organizador são aplicados no servidor,
+  // assim o limite de 500 sempre pega os eventos certos (e não só os mais antigos).
+  const [dateSort, setDateSort] = useState("desc"); // "desc" = mais recentes primeiro
+  const [organizerFilter, setOrganizerFilter] = useState(""); // "" = todos | "none" = sem responsável | id
+
   const { data: events, isLoading: eventsLoading } = useQuery({
-    queryKey: ["admin-events", debouncedSearchTerm],
+    queryKey: ["admin-events", debouncedSearchTerm, dateSort, organizerFilter],
     queryFn: async () => {
-      const response = await api.get(`/events?limit=500&managedOnly=true&search=${debouncedSearchTerm}`);
+      const response = await api.get("/events", {
+        params: {
+          limit: 500,
+          managedOnly: true,
+          search: debouncedSearchTerm,
+          sort: dateSort,
+          ...(organizerFilter ? { creatorId: organizerFilter } : {}),
+        },
+      });
       return response.data.events;
     },
+  });
+
+  // Organizadores que possuem eventos (opções do filtro; só o admin vê o filtro)
+  const { data: eventOrganizers } = useQuery({
+    queryKey: ["event-organizers"],
+    queryFn: async () => {
+      const response = await api.get("/events/organizers");
+      return response.data.organizers;
+    },
+    enabled: isAdmin,
   });
 
   const { data: categoriesArray } = useQuery({
@@ -711,6 +741,14 @@ const Admin = () => {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  // Organizador do evento: nome + unidade/setor (primeira localidade vinculada ao usuário)
+  const getOrganizerInfo = (creator) => {
+    const workplaces = creator?.workplaces || [];
+    const extra = workplaces.length > 1 ? ` (+${workplaces.length - 1})` : "";
+    const unit = workplaces[0] ? `${workplaces[0].name}${extra}` : "";
+    return { unit, full: unit ? `${creator.name} — ${unit}` : creator?.name || "" };
   };
 
   const getModalityLabel = (modality) => MODALITY_LABELS[modality] || "Presencial";
@@ -1654,6 +1692,52 @@ const Admin = () => {
             </div>
           </div>
 
+          {/* Filtros e ordenação da lista */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <Select value={dateSort} onValueChange={setDateSort}>
+              <SelectTrigger className="w-full sm:w-[220px]" title="Ordenar por data de início">
+                <SelectValue placeholder="Ordenar por data" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="desc">Mais recentes primeiro</SelectItem>
+                <SelectItem value="asc">Mais antigos primeiro</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {isAdmin && (
+              <>
+                <Combobox
+                  className="w-full sm:w-[300px]"
+                  options={[
+                    { value: "none", label: "Sem responsável definido" },
+                    ...(eventOrganizers || []).map((o) => ({
+                      value: o.id,
+                      label: o.workplaces?.[0]
+                        ? `${o.name} — ${o.workplaces[0].name}`
+                        : o.name,
+                    })),
+                  ]}
+                  value={organizerFilter}
+                  onSelect={setOrganizerFilter}
+                  placeholder="Todos os organizadores"
+                  searchPlaceholder="Buscar organizador pelo nome..."
+                  emptyText="Nenhum organizador encontrado."
+                />
+                {organizerFilter && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setOrganizerFilter("")}
+                    title="Limpar filtro de organizador"
+                  >
+                    <XCircle className="h-4 w-4 mr-1" />
+                    Limpar filtro
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+
           <Card className="border-none shadow-none md:border md:shadow-sm">
             <CardContent className="p-0">
               {/* MOBILE VIEW: Cards */}
@@ -1697,6 +1781,12 @@ const Admin = () => {
                               <p className="text-muted-foreground text-xs">Local</p>
                               <p className="truncate">{event.location}</p>
                             </div>
+                            {event.creator && (
+                              <div className="col-span-2">
+                                <p className="text-muted-foreground text-xs">Organizador</p>
+                                <p className="truncate">{getOrganizerInfo(event.creator).full}</p>
+                              </div>
+                            )}
                             <div>
                               <p className="text-muted-foreground text-xs">Inscritos</p>
                               <p className="font-mono font-bold text-blue-600">{event.enrolledCount || 0}</p>
@@ -1775,6 +1865,7 @@ const Admin = () => {
                     <TableRow>
                       <TableHead>Título</TableHead>
                       <TableHead>Local</TableHead>
+                      <TableHead>Organizador</TableHead>
                       <TableHead>
                         <button
                           type="button"
@@ -1796,13 +1887,13 @@ const Admin = () => {
                   <TableBody>
                     {eventsLoading ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center">
+                        <TableCell colSpan={9} className="text-center">
                           Carregando...
                         </TableCell>
                       </TableRow>
                     ) : sortedEvents?.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center">
+                        <TableCell colSpan={9} className="text-center">
                           Nenhum evento cadastrado
                         </TableCell>
                       </TableRow>
@@ -1815,6 +1906,23 @@ const Admin = () => {
                             </TableCell>
                             <TableCell className="max-w-[150px] lg:max-w-[250px] truncate" title={event.location}>
                               {event.location}
+                            </TableCell>
+                            <TableCell>
+                              {event.creator ? (
+                                <div
+                                  className="max-w-[180px] lg:max-w-[240px] leading-tight"
+                                  title={getOrganizerInfo(event.creator).full}
+                                >
+                                  <div className="truncate">{event.creator.name}</div>
+                                  {getOrganizerInfo(event.creator).unit && (
+                                    <div className="truncate text-[11px] text-muted-foreground">
+                                      {getOrganizerInfo(event.creator).unit}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground" title="Sem responsável definido">—</span>
+                              )}
                             </TableCell>
                             <TableCell>
                               <Badge variant={getModalityBadgeVariant(event.modality)}>
@@ -1901,7 +2009,7 @@ const Admin = () => {
                                   <Users className="h-4 w-4" />
                                 </Button>
 
-                                {event.modality && event.modality !== "PRESENCIAL" && (
+                                {event.modality && event.modality !== "PRESENCIAL" ? (
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -1910,6 +2018,9 @@ const Admin = () => {
                                   >
                                     <Radio className="h-4 w-4 text-primary" />
                                   </Button>
+                                ) : (
+                                  // Reserva o espaço do botão para manter as colunas de ação alinhadas
+                                  <span className="inline-block h-8 w-9" aria-hidden="true" />
                                 )}
                               </div>
                             </TableCell>
