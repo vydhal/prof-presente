@@ -18,6 +18,7 @@ services:
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASS=${SMTP_PASS}
       - EMAIL_FROM=${EMAIL_FROM}
+      - EMAIL_REPLY_TO=${EMAIL_REPLY_TO:-}
       - PUBLIC_API_URL=https://corre.simplisoft.com.br/api
       - FACIAL_SERVICE_URL=http://eduagenda_facialrec:3002/api
       - TZ=America/Sao_Paulo

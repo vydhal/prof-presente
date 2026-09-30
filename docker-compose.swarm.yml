@@ -16,6 +16,7 @@ services:
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASS=${SMTP_PASS}
       - EMAIL_FROM=${EMAIL_FROM}
+      - EMAIL_REPLY_TO=${EMAIL_REPLY_TO:-}
       - PUBLIC_API_URL=https://eduagenda.simplisoft.com.br/api
       - AMQP_URL=amqp://guest:guest@eduagenda_rabbitmq:5672
       - REDIS_URL=redis://eduagenda_redis:6379

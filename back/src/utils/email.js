@@ -29,9 +29,15 @@ const transporter = nodemailer.createTransport({
  * @param {string} html - Conteúdo HTML do e-mail.
  * @param {Array} attachments - Array de anexos. Ex: [{ filename: 'certificado.pdf', content: pdfBuffer }]
  */
-const sendEmail = async ({ to, subject, html, attachments }) => {
+const sendEmail = async ({ to, subject, html, attachments, replyTo }) => {
   // Verificação para garantir que o 'from' está configurado
   const fromAddress = process.env.EMAIL_FROM || process.env.SMTP_USER;
+
+  // Contorno para domínios remetentes sem DMARC publicado (ex: órgãos .gov.br cujo DNS
+  // não controlamos): EMAIL_FROM passa a ser um domínio com SPF+DKIM+DMARC válidos
+  // (ex: simplisoft.com.br), e EMAIL_REPLY_TO mantém as respostas chegando na caixa
+  // real do cliente/órgão. Ver diagnóstico em diagn_stico_de_entrega_de_e_mail_e_configura_o_dmarc.md.
+  const replyToAddress = replyTo || process.env.EMAIL_REPLY_TO || undefined;
 
   try {
     console.log(`[EMAIL] Tentando enviar para: ${to} | Assunto: ${subject}`);
@@ -41,6 +47,7 @@ const sendEmail = async ({ to, subject, html, attachments }) => {
       subject,
       html,
       attachments,
+      replyTo: replyToAddress,
     });
     console.log(`[EMAIL] Sucesso! ID: ${info.messageId}`);
     return info;

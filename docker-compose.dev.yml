@@ -58,6 +58,7 @@ services:
       - SMTP_PASS=Vydhal@112358
       - SMTP_SECURE=false
       - EMAIL_FROM=ti@simplisoft.com.br
+      - EMAIL_REPLY_TO=formacoes.seduc@edu.campinagrande.pb.gov.br
       - FRONTEND_URL=http://localhost:3001
     depends_on:
       db:
