@@ -29,7 +29,7 @@ const transporter = nodemailer.createTransport({
  * @param {string} html - Conteúdo HTML do e-mail.
  * @param {Array} attachments - Array de anexos. Ex: [{ filename: 'certificado.pdf', content: pdfBuffer }]
  */
-const sendEmail = async ({ to, subject, html, attachments, replyTo }) => {
+const sendEmail = async ({ to, subject, html, attachments, replyTo, bcc }) => {
   // Verificação para garantir que o 'from' está configurado
   const fromAddress = process.env.EMAIL_FROM || process.env.SMTP_USER;
 
@@ -38,6 +38,11 @@ const sendEmail = async ({ to, subject, html, attachments, replyTo }) => {
   // (ex: simplisoft.com.br), e EMAIL_REPLY_TO mantém as respostas chegando na caixa
   // real do cliente/órgão. Ver diagnóstico em diagn_stico_de_entrega_de_e_mail_e_configura_o_dmarc.md.
   const replyToAddress = replyTo || process.env.EMAIL_REPLY_TO || undefined;
+
+  // Cópia oculta opcional (backup/auditoria): todo e-mail enviado pelo sistema
+  // também cai nessa caixa, útil para conferir que o envio está saindo mesmo
+  // quando o remetente técnico (EMAIL_FROM) não é a caixa real do cliente/órgão.
+  const bccAddress = bcc || process.env.EMAIL_BCC || undefined;
 
   try {
     console.log(`[EMAIL] Tentando enviar para: ${to} | Assunto: ${subject}`);
@@ -48,6 +53,7 @@ const sendEmail = async ({ to, subject, html, attachments, replyTo }) => {
       html,
       attachments,
       replyTo: replyToAddress,
+      bcc: bccAddress,
     });
     console.log(`[EMAIL] Sucesso! ID: ${info.messageId}`);
     return info;

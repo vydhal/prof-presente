@@ -61,6 +61,7 @@ services:
       - SMTP_SECURE=${SMTP_SECURE}
       - EMAIL_FROM=${EMAIL_FROM}
       - EMAIL_REPLY_TO=${EMAIL_REPLY_TO:-}
+      - EMAIL_BCC=${EMAIL_BCC:-}
       - FRONTEND_URL=http://localhost:3001
     depends_on:
       db:
