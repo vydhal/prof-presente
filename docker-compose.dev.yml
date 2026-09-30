@@ -52,13 +52,15 @@ services:
       - AMQP_URL=amqp://guest:guest@rabbitmq:5672
       - REDIS_URL=redis://redis:6379
       - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-      - SMTP_HOST=smtp.hostinger.com
-      - SMTP_PORT=587
-      - SMTP_USER=ti@simplisoft.com.br
-      - SMTP_PASS=Vydhal@112358
-      - SMTP_SECURE=false
-      - EMAIL_FROM=ti@simplisoft.com.br
-      - EMAIL_REPLY_TO=formacoes.seduc@edu.campinagrande.pb.gov.br
+      # Lidas de um .env na raiz (não versionado — ver .env.example) via
+      # substituição de variáveis do Docker Compose.
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_SECURE=${SMTP_SECURE}
+      - EMAIL_FROM=${EMAIL_FROM}
+      - EMAIL_REPLY_TO=${EMAIL_REPLY_TO:-}
       - FRONTEND_URL=http://localhost:3001
     depends_on:
       db:
