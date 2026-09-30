@@ -1,4 +1,4 @@
-# Progresso do Projeto - 24/09/2026
+# Progresso do Projeto - 30/09/2026
 
 ## 📊 Tabela de Progresso Atual
 
@@ -26,6 +26,8 @@
 | **20. Organizador e Filtros na Lista de Eventos (Admin)** | Nova coluna "Organizador" (com unidade/setor), filtro por organizador com busca por nome (inclui "Sem responsável definido") e ordenação por data (mais recentes / mais antigos), feitos no servidor | **Concluído** | 24/09/2026 |
 | **21. Busca e Paginação em Trilhas (Admin)** | Campo de busca (título/descrição, sem acento, por palavras) e paginação de 10 em 10 na tela Gerenciar Trilhas | **Concluído** | 24/09/2026 |
 | **22. Padronização dos nomes das pastas** | `cracha-virtual-frontend` → `front`, `cracha-virtual-system` → `back`, `cracha-virtual-facialrec` → `facialrec` (via `git mv`, histórico preservado), com atualização do docker-compose de dev, scripts de build/dev, `.gitignore` e docs | **Concluído** | 24/09/2026 |
+| **23. Contorno para e-mails rejeitados (DMARC ausente no domínio .gov.br)** | `EMAIL_REPLY_TO` opcional em `sendEmail()`, permitindo enviar com `EMAIL_FROM` num domínio já autenticado (ex: `simplisoft.com.br`) e manter as respostas indo para o e-mail real do órgão. Pedido de DMARC encaminhado a quem administra o Route 53 do domínio `.gov.br` | **Concluído (código); pendente o DNS e a troca das variáveis em produção** | 30/09/2026 |
+| **24. Limpeza dos docker-compose obsoletos** | Removidos `docker-compose.yml` e `docker-compose.older.yml` (domínio `corre.simplisoft.com.br`, fora de uso) e `docker-compose.valida.yml` (fluxo de validação não usado); sincronizado `docker-compose.swarm.yml` — o único realmente usado em produção — com as versões de imagem que já estavam rodando no servidor (estavam desalinhadas do repositório) | **Concluído** | 30/09/2026 |
 
 ---
 
@@ -131,7 +133,7 @@
 
 ## Próximos Passos (Para o Usuário Executar)
 
-1. **Build e deploy das imagens**: rodar `build-images.ps1` (opção 3 - Ambos) com uma versão nova (ex: `2.5.0`), dar push, e **atualizar o número da versão no `docker-compose.yml`/`docker-compose.older.yml`** antes de rodar o deploy. As mudanças desta fase exigem front **e** back (a coluna/filtro de organizador depende dos dois). O `facialrec` não mudou.
+1. **Build e deploy das imagens**: rodar `build-images.ps1` (opção 3 - Ambos) com uma versão nova, dar push, e **atualizar o número da versão no `docker-compose.swarm.yml`** (é o único usado em produção — ver item 23 da tabela) antes de rodar o deploy. As mudanças desta fase exigem front **e** back (a coluna/filtro de organizador depende dos dois). O `facialrec` não mudou.
 2. **Após puxar (`git pull`) em outras máquinas**: as pastas foram renomeadas. Arquivos versionados são movidos pelo git, mas o que é ignorado (`.env`, `node_modules`, `uploads`) fica nas pastas antigas — mover `cracha-virtual-system/.env` para `back/.env` (e `uploads/`), `cracha-virtual-frontend/.env` para `front/.env`, e rodar `npm install` nas pastas novas; depois apagar as pastas antigas vazias.
 3. **Segurança (recomendado)**: o `docker-compose.dev.yml` contém uma senha de SMTP em texto puro (`SMTP_PASS`) que já está no histórico do GitHub. Trocar essa senha no provedor de e-mail e passar a lê-la de variável de ambiente/arquivo `.env` não versionado.
 4. **Testar o Modal de Histórico**: Acessar o Painel Admin > Gerenciamento de Usuários > Clicar em "Histórico" em qualquer usuário -> Verificar a abertura ampla do diálogo, a presença do check-in real e o download do PDF.
