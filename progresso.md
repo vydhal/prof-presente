@@ -26,8 +26,10 @@
 | **20. Organizador e Filtros na Lista de Eventos (Admin)** | Nova coluna "Organizador" (com unidade/setor), filtro por organizador com busca por nome (inclui "Sem responsável definido") e ordenação por data (mais recentes / mais antigos), feitos no servidor | **Concluído** | 24/09/2026 |
 | **21. Busca e Paginação em Trilhas (Admin)** | Campo de busca (título/descrição, sem acento, por palavras) e paginação de 10 em 10 na tela Gerenciar Trilhas | **Concluído** | 24/09/2026 |
 | **22. Padronização dos nomes das pastas** | `cracha-virtual-frontend` → `front`, `cracha-virtual-system` → `back`, `cracha-virtual-facialrec` → `facialrec` (via `git mv`, histórico preservado), com atualização do docker-compose de dev, scripts de build/dev, `.gitignore` e docs | **Concluído** | 24/09/2026 |
-| **23. Contorno para e-mails rejeitados (DMARC ausente no domínio .gov.br)** | `EMAIL_REPLY_TO` opcional em `sendEmail()`, permitindo enviar com `EMAIL_FROM` num domínio já autenticado (ex: `simplisoft.com.br`) e manter as respostas indo para o e-mail real do órgão. Pedido de DMARC encaminhado a quem administra o Route 53 do domínio `.gov.br` | **Concluído (código); pendente o DNS e a troca das variáveis em produção** | 30/09/2026 |
+| **23. Contorno para e-mails rejeitados (DMARC ausente no domínio .gov.br)** | `EMAIL_REPLY_TO` opcional em `sendEmail()`, permitindo enviar com `EMAIL_FROM`/SMTP num domínio já autenticado (`ti@simplisoft.com.br` na Hostinger, com SPF+DKIM+DMARC válidos) e manter as respostas indo para o e-mail real do órgão (`formacoes.seduc@edu.campinagrande.pb.gov.br`). Causa raiz real: `_dmarc.edu.campinagrande.pb.gov.br` sem registro publicado (DNS hospedado no Route 53 da AWS, fora do nosso acesso) | **Concluído e validado em produção** | 30/09/2026 |
 | **24. Limpeza dos docker-compose obsoletos** | Removidos `docker-compose.yml` e `docker-compose.older.yml` (domínio `corre.simplisoft.com.br`, fora de uso) e `docker-compose.valida.yml` (fluxo de validação não usado); sincronizado `docker-compose.swarm.yml` — o único realmente usado em produção — com as versões de imagem que já estavam rodando no servidor (estavam desalinhadas do repositório) | **Concluído** | 30/09/2026 |
+| **25. Remoção de credenciais em texto puro do repositório** | Senha de SMTP movida do `docker-compose.dev.yml` para um `.env` na raiz (gitignorado); removido do rastreamento do git o `.env.test`, que continha segredos reais (`JWT_SECRET`, senha do Postgres de produção) commitados por engano | **Concluído (código); rotação das credenciais expostas é decisão do usuário, ainda pendente** | 30/09/2026 |
+| **26. Cópia oculta (BCC) de auditoria em todo e-mail enviado** | `EMAIL_BCC` opcional em `sendEmail()`, enviando cópia oculta (via envelope SMTP, sem cabeçalho `Bcc:` visível) de todo e-mail do sistema para uma caixa de auditoria | **Código concluído; cópia ainda não chega em produção (investigação em andamento — ver Fase 8)** | 30/09/2026 |
 
 ---
 
@@ -131,11 +133,42 @@
 
 ---
 
+## Alterações Realizadas em 30/09/2026 (Fase 8 - Entrega de E-mail, DMARC e Segurança de Credenciais)
+
+### Contexto e causa raiz
+E-mails enviados para destinatários Hotmail/Outlook estavam voltando com erro `550 5.7.515`. Diagnóstico confirmado via consulta DNS real: o domínio `edu.campinagrande.pb.gov.br` tem SPF e DKIM publicados, mas **não tem registro DMARC** em `_dmarc.edu.campinagrande.pb.gov.br`. O DNS do domínio está no Route 53 da AWS (nameservers `awsdns-*`) — nem o usuário nem eu temos acesso para publicar o registro; o pedido foi encaminhado para quem administra essa infraestrutura, e a correção definitiva depende disso.
+
+### Solução aplicada (contorno em nível de aplicação)
+- **`EMAIL_REPLY_TO`** (`back/src/utils/email.js`): o envio passou a sair de uma conta com domínio já autenticado (SPF+DKIM+DMARC válidos) — `ti@simplisoft.com.br` na Hostinger —, mantendo `Reply-To: formacoes.seduc@edu.campinagrande.pb.gov.br` para que qualquer resposta manual chegue na caixa real do órgão. Sem essa variável, nenhum Reply-To é enviado (comportamento anterior preservado).
+- **`EMAIL_BCC`**: depois de confirmado que Reply-To não gera cópia automática (só direciona respostas manuais), foi adicionada uma cópia oculta (BCC, no envelope SMTP, sem cabeçalho `Bcc:` visível) de **todo** e-mail enviado pelo sistema, para auditoria/backup. Validado localmente com um servidor SMTP de teste: o `RCPT TO` inclui corretamente o destinatário real e o BCC, sem vazar o endereço de auditoria no cabeçalho.
+- Ambas as variáveis são opcionais, documentadas em `back/.env-modelo` e `.env.example`, e propagadas em `docker-compose.dev.yml`/`docker-compose.swarm.yml` via `${VAR:-}`.
+
+### Três bugs reais encontrados só em produção (cada um com fix específico)
+1. **`553 5.6.7 Must declare SMTPUTF8`**: o nome de exibição do remetente tinha acentos (`Secretaria de Educação`) — a Hostinger é mais estrita que o Gmail nesse ponto. Corrigido removendo os acentos do `EMAIL_FROM`.
+2. **`553 5.7.1 Sender address rejected: not owned by user`**: as aspas literais em `EMAIL_FROM="Nome <email>"` no `.env` estavam sendo repassadas como caracteres do próprio valor da variável dentro do container, quebrando o parsing do endereço. Corrigido removendo as aspas do valor no `.env` (sem aspas, mesmo com espaço no nome).
+3. **Cópia oculta (BCC) não chega em produção — em investigação**: o e-mail principal chega normalmente, mas a cópia em `formacoes.seduc@edu.campinagrande.pb.gov.br` (e também em `ti@simplisoft.com.br`, testado depois) não aparece. O log de `sendEmail()` foi melhorado para mostrar explicitamente `ReplyTo` e `BCC` a cada envio (antes só mostrava o destinatário principal, escondendo esse diagnóstico). Com o log novo, confirmou-se em produção: `BCC: (nenhum)` — ou seja, a variável simplesmente não está chegando ao processo do backend, mesmo com a imagem já reconstruída (`2.5.9`) e o `.env` do servidor já contendo `EMAIL_BCC=formacoes.seduc@edu.campinagrande.pb.gov.br`. Hipótese mais provável: o `docker-compose.swarm.yml` efetivamente usado no `docker stack deploy` do servidor ainda não tem a linha `EMAIL_BCC=${EMAIL_BCC:-}` no bloco `environment:` do backend (ela já existe no repositório, mas trocar só a tag da imagem/reiniciar o serviço não reaplica o compose) — **a confirmar e corrigir na próxima sessão**.
+
+### Segurança: credenciais expostas no repositório
+Um `git push` foi bloqueado pelo classificador de segurança do Claude Code por vazamento de credencial: a senha de SMTP da Hostinger estava em texto puro no `docker-compose.dev.yml`. Por decisão explícita do usuário (**não trocar a senha da Hostinger**), a correção foi mover todos os valores de SMTP/e-mail para um `.env` na raiz do projeto (gitignorado), com `.env.example` como modelo sem segredos, e o `docker-compose.dev.yml` passou a ler tudo via `${VAR}`.
+
+Durante essa limpeza foi descoberto um segundo problema, mais sério: o arquivo `.env.test`, já commitado no histórico do git (por engano, num commit antigo não relacionado), continha o que aparentam ser segredos **reais de produção** (`JWT_SECRET`, senha do Postgres). Esse arquivo:
+- foi removido do rastreamento do git (`git rm --cached`, mantido localmente);
+- **não** teve suas credenciais rotacionadas;
+- **não** teve o histórico do git reescrito para apagar o rastro antigo.
+Ambas as ações ficam como decisão do usuário — não foram executadas por serem irreversíveis/de alto impacto sem autorização explícita.
+
+### Commits desta fase
+`5a94a69` (contorno DMARC/Reply-To), `a9ec316` (sincroniza swarm.yml), `1f9b0ff` (remove composes obsoletos), `7b76766` (remove credenciais em texto puro), `60408eb` (EMAIL_BCC).
+
+---
+
 ## Próximos Passos (Para o Usuário Executar)
 
-1. **Build e deploy das imagens**: rodar `build-images.ps1` (opção 3 - Ambos) com uma versão nova, dar push, e **atualizar o número da versão no `docker-compose.swarm.yml`** (é o único usado em produção — ver item 23 da tabela) antes de rodar o deploy. As mudanças desta fase exigem front **e** back (a coluna/filtro de organizador depende dos dois). O `facialrec` não mudou.
-2. **Após puxar (`git pull`) em outras máquinas**: as pastas foram renomeadas. Arquivos versionados são movidos pelo git, mas o que é ignorado (`.env`, `node_modules`, `uploads`) fica nas pastas antigas — mover `cracha-virtual-system/.env` para `back/.env` (e `uploads/`), `cracha-virtual-frontend/.env` para `front/.env`, e rodar `npm install` nas pastas novas; depois apagar as pastas antigas vazias.
-3. **Segurança (recomendado)**: o `docker-compose.dev.yml` contém uma senha de SMTP em texto puro (`SMTP_PASS`) que já está no histórico do GitHub. Trocar essa senha no provedor de e-mail e passar a lê-la de variável de ambiente/arquivo `.env` não versionado.
-4. **Testar o Modal de Histórico**: Acessar o Painel Admin > Gerenciamento de Usuários > Clicar em "Histórico" em qualquer usuário -> Verificar a abertura ampla do diálogo, a presença do check-in real e o download do PDF.
-5. **Testar Admin > Eventos e Trilhas**: conferir a coluna Organizador, o filtro por organizador, a ordenação por data e a busca/paginação em Gerenciar Trilhas com os dados reais de produção.
-6. **Pendente de fases anteriores**: uma tela dedicada de "frequência em eventos online" (o endpoint `GET /reports/ranking?modality=ONLINE` já existe, mas nenhuma tela o consome).
+1. **Investigar por que o `EMAIL_BCC` não chega em produção** (ver Fase 8): confirmar se o `docker-compose.swarm.yml` **do servidor** já tem a linha `EMAIL_BCC=${EMAIL_BCC:-}` no serviço do backend, e rodar `docker stack deploy` novamente (não basta trocar a tag da imagem ou reiniciar o serviço) para o Swarm reaplicar as variáveis de ambiente.
+2. **Build e deploy das imagens**: rodar `build-images.ps1` (opção 3 - Ambos) com uma versão nova, dar push, e **atualizar o número da versão no `docker-compose.swarm.yml`** (é o único usado em produção — ver item 23 da tabela) antes de rodar o deploy. As mudanças desta fase exigem front **e** back (a coluna/filtro de organizador depende dos dois). O `facialrec` não mudou.
+3. **Após puxar (`git pull`) em outras máquinas**: as pastas foram renomeadas. Arquivos versionados são movidos pelo git, mas o que é ignorado (`.env`, `node_modules`, `uploads`) fica nas pastas antigas — mover `cracha-virtual-system/.env` para `back/.env` (e `uploads/`), `cracha-virtual-frontend/.env` para `front/.env`, e rodar `npm install` nas pastas novas; depois apagar as pastas antigas vazias.
+4. **Segurança (decisão pendente do usuário)**: rotacionar `JWT_SECRET` e a senha do Postgres de produção, expostas no `.env.test` que esteve commitado no histórico do GitHub (ver item 25 da tabela). Avaliar também se vale reescrever o histórico do git para remover o rastro desses segredos.
+5. **DMARC definitivo**: quando houver acesso a quem administra o Route 53 do domínio `campinagrande.pb.gov.br`, publicar o registro `_dmarc.edu.campinagrande.pb.gov.br` — isso elimina a necessidade do contorno `EMAIL_REPLY_TO`/`EMAIL_FROM` alternativo.
+6. **Testar o Modal de Histórico**: Acessar o Painel Admin > Gerenciamento de Usuários > Clicar em "Histórico" em qualquer usuário -> Verificar a abertura ampla do diálogo, a presença do check-in real e o download do PDF.
+7. **Testar Admin > Eventos e Trilhas**: conferir a coluna Organizador, o filtro por organizador, a ordenação por data e a busca/paginação em Gerenciar Trilhas com os dados reais de produção.
+8. **Pendente de fases anteriores**: uma tela dedicada de "frequência em eventos online" (o endpoint `GET /reports/ranking?modality=ONLINE` já existe, mas nenhuma tela o consome).

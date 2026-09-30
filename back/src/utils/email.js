@@ -45,7 +45,7 @@ const sendEmail = async ({ to, subject, html, attachments, replyTo, bcc }) => {
   const bccAddress = bcc || process.env.EMAIL_BCC || undefined;
 
   try {
-    console.log(`[EMAIL] Tentando enviar para: ${to} | Assunto: ${subject}`);
+    console.log(`[EMAIL] Tentando enviar para: ${to} | Assunto: ${subject} | ReplyTo: ${replyToAddress || '(nenhum)'} | BCC: ${bccAddress || '(nenhum)'}`);
     const info = await transporter.sendMail({
       from: fromAddress,
       to,
