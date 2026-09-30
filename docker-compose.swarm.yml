@@ -3,7 +3,7 @@ version: "3.8"
 services:
   # Serviço do Backend (API)
   backend:
-    image: vydhal/eduagenda-backend:2.5.0
+    image: vydhal/eduagenda-backend:2.5.7
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@eduagenda_db:5432/${POSTGRES_DB}?schema=public
       - JWT_SECRET=${JWT_SECRET}
@@ -68,7 +68,7 @@ services:
 
   # Serviço do Frontend (React + Nginx)
   frontend:
-    image: vydhal/eduagenda-frontend:2.5.0
+    image: vydhal/eduagenda-frontend:2.5.7
     environment:
       - VITE_API_URL=https://eduagenda.simplisoft.com.br/api
     networks:
@@ -107,7 +107,7 @@ services:
         constraints: [ node.role == manager ]
 
   eduagenda_facialrec:
-    image: vydhal/eduagenda-facialrec:2.5.0
+    image: vydhal/eduagenda-facialrec:2.5.5
     environment:
       - PORT=3002
       - PUBLIC_API_URL=https://eduagenda.simplisoft.com.br/api
