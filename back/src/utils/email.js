@@ -3,6 +3,7 @@ const path = require("path");
 const fs = require("fs");
 
 const { generateBadgeHtml } = require("../utils/badgeService");
+const { enqueueEmail } = require("../queues/emailQueue");
 
 const isSecure = process.env.SMTP_SECURE === "true" || process.env.SMTP_SECURE === "1" || process.env.SMTP_SECURE === true || String(process.env.SMTP_SECURE).toLowerCase() === "true";
 
@@ -124,7 +125,7 @@ const sendEnrollmentConfirmationEmail = async (
       </div>
     `;
 
-    await sendEmail({ to: user.email, subject, html, attachments });
+    await enqueueEmail({ to: user.email, subject, html, attachments });
   } catch (error) {
     console.error(`[EMAIL-ERROR] Falha ao preparar/enviar e-mail de confirmação para ${user.email}:`, error.message);
   }
@@ -157,7 +158,7 @@ const sendEnrollmentCancellationEmail = async (user, event) => {
         </div>
     `;
 
-    await sendEmail({ to: user.email, subject, html });
+    await enqueueEmail({ to: user.email, subject, html });
   } catch (error) {
     console.error(`[EMAIL-ERROR] Falha ao enviar e-mail de cancelamento para ${user.email}:`, error.message);
   }

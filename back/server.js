@@ -2,6 +2,7 @@ require('dotenv').config();
 const app = require('./src/app'); // Force restart for presentation routes
 const { disconnectDatabase } = require('./src/config/database');
 const { startEmailWorker } = require('./src/workers/emailWorker');
+const { startEmailJobWorker } = require('./src/workers/emailJobWorker');
 const setupSockets = require('./src/sockets');
 
 const PORT = process.env.PORT || 3000;
@@ -9,6 +10,9 @@ const HOST = '0.0.0.0'; // Permitir acesso externo
 
 // Inicializar Worker de Email (RabbitMQ)
 startEmailWorker().catch(err => console.error("Failed to start Email Worker:", err));
+
+// Inicializar Worker de envio de e-mails com retry (BullMQ/Redis)
+startEmailJobWorker();
 
 const server = app.listen(PORT, HOST, () => {
   console.log(`🚀 Servidor rodando em http://${HOST}:${PORT}`);

@@ -3,7 +3,7 @@ const { body, validationResult } = require("express-validator");
 const { prisma } = require("../config/database");
 const { generateToken } = require("../utils/jwt");
 const { generateQRCode } = require("../utils/qrcode");
-const { sendEmail } = require("../utils/email"); // Import sendEmail
+const { enqueueEmail } = require("../queues/emailQueue");
 const jwt = require("jsonwebtoken"); // Import jsonwebtoken for reset token
 const axios = require("axios");
 
@@ -399,9 +399,12 @@ const forgotPassword = async (req, res) => {
       </div>
     `;
 
-    console.log(`[AUTH] Chamando sendEmail para ${user.email}`);
-    await sendEmail({ to: user.email, subject, html });
-    console.log(`[AUTH] sendEmail concluído com sucesso para ${user.email}`);
+    try {
+      await enqueueEmail({ to: user.email, subject, html });
+      console.log(`[AUTH] Email de redefinição enfileirado para ${user.email}`);
+    } catch (emailError) {
+      console.error(`[AUTH] Falha ao enfileirar email de redefinição para ${user.email}:`, emailError.message);
+    }
 
     res.json({ message: "Se este email estiver cadastrado, você receberá um link de redefinição." });
   } catch (error) {
