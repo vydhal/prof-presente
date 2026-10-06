@@ -29,7 +29,9 @@
 | **23. Contorno para e-mails rejeitados (DMARC ausente no domínio .gov.br)** | `EMAIL_REPLY_TO` opcional em `sendEmail()`, permitindo enviar com `EMAIL_FROM`/SMTP num domínio já autenticado (`ti@simplisoft.com.br` na Hostinger, com SPF+DKIM+DMARC válidos) e manter as respostas indo para o e-mail real do órgão (`formacoes.seduc@edu.campinagrande.pb.gov.br`). Causa raiz real: `_dmarc.edu.campinagrande.pb.gov.br` sem registro publicado (DNS hospedado no Route 53 da AWS, fora do nosso acesso) | **Concluído e validado em produção** | 30/09/2026 |
 | **24. Limpeza dos docker-compose obsoletos** | Removidos `docker-compose.yml` e `docker-compose.older.yml` (domínio `corre.simplisoft.com.br`, fora de uso) e `docker-compose.valida.yml` (fluxo de validação não usado); sincronizado `docker-compose.swarm.yml` — o único realmente usado em produção — com as versões de imagem que já estavam rodando no servidor (estavam desalinhadas do repositório) | **Concluído** | 30/09/2026 |
 | **25. Remoção de credenciais em texto puro do repositório** | Senha de SMTP movida do `docker-compose.dev.yml` para um `.env` na raiz (gitignorado); removido do rastreamento do git o `.env.test`, que continha segredos reais (`JWT_SECRET`, senha do Postgres de produção) commitados por engano | **Concluído (código); rotação das credenciais expostas é decisão do usuário, ainda pendente** | 30/09/2026 |
-| **26. Cópia oculta (BCC) de auditoria em todo e-mail enviado** | `EMAIL_BCC` opcional em `sendEmail()`, enviando cópia oculta (via envelope SMTP, sem cabeçalho `Bcc:` visível) de todo e-mail do sistema para uma caixa de auditoria | **Código concluído; cópia ainda não chega em produção (investigação em andamento — ver Fase 8)** | 30/09/2026 |
+| **26. Cópia oculta (BCC) de auditoria em todo e-mail enviado** | `EMAIL_BCC` opcional em `sendEmail()`, enviando cópia oculta (via envelope SMTP, sem cabeçalho `Bcc:` visível) de todo e-mail do sistema para uma caixa de auditoria | **Concluído e funcionando em produção desde a 2.5.9 + compose atualizado** (ver Fase 9: o BCC dobra a contagem de destinatários no limite de envio) | 06/10/2026 |
+| **27. Fila de e-mails com retry (BullMQ/Redis)** | Envios de inscrição/cancelamento e redefinição de senha passam por uma fila `email` no Redis existente, com até 8 tentativas e espera exponencial. Erros 5xx não são repetidos | **Concluído (testado com Redis e SMTP falsos); pendente build/deploy da 2.6.0** | 06/10/2026 |
+| **28. Redefinição de senha sem erro 500** | `POST /auth/forgot-password` não responde mais 500 quando o envio falha; a mensagem é sempre genérica (também elimina o vazamento de quais emails estão cadastrados) | **Concluído; pendente deploy da 2.6.0** | 06/10/2026 |
 
 ---
 
@@ -162,13 +164,47 @@ Ambas as ações ficam como decisão do usuário — não foram executadas por s
 
 ---
 
+## Alterações Realizadas em 06/10/2026 (Fase 9 - Fila de E-mails, Limite de Envio e Versão 2.6.0)
+
+### Diagnóstico
+- Os logs de produção mostraram `451 4.7.1 Ratelimit "hostinger_out_ratelimit" exceeded`: a conta `ti@simplisoft.com.br` atingiu o limite de envio do Hostinger. Isso fazia as confirmações de inscrição falharem e a redefinição de senha responder 500.
+- O BCC de auditoria (Fase 8) **dobra a quantidade de destinatários por envio**, e o limite do Hostinger conta destinatários, então a cota se esgota mais rápido.
+- Ficou confirmado que o BCC já funciona em produção: o log mostra `BCC: formacoes.seduc@edu.campinagrande.pb.gov.br` nos envios.
+- Trocar de conta para contornar o limite (rodízio entre Google e Hostinger) foi descartado: burla o controle do provedor e prejudica a reputação do domínio.
+
+### Backend (`back`)
+- **Fila de e-mails** (`src/queues/emailQueue.js`): fila BullMQ `email` sobre o Redis que já existe no Swarm (`REDIS_URL`). Até 8 tentativas com espera exponencial a partir de 1 minuto (cerca de 2 horas no total). Anexos são serializados em base64.
+- **Worker** (`src/workers/emailJobWorker.js`, iniciado em `server.js`): chama o `sendEmail` existente. Erros 5xx (permanentes, ex.: destinatário inexistente) não são repetidos; 4xx (temporários, ex.: 451) são.
+- Passam pela fila: confirmação e cancelamento de inscrição (`utils/email.js`) e redefinição de senha (`authController.js`).
+- Continuam com envio direto: certificados (o status deles depende do resultado síncrono) e propostas. Ainda sofrem com o limite e são candidatos à fila numa próxima etapa.
+- **Redefinição de senha**: o envio agora fica num `try/catch` próprio. Em caso de falha, o erro vai para o log e a resposta continua genérica, o que também evita revelar quais emails estão cadastrados.
+- **Dependência nova**: `bullmq` ^5.81.5. A instalação atualizou dependências transitivas dentro das faixas já definidas, incluindo `ioredis` 5.9.2 → 5.11.1 (cliente do cache).
+
+### Teste
+Redis temporário + servidor SMTP falso: o envio que respondeu `451` foi repetido e entregue na segunda tentativa, cerca de 60 segundos depois. O envio que respondeu `550` falhou com uma tentativa só, sem retry.
+
+### Infraestrutura
+- `docker-compose.swarm.yml`: backend e frontend em `2.6.0`. O facialrec continua em `2.5.5`.
+- Para aplicar em produção: build e push de front e back com `2.6.0`, atualizar as tags no compose do servidor e rodar `docker stack deploy -c docker-compose.swarm.yml <stack>` novamente.
+
+### Limitações conhecidas
+- Se a cota do Hostinger for diária e estiver estourada, as 8 tentativas podem não bastar. Jobs que esgotam as tentativas ficam guardados no Redis (até 1000) para inspeção, mas não são reenviados automaticamente.
+- O BCC continua dobrando os destinatários.
+- Próxima etapa recomendada: provedor transacional com domínio autenticado (`simplisoft.com.br`). A troca é só nas variáveis `SMTP_*`.
+
+### Commits desta fase
+`b52b40c` (documentação da fase de e-mail) e o commit da fila de e-mails, redefinição de senha e tags 2.6.0 (ver `git log`).
+
+---
+
 ## Próximos Passos (Para o Usuário Executar)
 
-1. **Investigar por que o `EMAIL_BCC` não chega em produção** (ver Fase 8): confirmar se o `docker-compose.swarm.yml` **do servidor** já tem a linha `EMAIL_BCC=${EMAIL_BCC:-}` no serviço do backend, e rodar `docker stack deploy` novamente (não basta trocar a tag da imagem ou reiniciar o serviço) para o Swarm reaplicar as variáveis de ambiente.
-2. **Build e deploy das imagens**: rodar `build-images.ps1` (opção 3 - Ambos) com uma versão nova, dar push, e **atualizar o número da versão no `docker-compose.swarm.yml`** (é o único usado em produção — ver item 23 da tabela) antes de rodar o deploy. As mudanças desta fase exigem front **e** back (a coluna/filtro de organizador depende dos dois). O `facialrec` não mudou.
-3. **Após puxar (`git pull`) em outras máquinas**: as pastas foram renomeadas. Arquivos versionados são movidos pelo git, mas o que é ignorado (`.env`, `node_modules`, `uploads`) fica nas pastas antigas — mover `cracha-virtual-system/.env` para `back/.env` (e `uploads/`), `cracha-virtual-frontend/.env` para `front/.env`, e rodar `npm install` nas pastas novas; depois apagar as pastas antigas vazias.
-4. **Segurança (decisão pendente do usuário)**: rotacionar `JWT_SECRET` e a senha do Postgres de produção, expostas no `.env.test` que esteve commitado no histórico do GitHub (ver item 25 da tabela). Avaliar também se vale reescrever o histórico do git para remover o rastro desses segredos.
-5. **DMARC definitivo**: quando houver acesso a quem administra o Route 53 do domínio `campinagrande.pb.gov.br`, publicar o registro `_dmarc.edu.campinagrande.pb.gov.br` — isso elimina a necessidade do contorno `EMAIL_REPLY_TO`/`EMAIL_FROM` alternativo.
-6. **Testar o Modal de Histórico**: Acessar o Painel Admin > Gerenciamento de Usuários > Clicar em "Histórico" em qualquer usuário -> Verificar a abertura ampla do diálogo, a presença do check-in real e o download do PDF.
-7. **Testar Admin > Eventos e Trilhas**: conferir a coluna Organizador, o filtro por organizador, a ordenação por data e a busca/paginação em Gerenciar Trilhas com os dados reais de produção.
-8. **Pendente de fases anteriores**: uma tela dedicada de "frequência em eventos online" (o endpoint `GET /reports/ranking?modality=ONLINE` já existe, mas nenhuma tela o consome).
+1. **Deploy da 2.6.0**: build e push de front e back, atualizar as tags no `docker-compose.swarm.yml` do servidor e rodar `docker stack deploy` novamente (não basta trocar a imagem ou reiniciar o serviço).
+2. **Conferir nos logs após o deploy**: `BCC: formacoes.seduc@...` nos envios; `[AUTH] Email de redefinição enfileirado` na redefinição de senha; e `[EMAIL-QUEUE] Job ... falhou` quando houver falha (me enviar a linha se aparecer).
+3. **Provedor transacional gratuito com domínio autenticado** (SPF, DKIM e DMARC em `simplisoft.com.br`): verificar os limites atuais de planos gratuitos antes de escolher. Depois, trocar só as variáveis `SMTP_*` no `.env` do servidor.
+4. **Após puxar (`git pull`) em outras máquinas**: as pastas foram renomeadas. Arquivos versionados são movidos pelo git, mas o que é ignorado (`.env`, `node_modules`, `uploads`) fica nas pastas antigas — mover `cracha-virtual-system/.env` para `back/.env` (e `uploads/`), `cracha-virtual-frontend/.env` para `front/.env`, e rodar `npm install` nas pastas novas; depois apagar as pastas antigas vazias.
+5. **Segurança (decisão pendente do usuário)**: rotacionar `JWT_SECRET` e a senha do Postgres de produção, expostas no `.env.test` que esteve commitado no histórico do GitHub (ver item 25 da tabela). Avaliar também se vale reescrever o histórico do git para remover o rastro desses segredos.
+6. **DMARC definitivo**: quando houver acesso a quem administra o Route 53 do domínio `campinagrande.pb.gov.br`, publicar o registro `_dmarc.edu.campinagrande.pb.gov.br` — isso elimina a necessidade do contorno `EMAIL_REPLY_TO`/`EMAIL_FROM` alternativo.
+7. **Testar o Modal de Histórico**: Acessar o Painel Admin > Gerenciamento de Usuários > Clicar em "Histórico" em qualquer usuário -> Verificar a abertura ampla do diálogo, a presença do check-in real e o download do PDF.
+8. **Testar Admin > Eventos e Trilhas**: conferir a coluna Organizador, o filtro por organizador, a ordenação por data e a busca/paginação em Gerenciar Trilhas com os dados reais de produção.
+9. **Pendente de fases anteriores**: uma tela dedicada de "frequência em eventos online" (o endpoint `GET /reports/ranking?modality=ONLINE` já existe, mas nenhuma tela o consome).
